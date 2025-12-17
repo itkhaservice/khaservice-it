@@ -243,18 +243,24 @@ body {
     }
 
     .mobile-nav-wrapper {
-        display: none; /* Hidden by default on mobile */
+        display: block; /* Change from none to block for max-height transition */
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition: max-height 0.5s ease-out, opacity 0.5s ease-out; /* Smooth transition */
         flex-basis: 100%; /* Take full width when shown */
         order: 1; /* Position after logo/hamburger */
         background-color: #fff;
         box-shadow: 0 2px 4px var(--box-shadow-light);
         border-radius: var(--border-radius-base);
         margin-top: 10px;
-        padding: 10px 0;
+        padding: 0; /* Adjust padding to animate from 0 */
     }
 
     .mobile-nav-wrapper.active {
-        display: block; /* Show when active */
+        max-height: 500px; /* Max height to cover content (adjust as needed) */
+        opacity: 1;
+        padding: 10px 0; /* Add padding when active */
     }
 
     .mobile-nav-wrapper .main-nav ul {
