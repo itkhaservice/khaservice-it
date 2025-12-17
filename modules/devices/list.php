@@ -1,6 +1,6 @@
 <?php
 // --- Pagination Logic ---
-$rows_per_page = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+$rows_per_page = isset($_GET['limit']) ? (int)$_GET['limit'] : 5;
 $current_page = isset($_GET['p']) ? (int)$_GET['p'] : 1;
 
 // --- Filtering Logic ---
@@ -118,6 +118,7 @@ $statuses = $pdo->query("SELECT DISTINCT trang_thai FROM devices ORDER BY trang_
         </select>
         <input type="text" name="filter_keyword" placeholder="Lọc theo tên, mã..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
         <button type="submit" class="btn btn-secondary">Lọc</button>
+        <button type="button" class="btn btn-secondary" onclick="window.location.href='index.php?page=devices/list'">Xóa bộ lọc</button>
     </form>
 </div>
 
@@ -127,6 +128,7 @@ $statuses = $pdo->query("SELECT DISTINCT trang_thai FROM devices ORDER BY trang_
         <a href="index.php?page=devices/add" class="add-button btn btn-primary">Thêm thiết bị mới</a>
         <button type="submit" name="export_selected" class="btn btn-secondary" id="export-selected-btn" style="display: none;" formaction="index.php?page=devices/export">Export ra CSV</button>
         <button type="submit" name="delete_selected" class="btn btn-danger" id="delete-selected-btn" style="display: none;" formaction="index.php?page=devices/delete_multiple" onclick="return confirm('Bạn có chắc chắn muốn xóa các mục đã chọn không?');">Xóa mục đã chọn</button>
+        <span id="selected-count" style="margin-left: 15px; margin-right: 15px; font-weight: bold; display: none;"></span>
     </div>
 
     <div class="content-table-wrapper">
@@ -221,8 +223,8 @@ $statuses = $pdo->query("SELECT DISTINCT trang_thai FROM devices ORDER BY trang_
             <span class="rows-per-page">
                 <span>Hiển thị</span>
                 <select name="limit" onchange="this.form.submit()">
-                    <option value="5" <?php echo $rows_per_page == 5 ? '' : ''; ?>>5</option>
-                    <option value="10" <?php echo $rows_per_page == 10 ? 'selected' : ''; ?>>10</option>
+                    <option value="5" <?php echo $rows_per_page == 5 ? 'selected' : ''; ?>>5</option>
+                    <option value="10" <?php echo $rows_per_page == 10 ? '' : ''; ?>>10</option>
                     <option value="25" <?php echo $rows_per_page == 25 ? 'selected' : ''; ?>>25</option>
                     <option value="50" <?php echo $rows_per_page == 50 ? 'selected' : ''; ?>>50</option>
                     <option value="100" <?php echo $rows_per_page == 100 ? 'selected' : ''; ?>>100</option>
@@ -239,17 +241,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const rowCheckboxes = document.querySelectorAll('.row-checkbox');
     const deleteSelectedBtn = document.getElementById('delete-selected-btn');
     const exportSelectedBtn = document.getElementById('export-selected-btn');
+    const selectedCountSpan = document.getElementById('selected-count'); // Thêm dòng này
 
     function updateActionButtons() {
         const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
         
         if (checkedCount > 0) {
-            // As per user request, show delete button on 2 or more, but we'll do >= 1 for better UX and combine export button visibility
             deleteSelectedBtn.style.display = 'inline-flex';
             exportSelectedBtn.style.display = 'inline-flex';
+            selectedCountSpan.style.display = 'inline'; // Hiển thị span
+            selectedCountSpan.textContent = `Đã chọn ${checkedCount} thiết bị`; // Cập nhật văn bản
         } else {
             deleteSelectedBtn.style.display = 'none';
             exportSelectedBtn.style.display = 'none';
+            selectedCountSpan.style.display = 'none'; // Ẩn span
+            selectedCountSpan.textContent = ''; // Xóa văn bản
         }
     }
 
