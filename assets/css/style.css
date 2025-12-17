@@ -1,33 +1,54 @@
 /* assets/css/style.css */
 
 /* Define CSS Variables for colors and common styles */
+/* Define CSS Variables for colors and common styles */
 :root {
-    --primary-color: #28a745; /* Darker green for primary actions */
-    --primary-light-color: #2dc44d;
-    --secondary-color: #6c757d;
-    --background-light: #f8f9fa; /* Off-white / light gray */
-    --text-color: #343a40;
-    --text-light-color: #6c757d;
-    --border-color: #ced4da;
-    --box-shadow-light: rgba(0, 0, 0, 0.05);
+    /* Primary Colors (Green Tones) - based on prompt */
+    --primary-color: #4CAF50; /* A pleasant green */
+    --primary-light-color: #81C784; /* Lighter shade */
+    --primary-dark-color: #388E3C;  /* Darker shade */
 
-    --success-color: #28a745; /* Green */
-    --success-bg-light: #d4edda; /* Light green background */
-    --success-text: #155724;
+    /* Secondary Colors (Neutral Tones) - based on prompt */
+    --secondary-color: #607D8B; /* Blue Grey */
+    --secondary-light-color: #B0BEC5; /* Lighter Blue Grey, or could be #F5F5F5 for off-white */
+    --secondary-dark-color: #455A64; /* Darker Blue Grey */
 
-    --warning-color: #ffc107; /* Orange/Yellow */
-    --warning-bg-light: #fff3cd; /* Light yellow background */
-    --warning-text: #856404;
+    /* Text Colors */
+    --text-color: #343a40; /* Dark grey for main text */
+    --text-light-color: #6c757d; /* Lighter grey for secondary text */
 
-    --error-color: #dc3545; /* Red */
-    --error-bg-light: #f8d7da; /* Light red background */
-    --error-text: #721c24;
+    /* Background Colors */
+    --background-color: #f4f7f6; /* Light grey background - from prompt "Nền sáng" */
+    --background-light: #fdfdfd; /* Even lighter background */
 
-    --border-radius-base: 8px; /* For general elements */
+    /* Border & Shadow */
+    --border-color: #e0e0e0; /* Light grey border */
+    --box-shadow-light: rgba(0, 0, 0, 0.08); /* Very light shadow */
+
+    /* Border Radius */
+    --border-radius-base: 8px; /* Consistent border-radius for inputs, buttons */
     --border-radius-card: 12px; /* For larger containers/cards */
 
+    /* Transitions */
     --transition-speed: 0.2s;
     --transition-easing: ease-out;
+
+    /* Message Colors - based on prompt */
+    --success-background: #d4edda; /* Light green for success */
+    --success-color: #155724;     /* Dark green text for success */
+    --success-border: #c3e6cb;    /* Border for success */
+
+    --error-background: #f8d7da;  /* Light red for error */
+    --error-color: #721c24;       /* Dark red text for error */
+    --error-border: #f5c6cb;      /* Border for error */
+
+    --warning-background: #fff3cd; /* Light yellow for warning */
+    --warning-color: #856404;     /* Dark yellow text for warning */
+    --warning-border: #ffeeba;    /* Border for warning */
+
+    --info-background: #d1ecf1;  /* Light blue for info (general messages) */
+    --info-color: #0c5460;        /* Dark blue text for info */
+    --info-border: #bee5eb;       /* Border for info */
 }
 
 body {
@@ -97,19 +118,74 @@ a:hover {
     margin-bottom: 15px;
 }
 
-/* Buttons */
+/* Styling for buttons */
 .btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: var(--border-radius-base);
-    text-decoration: none;
-    color: #fff;
-    cursor: pointer;
-    transition: background-color var(--transition-speed) var(--transition-easing),
-                transform 0.1s ease-out; /* For click effect */
-    display: inline-flex; /* To align icon and text if present */
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    padding: 10px 18px;
+    border: none;
+    border-radius: var(--border-radius-base);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    font-family: inherit; /* Ensure font inheritance for consistency */
+    text-decoration: none;
+    transition: background-color var(--transition-speed) var(--transition-easing),
+                color var(--transition-speed) var(--transition-easing),
+                box-shadow var(--transition-speed) var(--transition-easing),
+                transform 0.1s ease-out; /* For click effect */
+}
+
+/* Styling for messages */
+#message-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000; /* Ensure it's above other content */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.message-box {
+    padding: 12px 20px;
+    border-radius: var(--border-radius-base);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    opacity: 0; /* Hidden by default */
+    transform: translateX(100%); /* Start off-screen */
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+    max-width: 350px; /* Limit width */
+}
+
+.message-box.show {
+    opacity: 1; /* Fade in */
+    transform: translateX(0); /* Slide in */
+}
+
+/* Specific colors for message types */
+.message-box.success {
+    background-color: var(--success-background);
+    color: var(--success-color);
+    border: 1px solid var(--success-border);
+}
+
+.message-box.error {
+    background-color: var(--error-background);
+    color: var(--error-color);
+    border: 1px solid var(--error-border);
+}
+
+.message-box.warning {
+    background-color: var(--warning-background);
+    color: var(--warning-color);
+    border: 1px solid var(--warning-border);
+}
+
+.message-box.info {
+    background-color: var(--info-background);
+    color: var(--info-color);
+    border: 1px solid var(--info-border);
 }
 
 .btn:active {
@@ -118,6 +194,7 @@ a:hover {
 
 .btn-primary {
     background-color: var(--primary-color);
+    color: #fff; /* Added */
 }
 
 .btn-primary:hover {
@@ -143,6 +220,7 @@ a:hover {
 
 .btn-danger {
     background-color: var(--error-color);
+    color: #fff; /* Added */
 }
 
 .btn-danger:hover {
@@ -159,6 +237,7 @@ textarea {
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-base);
     padding: 0.75rem;
+    box-sizing: border-box; /* Added to ensure padding and border are included in the element's total width and height */
     transition: border-color var(--transition-speed) var(--transition-easing),
                 box-shadow var(--transition-speed) var(--transition-easing);
 }
@@ -210,74 +289,4 @@ textarea:focus {
     100% { transform: rotate(360deg); }
 }
 
-/* Messages (Success, Error, Warning) */
-.message-box {
-    padding: 12px 20px;
-    margin-bottom: 20px;
-    border-radius: var(--border-radius-base);
-    font-size: 0.95em;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
 
-.message-box.success {
-    background-color: var(--success-bg-light);
-    color: var(--success-text);
-    border: 1px solid var(--success-color);
-}
-
-.message-box.error {
-    background-color: var(--error-bg-light);
-    color: var(--error-text);
-    border: 1px solid var(--error-color);
-}
-
-.message-box.warning {
-    background-color: var(--warning-bg-light);
-    color: var(--warning-text);
-    border: 1px solid var(--warning-color);
-}
-
-/* Audio Toggle UI */
-.audio-toggle-label {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    margin-right: 15px; /* Space between toggle and username */
-    font-size: 0.9em;
-    color: var(--text-light-color);
-}
-
-.audio-toggle-label input[type="checkbox"] {
-    margin-right: 5px;
-    /* You might want to style the checkbox itself for better aesthetics */
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    border: 1px solid var(--border-color);
-    border-radius: 3px;
-    outline: none;
-    cursor: pointer;
-    position: relative;
-    transition: all var(--transition-speed) var(--transition-easing);
-}
-
-.audio-toggle-label input[type="checkbox"]:checked {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-}
-
-.audio-toggle-label input[type="checkbox"]:checked::before {
-    content: '\2713'; /* Checkmark character */
-    display: block;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 14px;
-    color: #fff;
-}
