@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $log_id
             ]);
             set_message('success', 'Nhật ký bảo trì đã được cập nhật thành công!');
-            header("Location: index.php?page=maintenance/history");
+            header("Location: index.php?page=maintenance/view&id=" . $log_id);
             exit;
         } catch (PDOException $e) {
             set_message('error', 'Lỗi khi cập nhật nhật ký bảo trì: ' . $e->getMessage());
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <select id="device_id" name="device_id" required>
                 <option value="">-- Chọn thiết bị --</option>
                 <?php foreach ($devices as $device): ?>
-                    <option value="<?php echo $device['id']; ?>" <?php echo ($log['device_id'] == $device['id']) ? 'selected' : ''; ?>>
+                    <option value="<?php echo $device['id']; ?>" <?php echo (($_POST['device_id'] ?? $log['device_id']) == $device['id']) ? 'selected' : ''; ?>>
                         <?php echo htmlspecialchars($device['ma_tai_san'] . ' - ' . $device['ten_thiet_bi']); ?>
                     </option>
                 <?php endforeach; ?>
@@ -72,31 +72,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="form-group">
             <label for="ngay_su_co">Ngày sự cố (*)</label>
-            <input type="date" id="ngay_su_co" name="ngay_su_co" value="<?php echo htmlspecialchars($log['ngay_su_co']); ?>" required>
+            <input type="date" id="ngay_su_co" name="ngay_su_co" value="<?php echo htmlspecialchars($_POST['ngay_su_co'] ?? $log['ngay_su_co']); ?>" required>
         </div>
 
         <div class="form-group full-width">
             <label for="noi_dung">Mô tả sự cố</label>
-            <textarea id="noi_dung" name="noi_dung"><?php echo htmlspecialchars($log['noi_dung']); ?></textarea>
+            <textarea id="noi_dung" name="noi_dung"><?php echo htmlspecialchars($_POST['noi_dung'] ?? $log['noi_dung']); ?></textarea>
         </div>
 
         <div class="form-group full-width">
             <label for="hu_hong">Hư hỏng</label>
-            <textarea id="hu_hong" name="hu_hong"><?php echo htmlspecialchars($log['hu_hong']); ?></textarea>
+            <textarea id="hu_hong" name="hu_hong"><?php echo htmlspecialchars($_POST['hu_hong'] ?? $log['hu_hong']); ?></textarea>
         </div>
 
         <div class="form-group full-width">
             <label for="xu_ly">Xử lý</label>
-            <textarea id="xu_ly" name="xu_ly"><?php echo htmlspecialchars($log['xu_ly']); ?></textarea>
+            <textarea id="xu_ly" name="xu_ly"><?php echo htmlspecialchars($_POST['xu_ly'] ?? $log['xu_ly']); ?></textarea>
         </div>
 
         <div class="form-group">
             <label for="chi_phi">Chi phí (VNĐ)</label>
-            <input type="number" id="chi_phi" name="chi_phi" step="1000" value="<?php echo htmlspecialchars($log['chi_phi']); ?>">
+            <input type="number" id="chi_phi" name="chi_phi" step="1000" value="<?php echo htmlspecialchars($_POST['chi_phi'] ?? $log['chi_phi']); ?>">
         </div>
 
         <div class="form-actions">
-            <a href="index.php?page=maintenance/history" class="btn btn-secondary">Hủy</a>
+            <a href="index.php?page=maintenance/view&id=<?php echo $log_id; ?>" class="btn btn-secondary">Hủy</a>
             <button type="submit" class="btn btn-primary">Cập nhật Nhật ký</button>
         </div>
     </form>

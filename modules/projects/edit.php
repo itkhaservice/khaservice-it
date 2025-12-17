@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $project_id
             ]);
             set_message('success', 'Dự án đã được cập nhật thành công!');
-            header("Location: index.php?page=projects/list");
+            header("Location: index.php?page=projects/view&id=" . $project_id);
             exit;
         } catch (PDOException $e) {
             set_message('error', 'Lỗi khi cập nhật dự án: ' . $e->getMessage());
@@ -55,30 +55,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form action="index.php?page=projects/edit&id=<?php echo $project_id; ?>" method="POST" class="form-grid">
         <div class="form-group">
             <label for="ma_du_an">Mã Dự án (*)</label>
-            <input type="text" id="ma_du_an" name="ma_du_an" value="<?php echo htmlspecialchars($project['ma_du_an']); ?>" required>
+            <input type="text" id="ma_du_an" name="ma_du_an" value="<?php echo htmlspecialchars($_POST['ma_du_an'] ?? $project['ma_du_an']); ?>" required>
         </div>
         <div class="form-group">
             <label for="ten_du_an">Tên Dự án (*)</label>
-            <input type="text" id="ten_du_an" name="ten_du_an" value="<?php echo htmlspecialchars($project['ten_du_an']); ?>" required>
+            <input type="text" id="ten_du_an" name="ten_du_an" value="<?php echo htmlspecialchars($_POST['ten_du_an'] ?? $project['ten_du_an']); ?>" required>
         </div>
 
         <div class="form-group full-width">
             <label for="dia_chi">Địa chỉ</label>
-            <textarea id="dia_chi" name="dia_chi"><?php echo htmlspecialchars($project['dia_chi']); ?></textarea>
+            <textarea id="dia_chi" name="dia_chi"><?php echo htmlspecialchars($_POST['dia_chi'] ?? $project['dia_chi']); ?></textarea>
         </div>
 
         <div class="form-group">
             <label for="loai_du_an">Loại Dự án</label>
-            <input type="text" id="loai_du_an" name="loai_du_an" value="<?php echo htmlspecialchars($project['loai_du_an']); ?>">
+            <input type="text" id="loai_du_an" name="loai_du_an" value="<?php echo htmlspecialchars($_POST['loai_du_an'] ?? $project['loai_du_an']); ?>">
         </div>
 
         <div class="form-group full-width">
             <label for="ghi_chu">Ghi chú</label>
-            <textarea id="ghi_chu" name="ghi_chu"><?php echo htmlspecialchars($project['ghi_chu']); ?></textarea>
+            <textarea id="ghi_chu" name="ghi_chu"><?php echo htmlspecialchars($_POST['ghi_chu'] ?? $project['ghi_chu']); ?></textarea>
         </div>
 
         <div class="form-actions">
-            <a href="index.php?page=projects/list" class="btn btn-secondary">Hủy</a>
+            <a href="index.php?page=projects/view&id=<?php echo $project_id; ?>" class="btn btn-secondary">Hủy</a>
             <button type="submit" class="btn btn-primary">Cập nhật Dự án</button>
         </div>
     </form>

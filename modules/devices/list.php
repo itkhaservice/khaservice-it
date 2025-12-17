@@ -75,17 +75,26 @@ $sql = "
     FROM devices d
     LEFT JOIN projects p ON d.project_id = p.id
     LEFT JOIN suppliers s ON d.supplier_id = s.id
-    " . $where_sql .
-    $order_sql . "
+    WHERE (d.ma_tai_san LIKE :keyword OR d.ten_thiet_bi LIKE :keyword)
+    " . $order_sql . "
     LIMIT :limit OFFSET :offset
 ";
 $stmt = $pdo->prepare($sql);
-$stmt->bindParam(':limit', $rows_per_page, PDO::PARAM_INT);
-$stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-foreach ($bind_params as $key => $value) {
-    $stmt->bindValue($key, $value);
+
+echo "<pre>";
+if (method_exists($stmt, 'debugDumpParams')) {
+    echo "Dumping Params (after prepare):\n";
+    $stmt->debugDumpParams();
+} else {
+    echo "debugDumpParams not available.<br>";
+    echo "SQL:\n" . htmlspecialchars($sql) . "\n\n";
+    echo "Intended Params for execute:\n";
+    print_r($final_bind_params);
 }
-$stmt->execute();
+echo "</pre>";
+die("DEBUGGING OUTPUT - Check above for SQL and Params.");
+
+$stmt->execute($final_bind_params);
 $devices = $stmt->fetchAll();
 
 // --- Fetch Projects and Statuses for dropdown filters ---

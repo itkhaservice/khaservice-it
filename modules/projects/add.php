@@ -37,26 +37,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form action="index.php?page=projects/add" method="POST" class="form-grid">
         <div class="form-group">
             <label for="ma_du_an">Mã Dự án (*)</label>
-            <input type="text" id="ma_du_an" name="ma_du_an" required>
+            <input type="text" id="ma_du_an" name="ma_du_an" required value="<?php echo htmlspecialchars($_POST['ma_du_an'] ?? ''); ?>">
         </div>
         <div class="form-group">
             <label for="ten_du_an">Tên Dự án (*)</label>
-            <input type="text" id="ten_du_an" name="ten_du_an" required>
+            <input type="text" id="ten_du_an" name="ten_du_an" required value="<?php echo htmlspecialchars($_POST['ten_du_an'] ?? ''); ?>">
         </div>
 
         <div class="form-group full-width">
             <label for="dia_chi">Địa chỉ</label>
-            <textarea id="dia_chi" name="dia_chi"></textarea>
+            <textarea id="dia_chi" name="dia_chi"><?php echo htmlspecialchars($_POST['dia_chi'] ?? ''); ?></textarea>
         </div>
 
         <div class="form-group">
             <label for="loai_du_an">Loại Dự án</label>
-            <input type="text" id="loai_du_an" name="loai_du_an">
+            <input type="text" id="loai_du_an" name="loai_du_an" value="<?php echo htmlspecialchars($_POST['loai_du_an'] ?? ''); ?>">
         </div>
 
         <div class="form-group full-width">
             <label for="ghi_chu">Ghi chú</label>
-            <textarea id="ghi_chu" name="ghi_chu"></textarea>
+            <textarea id="ghi_chu" name="ghi_chu"><?php echo htmlspecialchars($_POST['ghi_chu'] ?? ''); ?></textarea>
         </div>
 
         <div class="form-actions">
