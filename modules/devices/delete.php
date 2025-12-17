@@ -51,5 +51,6 @@ try {
     // Catch other general exceptions (e.g., from file operations)
     $pdo->rollBack();
     set_message('error', 'Đã xảy ra lỗi: ' . $e->getMessage());
+}
 header("Location: " . ($_SERVER['HTTP_REFERER'] ?? 'index.php?page=devices/list'));
 exit;
