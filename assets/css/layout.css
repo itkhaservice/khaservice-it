@@ -1,10 +1,21 @@
+/* Sticky Footer Setup */
+html, body {
+    height: 100%; /* Make html and body take full viewport height */
+    margin: 0;
+}
+
+body {
+    display: flex; /* Enable flexbox for body */
+    flex-direction: column; /* Arrange children in a column */
+}
+
 /* assets/css/layout.css */
 
 /* General container styling */
 .container {
     width: 95%;
     max-width: 1400px;
-    margin: 20px auto; /* Add margin-top/bottom */
+    margin: 0 auto; /* Removed top/bottom margin */
     padding: 20px;
 }
 
@@ -145,8 +156,8 @@
 
 /* Main Content area */
 .main-content {
-    flex: 1;
-    padding: 0 20px; /* Adjust padding if container has auto margin */
+    flex: 1; /* Allow main content to grow and push footer down */
+    padding: 20px 20px 40px; /* Added padding-top and increased padding-bottom */
 }
 
 /* Main Footer */

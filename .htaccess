@@ -1,7 +1,13 @@
 # Disable directory browsing
 Options -Indexes
 
-# Optional: Further restrict direct access to uploaded files if needed.
-# For example, to force downloads or serve through a script.
-# RewriteEngine On
-# RewriteRule ^uploads/(.*)$ /download.php?file=$1 [L,QSA]
+RewriteEngine On
+RewriteBase /khaservice-it/
+
+# Redirect root access to public/
+RewriteRule ^$ public/ [L]
+
+# Redirect all requests not starting with public/ to public/ directory
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^((?!public/).*)$ public/$1 [L,QSA]

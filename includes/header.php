@@ -8,6 +8,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý IT - KHASERVICE</title>
+    <base href="/khaservice-it/public/" />
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/layout.css">
     <link rel="stylesheet" href="../assets/css/table.css">
@@ -37,30 +38,19 @@
                                 <?php endif; ?>
                             </ul>
                         </nav>
-            <div class="search-box">
-                <form action="/khaservice-it/public/index.php" method="GET">
-                    <input type="hidden" name="page" value="search/results"> <!-- Will create this module -->
-                    <input type="text" name="search_query" placeholder="Tìm kiếm tài sản, serial..." value="<?php echo htmlspecialchars($_GET['search_query'] ?? ''); ?>">
-                    <button type="submit" class="btn btn-primary btn-search">Tìm</button>
-                </form>
-            </div>
+            <!-- <div class="search-box"> -->
+                <!-- <form action="/khaservice-it/public/index.php" method="GET"> -->
+                    <!-- <input type="hidden" name="page" value="search/results"> Will create this module -->
+                    <!-- <input type="text" name="search_query" placeholder="Tìm kiếm tài sản, serial..." value="<?php echo htmlspecialchars($_GET['search_query'] ?? ''); ?>"> -->
+                    <!-- <button type="submit" class="btn btn-primary btn-search">Tìm</button> -->
+                <!-- </form> -->
+            <!-- </div> -->
         </div>
         <div class="user-info">
-            <label for="audioToggle" class="audio-toggle-label">
-                <input type="checkbox" id="audioToggle" onchange="window.toggleAudioFeedback(this.checked);">
-                Âm thanh
-            </label>
+
             <span><?php echo htmlspecialchars($_SESSION['username']); ?></span>
             <a href="/khaservice-it/public/logout.php">Đăng xuất</a>
         </div>
     </header>
-    <script>
-        // Set initial state of the toggle based on localStorage
-        document.addEventListener('DOMContentLoaded', function() {
-            const audioToggle = document.getElementById('audioToggle');
-            if (audioToggle) {
-                audioToggle.checked = localStorage.getItem('audioFeedbackEnabled') === 'true';
-            }
-        });
-    </script>    <main class="main-content">
+    <main class="main-content">
         <div class="container">

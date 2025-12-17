@@ -60,23 +60,34 @@
 /* Specific button styles (using global .btn classes) */
 .actions .view-btn {
     background-color: var(--secondary-color);
+    color: #fff;
+
 }
 .actions .view-btn:hover {
     background-color: #5a6268;
+    color: #fff;
+
 }
 
 .actions .edit-btn {
     background-color: var(--warning-color);
+    color: #fff;
 }
 .actions .edit-btn:hover {
     background-color: #e0a800;
+    color: #fff;
+
 }
 
 .actions .delete-btn {
     background-color: var(--error-color);
+    color: #fff;
+
 }
 .actions .delete-btn:hover {
     background-color: #c82333;
+    color: #fff;
+
 }
 
 /* General add button outside table */

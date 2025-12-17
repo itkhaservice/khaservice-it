@@ -48,5 +48,34 @@ document.addEventListener('DOMContentLoaded', () => {
             hamburgerButton.classList.toggle('active'); // Optional: Add active class to button for animation
         });
     }
+    // Message handling (auto-hide and hover)
+    const messageContainer = document.getElementById('message-container');
+    if (messageContainer) {
+        const messageBoxes = messageContainer.querySelectorAll('.message-box');
+        messageBoxes.forEach(messageBox => {
+            let timer;
 
+            function hideMessage() {
+                messageBox.style.opacity = '0';
+                messageBox.style.transform = 'translateX(100%)';
+                setTimeout(() => messageBox.remove(), 300); // Remove after transition
+            }
+
+            function startHideTimer() {
+                timer = setTimeout(hideMessage, 5000); // Hide after 5 seconds
+            }
+
+            function stopHideTimer() {
+                clearTimeout(timer);
+            }
+
+            // Start timer immediately
+            startHideTimer();
+
+            // Pause timer on hover
+            messageBox.addEventListener('mouseover', stopHideTimer);
+            // Resume timer on mouse out
+            messageBox.addEventListener('mouseout', startHideTimer);
+        });
+    }
 });

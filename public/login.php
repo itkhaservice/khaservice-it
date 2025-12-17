@@ -31,8 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập - KHASERVICE IT</title>
-    <link rel="stylesheet" href="../assets/css/style.css"> <!-- Keep general styles -->
-    <link rel="stylesheet" href="../assets/css/login.css"> <!-- Specific login styles -->
+    <link rel="stylesheet" href="/khaservice-it/assets/css/style.css"> <!-- Keep general styles -->
+    <link rel="stylesheet" href="/khaservice-it/assets/css/login.css"> <!-- Specific login styles -->
 </head>
 <body>
     <div class="login-container">

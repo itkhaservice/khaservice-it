@@ -10,13 +10,15 @@ function set_message($type, $message) {
 // Function to display and clear session messages
 function display_messages() {
     if (isset($_SESSION['messages']) && !empty($_SESSION['messages'])) {
+        echo '<div id="message-container" class="message-container">'; // Thêm container
         foreach ($_SESSION['messages'] as $message) {
-            echo '<div class="message-box ' . htmlspecialchars($message['type']) . '">';
+            // Thêm class 'show' để hiển thị ban đầu
+            echo '<div class="message-box ' . htmlspecialchars($message['type']) . ' show">';
             echo htmlspecialchars($message['content']);
             echo '</div>';
-            // Trigger audio feedback via JavaScript
             echo '<script>window.playAudioFeedback("' . htmlspecialchars($message['type']) . '");</script>';
         }
+        echo '</div>'; // Đóng container
         unset($_SESSION['messages']); // Clear messages after displaying
     }
 }
