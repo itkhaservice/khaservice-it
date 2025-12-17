@@ -242,6 +242,10 @@ body {
         display: none;
     }
 
+    .mobile-nav-wrapper.active .main-nav {
+        display: block; /* Ensure main nav is visible when mobile nav wrapper is active */
+    }
+
     .mobile-nav-wrapper {
         display: block; /* Change from none to block for max-height transition */
         max-height: 0;
