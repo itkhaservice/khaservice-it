@@ -24,7 +24,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_selected'])) {
         SELECT 
             d.ma_tai_san,
             d.ten_thiet_bi,
-            d.serial_number,
             d.ngay_mua,
             d.gia_mua,
             d.thoi_han_bao_hanh,
@@ -56,7 +55,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_selected'])) {
     fputcsv($output, [
         'Mã Tài Sản',
         'Tên Thiết Bị',
-        'Serial Number',
         'Ngày Mua',
         'Giá Mua',
         'Thời Hạn Bảo Hành (tháng)',

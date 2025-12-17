@@ -96,3 +96,13 @@
 .compact-table th, .compact-table td {
     padding: 8px 10px;
 }
+
+/* Fix for link color in table header */
+.content-table thead a {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.content-table thead a:hover {
+    color: #f0f0f0; /* Lighter shade for hover */
+}

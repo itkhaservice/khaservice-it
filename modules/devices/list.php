@@ -1,6 +1,6 @@
 <?php
 // --- Pagination Logic ---
-$rows_per_page = isset($_GET['limit']) ? (int)$_GET['limit'] : 25;
+$rows_per_page = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
 $current_page = isset($_GET['p']) ? (int)$_GET['p'] : 1;
 
 // --- Filtering Logic ---
@@ -100,7 +100,6 @@ $statuses = $pdo->query("SELECT DISTINCT trang_thai FROM devices ORDER BY trang_
 <div class="filter-section">
     <form action="index.php" method="GET">
         <input type="hidden" name="page" value="devices/list">
-        <input type="text" name="filter_keyword" placeholder="Lọc theo tên, mã..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
         <select name="filter_project">
             <option value="">-- Lọc theo dự án --</option>
             <?php foreach ($projects as $project): ?>
@@ -117,7 +116,8 @@ $statuses = $pdo->query("SELECT DISTINCT trang_thai FROM devices ORDER BY trang_
                 </option>
             <?php endforeach; ?>
         </select>
-        <button type="submit" class="btn">Lọc</button>
+        <input type="text" name="filter_keyword" placeholder="Lọc theo tên, mã..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
+        <button type="submit" class="btn btn-secondary">Lọc</button>
     </form>
 </div>
 
@@ -125,7 +125,8 @@ $statuses = $pdo->query("SELECT DISTINCT trang_thai FROM devices ORDER BY trang_
 <form action="index.php?page=devices/export" method="POST" id="devices-form">
     <div class="table-actions">
         <a href="index.php?page=devices/add" class="add-button btn btn-primary">Thêm thiết bị mới</a>
-        <button type="submit" name="export_selected" class="btn">Export ra CSV</button>
+        <button type="submit" name="export_selected" class="btn btn-secondary" id="export-selected-btn" style="display: none;" formaction="index.php?page=devices/export">Export ra CSV</button>
+        <button type="submit" name="delete_selected" class="btn btn-danger" id="delete-selected-btn" style="display: none;" formaction="index.php?page=devices/delete_multiple" onclick="return confirm('Bạn có chắc chắn muốn xóa các mục đã chọn không?');">Xóa mục đã chọn</button>
     </div>
 
     <div class="content-table-wrapper">
@@ -189,55 +190,89 @@ $statuses = $pdo->query("SELECT DISTINCT trang_thai FROM devices ORDER BY trang_
 
 <!-- Pagination Section -->
 <div class="pagination">
-    <?php
-    // Build URL with existing filters and sort parameters
-    $query_params = $_GET;
-    unset($query_params['p']); // Unset page number for base URL
-    $base_url = 'index.php?' . http_build_query($query_params);
-    ?>
+    <div class="pagination-links">
+        <?php
+        // Build URL with existing filters and sort parameters
+        $query_params = $_GET;
+        unset($query_params['p']); // Unset page number for base URL
+        $base_url = 'index.php?' . http_build_query($query_params);
+        ?>
 
-    <a href="<?php echo $base_url . '&p=1'; ?>" <?php echo $current_page <= 1 ? 'class="disabled"' : ''; ?>>&laquo; Đầu</a>
-    <a href="<?php echo $base_url . '&p=' . ($current_page - 1); ?>" <?php echo $current_page <= 1 ? 'class="disabled"' : ''; ?>>&laquo; Trước</a>
+        <a href="<?php echo $base_url . '&p=1'; ?>" <?php echo $current_page <= 1 ? 'class="disabled"' : ''; ?>>&laquo; Đầu</a>
+        <a href="<?php echo $base_url . '&p=' . ($current_page - 1); ?>" <?php echo $current_page <= 1 ? 'class="disabled"' : ''; ?>>&laquo; Trước</a>
 
-    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-        <a href="<?php echo $base_url . '&p=' . $i; ?>" class="<?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
-    <?php endfor; ?>
+        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+            <a href="<?php echo $base_url . '&p=' . $i; ?>" class="<?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
+        <?php endfor; ?>
 
-    <a href="<?php echo $base_url . '&p=' . ($current_page + 1); ?>" <?php echo $current_page >= $total_pages ? 'class="disabled"' : ''; ?>>Sau &raquo;</a>
-    <a href="<?php echo $base_url . '&p=' . $total_pages; ?>" <?php echo $current_page >= $total_pages ? 'class="disabled"' : ''; ?>>Cuối &raquo;</a>
+        <a href="<?php echo $base_url . '&p=' . ($current_page + 1); ?>" <?php echo $current_page >= $total_pages ? 'class="disabled"' : ''; ?>>Sau &raquo;</a>
+        <a href="<?php echo $base_url . '&p=' . $total_pages; ?>" <?php echo $current_page >= $total_pages ? 'class="disabled"' : ''; ?>>Cuối &raquo;</a>
+    </div>
 
-    <form action="index.php" method="GET" class="rows-per-page-form">
-         <input type="hidden" name="page" value="devices/list">
-         <!-- Persist other filters and sort parameters -->
-         <?php foreach ($_GET as $key => $value): ?>
-            <?php if ($key !== 'limit' && $key !== 'page'): ?>
-                <input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>">
-            <?php endif; ?>
-         <?php endforeach; ?>
-        <span class="rows-per-page">
-            Hiển thị
-            <select name="limit" onchange="this.form.submit()">
-                <option value="10" <?php echo $rows_per_page == 10 ? 'selected' : ''; ?>>10</option>
-                <option value="25" <?php echo $rows_per_page == 25 ? 'selected' : ''; ?>>25</option>
-                <option value="50" <?php echo $rows_per_page == 50 ? 'selected' : ''; ?>>50</option>
-                <option value="100" <?php echo $rows_per_page == 100 ? 'selected' : ''; ?>>100</option>
-            </select>
-             dòng mỗi trang.
-        </span>
-    </form>
+    <div class="pagination-controls">
+        <form action="index.php" method="GET" class="rows-per-page-form">
+            <input type="hidden" name="page" value="devices/list">
+            <!-- Persist other filters and sort parameters -->
+            <?php foreach ($_GET as $key => $value): ?>
+                <?php if ($key !== 'limit' && $key !== 'page'): ?>
+                    <input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>">
+                <?php endif; ?>
+            <?php endforeach; ?>
+            <span class="rows-per-page">
+                <span>Hiển thị</span>
+                <select name="limit" onchange="this.form.submit()">
+                    <option value="5" <?php echo $rows_per_page == 5 ? '' : ''; ?>>5</option>
+                    <option value="10" <?php echo $rows_per_page == 10 ? 'selected' : ''; ?>>10</option>
+                    <option value="25" <?php echo $rows_per_page == 25 ? 'selected' : ''; ?>>25</option>
+                    <option value="50" <?php echo $rows_per_page == 50 ? 'selected' : ''; ?>>50</option>
+                    <option value="100" <?php echo $rows_per_page == 100 ? 'selected' : ''; ?>>100</option>
+                </select>
+                <span>dòng mỗi trang.</span>
+            </span>
+        </form>
+    </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const selectAllCheckbox = document.getElementById('select-all');
     const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+    const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+    const exportSelectedBtn = document.getElementById('export-selected-btn');
+
+    function updateActionButtons() {
+        const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+        
+        if (checkedCount > 0) {
+            // As per user request, show delete button on 2 or more, but we'll do >= 1 for better UX and combine export button visibility
+            deleteSelectedBtn.style.display = 'inline-flex';
+            exportSelectedBtn.style.display = 'inline-flex';
+        } else {
+            deleteSelectedBtn.style.display = 'none';
+            exportSelectedBtn.style.display = 'none';
+        }
+    }
 
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', function() {
             rowCheckboxes.forEach(checkbox => {
                 checkbox.checked = this.checked;
             });
+            updateActionButtons();
         });
     }
+
+    rowCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            // Uncheck 'select all' if a row is manually unchecked
+            if (!this.checked) {
+                selectAllCheckbox.checked = false;
+            }
+            updateActionButtons();
+        });
+    });
+
+    // Initial check on page load
+    updateActionButtons();
 });
 </script>

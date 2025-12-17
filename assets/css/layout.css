@@ -331,9 +331,10 @@
 .filter-section form select {
     padding: 8px 12px;
     border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-small);
+    border-radius: var(--border-radius-base); /* Use base radius for consistency */
     font-size: 0.95em;
-    flex-grow: 1; /* Allow inputs to grow */
+    width: auto; /* Override form.css */
+    flex: 1 1 200px; /* Allow to grow and shrink with a base size */
 }
 
 .filter-section form button {
@@ -343,61 +344,65 @@
 /* Pagination Styling */
 .pagination {
     display: flex;
-    justify-content: space-between; /* Puts pagination links on left, rows-per-page on right */
-    align-items: center; /* Vertically align items */
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
     margin-top: 20px;
     padding: 10px 0;
-    flex-wrap: wrap; /* Allow items to wrap on smaller screens */
-    gap: 10px; /* Space between flex items */
+    gap: 20px; /* Gap between left and right groups */
 }
 
-.pagination a, .pagination span {
+.pagination-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+}
+
+.pagination a {
     display: inline-block;
     padding: 8px 12px;
-    margin: 0 2px;
     border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-small);
+    border-radius: var(--border-radius-base);
     text-decoration: none;
     color: var(--text-color);
     transition: background-color var(--transition-speed) var(--transition-easing),
                 color var(--transition-speed) var(--transition-easing);
 }
 
-.pagination a:hover:not(.active), .pagination a:focus {
+.pagination a:hover:not(.active) {
     background-color: var(--background-light);
-    color: var(--primary-color);
 }
 
 .pagination a.active {
     background-color: var(--primary-color);
     color: #fff;
     border-color: var(--primary-color);
+    font-weight: 600;
 }
 
 .pagination a.disabled {
     color: var(--text-light-color);
-    cursor: not-allowed;
+    pointer-events: none;
     background-color: var(--background-light);
-    border-color: var(--border-color);
 }
 
-.pagination .rows-per-page-form {
+.rows-per-page-form .rows-per-page {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 10px;
 }
 
-.pagination .rows-per-page-form select {
+.rows-per-page-form select {
     padding: 5px 8px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-small);
-    background-color: #fff;
-    color: var(--text-color);
+    border-radius: var(--border-radius-base);
 }
 
-/* Ensure pagination links stay together if they wrap */
-.pagination > *:not(.rows-per-page-form) {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
+.rows-per-page-form .rows-per-page span {
+    white-space: nowrap;
 }

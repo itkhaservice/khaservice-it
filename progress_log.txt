@@ -42,6 +42,7 @@ Các công việc tiếp theo:
     [x] - Giai đoạn 2 (Backend - Lọc): Triển khai chức năng lọc cho devices/list.php.
     [x] - Giai đoạn 2 (Backend - Sắp xếp): Triển khai chức năng sắp xếp cho devices/list.php.
     [x] - Giai đoạn 2 (Backend - Export): Triển khai chức năng export CSV cho devices/list.php.
+    [x] - Giai đoạn 2 (Backend - Xóa nhiều): Triển khai chức năng xóa nhiều mục đã chọn.
     [ ] - Giai đoạn 3: Áp dụng các tính năng nâng cao cho các bảng dữ liệu khác.
 
 [x] - Cập nhật header để thêm liên kết quản lý người dùng (chỉ cho admin).
