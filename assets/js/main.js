@@ -87,6 +87,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelBtn = document.getElementById('cancelBtn');
     const closeButton = customConfirmModal ? customConfirmModal.querySelector('.close-button') : null;
 
+    if (!customConfirmModal) {
+        // Log an error if the modal element is not found.
+        // This is useful for debugging in the browser console.
+        console.error("Custom confirmation modal element (#customConfirmModal) not found in DOM.");
+        // We can stop further execution of modal-related logic if the element is missing.
+        return; 
+    }
+
     let confirmCallback = null; // To store the function to call on confirmation
 
     window.showCustomConfirm = (message, title = 'Xác nhận hành động', callback) => {
