@@ -8,12 +8,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'];
     $password = $_POST['password'];
 
-    // For now, using plain text. In a real app, use password_hash() and password_verify().
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? AND password = ?");
-    $stmt->execute([$username, $password]);
+    // Find user by username first
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->execute([$username]);
     $user = $stmt->fetch();
 
-    if ($user && password_verify($password, $user['password'])) { // Use password_verify
+    // Verify password if user exists
+    if ($user && password_verify($password, $user['password'])) {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['role'] = $user['role'];

@@ -1,41 +1,37 @@
 <?php
-$errors = [];
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Basic validation
     if (empty($_POST['ma_du_an'])) {
-        $errors[] = 'Mã dự án là bắt buộc.';
+        set_message('error', 'Mã dự án là bắt buộc.');
     }
     if (empty($_POST['ten_du_an'])) {
-        $errors[] = 'Tên dự án là bắt buộc.';
+        set_message('error', 'Tên dự án là bắt buộc.');
     }
 
-    if (empty($errors)) {
-        $sql = "INSERT INTO projects (ma_du_an, ten_du_an, dia_chi, loai_du_an, ghi_chu) VALUES (?, ?, ?, ?, ?)";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            $_POST['ma_du_an'],
-            $_POST['ten_du_an'],
-            $_POST['dia_chi'],
-            $_POST['loai_du_an'],
-            $_POST['ghi_chu']
-        ]);
-
-        header("Location: index.php?page=projects/list");
-        exit;
+    // Only proceed if no errors have been set
+    if (!isset($_SESSION['messages']) || empty(array_filter($_SESSION['messages'], function($msg) { return $msg['type'] === 'error'; }))) {
+        try {
+            $sql = "INSERT INTO projects (ma_du_an, ten_du_an, dia_chi, loai_du_an, ghi_chu) VALUES (?, ?, ?, ?, ?)";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                $_POST['ma_du_an'],
+                $_POST['ten_du_an'],
+                $_POST['dia_chi'],
+                $_POST['loai_du_an'],
+                $_POST['ghi_chu']
+            ]);
+            set_message('success', 'Dự án đã được thêm mới thành công!');
+            header("Location: index.php?page=projects/list");
+            exit;
+        } catch (PDOException $e) {
+            set_message('error', 'Lỗi khi thêm dự án: ' . $e->getMessage());
+        }
     }
 }
 ?>
 
 <h2>Thêm Dự án mới</h2>
 
-<?php if (!empty($errors)): ?>
-    <div class="error">
-        <?php foreach ($errors as $error): ?>
-            <p><?php echo $error; ?></p>
-        <?php endforeach; ?>
-    </div>
-<?php endif; ?>
 
 <div class="form-container">
     <form action="index.php?page=projects/add" method="POST" class="form-grid">

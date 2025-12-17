@@ -9,48 +9,44 @@ if ($supplier_id) {
 }
 
 if (!$supplier) {
-    echo "<p class='error'>Nhà cung cấp không tìm thấy!</p>";
-    echo "<a href='index.php?page=suppliers/list' class='btn btn-secondary'>Quay lại danh sách</a>";
+    set_message('error', 'Nhà cung cấp không tìm thấy!');
+    header("Location: index.php?page=suppliers/list");
     exit;
 }
-
-$errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Basic validation
     if (empty($_POST['ten_npp'])) {
-        $errors[] = 'Tên nhà phân phối là bắt buộc.';
+        set_message('error', 'Tên nhà phân phối là bắt buộc.');
     }
 
-    if (empty($errors)) {
-        $sql = "UPDATE suppliers SET
-                    ten_npp = ?, nguoi_lien_he = ?, dien_thoai = ?, email = ?, ghi_chu = ?
-                WHERE id = ?";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            $_POST['ten_npp'],
-            $_POST['nguoi_lien_he'],
-            $_POST['dien_thoai'],
-            $_POST['email'],
-            $_POST['ghi_chu'],
-            $supplier_id
-        ]);
-
-        header("Location: index.php?page=suppliers/list");
-        exit;
+    // Only proceed if no errors have been set
+    if (!isset($_SESSION['messages']) || empty(array_filter($_SESSION['messages'], function($msg) { return $msg['type'] === 'error'; }))) {
+        try {
+            $sql = "UPDATE suppliers SET
+                        ten_npp = ?, nguoi_lien_he = ?, dien_thoai = ?, email = ?, ghi_chu = ?
+                    WHERE id = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                $_POST['ten_npp'],
+                $_POST['nguoi_lien_he'],
+                $_POST['dien_thoai'],
+                $_POST['email'],
+                $_POST['ghi_chu'],
+                $supplier_id
+            ]);
+            set_message('success', 'Nhà cung cấp đã được cập nhật thành công!');
+            header("Location: index.php?page=suppliers/list");
+            exit;
+        } catch (PDOException $e) {
+            set_message('error', 'Lỗi khi cập nhật nhà cung cấp: ' . $e->getMessage());
+        }
     }
 }
 ?>
 
 <h2>Sửa Nhà cung cấp: <?php echo htmlspecialchars($supplier['ten_npp']); ?></h2>
 
-<?php if (!empty($errors)): ?>
-    <div class="error">
-        <?php foreach ($errors as $error): ?>
-            <p><?php echo $error; ?></p>
-        <?php endforeach; ?>
-    </div>
-<?php endif; ?>
 
 <div class="form-container">
     <form action="index.php?page=suppliers/edit&id=<?php echo $supplier_id; ?>" method="POST" class="form-grid">

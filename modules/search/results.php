@@ -6,51 +6,63 @@ $devices_results = [];
 $projects_results = [];
 $suppliers_results = [];
 
-if (!empty($search_query)) {
-    $search_param = '%' . $search_query . '%';
+if (empty($search_query)) {
+    set_message('info', 'Vui lòng nhập từ khóa để tìm kiếm.');
+    // Exit early as there's no query to process
+    return;
+}
 
-    // Search in devices
-    $stmt_devices = $pdo->prepare("
-        SELECT d.id, d.ma_tai_san, d.ten_thiet_bi, d.loai_thiet_bi, d.serial, p.ten_du_an, s.ten_npp
-        FROM devices d
-        LEFT JOIN projects p ON d.project_id = p.id
-        LEFT JOIN suppliers s ON d.supplier_id = s.id
-        WHERE d.ma_tai_san LIKE ? OR d.ten_thiet_bi LIKE ? OR d.serial LIKE ?
-        ORDER BY d.ten_thiet_bi
-    ");
-    $stmt_devices->execute([$search_param, $search_param, $search_param]);
-    $devices_results = $stmt_devices->fetchAll();
+$search_param = '%' . $search_query . '%';
 
-    // Search in projects
-    $stmt_projects = $pdo->prepare("
-        SELECT id, ma_du_an, ten_du_an, dia_chi
-        FROM projects
-        WHERE ma_du_an LIKE ? OR ten_du_an LIKE ?
-        ORDER BY ten_du_an
-    ");
-    $stmt_projects->execute([$search_param, $search_param]);
-    $projects_results = $stmt_projects->fetchAll();
+// Search in devices
+$stmt_devices = $pdo->prepare("
+    SELECT d.id, d.ma_tai_san, d.ten_thiet_bi, d.loai_thiet_bi, d.serial, p.ten_du_an, s.ten_npp
+    FROM devices d
+    LEFT JOIN projects p ON d.project_id = p.id
+    LEFT JOIN suppliers s ON d.supplier_id = s.id
+    WHERE d.ma_tai_san LIKE ? OR d.ten_thiet_bi LIKE ? OR d.serial LIKE ?
+    ORDER BY d.ten_thiet_bi
+");
+$stmt_devices->execute([$search_param, $search_param, $search_param]);
+$devices_results = $stmt_devices->fetchAll();
 
-    // Search in suppliers
-    $stmt_suppliers = $pdo->prepare("
-        SELECT id, ten_npp, nguoi_lien_he, dien_thoai
-        FROM suppliers
-        WHERE ten_npp LIKE ? OR nguoi_lien_he LIKE ?
-        ORDER BY ten_npp
-    ");
-    $stmt_suppliers->execute([$search_param, $search_param]);
-    $suppliers_results = $stmt_suppliers->fetchAll();
+// Search in projects
+$stmt_projects = $pdo->prepare("
+    SELECT id, ma_du_an, ten_du_an, dia_chi
+    FROM projects
+    WHERE ma_du_an LIKE ? OR ten_du_an LIKE ?
+    ORDER BY ten_du_an
+");
+$stmt_projects->execute([$search_param, $search_param]);
+$projects_results = $stmt_projects->fetchAll();
+
+// Search in suppliers
+$stmt_suppliers = $pdo->prepare("
+    SELECT id, ten_npp, nguoi_lien_he, dien_thoai
+    FROM suppliers
+    WHERE ten_npp LIKE ? OR nguoi_lien_he LIKE ?
+    ORDER BY ten_npp
+");
+$stmt_suppliers->execute([$search_param, $search_param]);
+$suppliers_results = $stmt_suppliers->fetchAll();
+
+$total_results = count($devices_results) + count($projects_results) + count($suppliers_results);
+
+if ($total_results === 0) {
+    set_message('info', 'Không tìm thấy kết quả nào phù hợp với "' . htmlspecialchars($search_query) . '".');
+} else {
+    $summary_message = "Tìm thấy {$total_results} kết quả cho \"". htmlspecialchars($search_query) . "\": ";
+    $parts = [];
+    if (count($devices_results) > 0) $parts[] = count($devices_results) . " thiết bị";
+    if (count($projects_results) > 0) $parts[] = count($projects_results) . " dự án";
+    if (count($suppliers_results) > 0) $parts[] = count($suppliers_results) . " nhà cung cấp";
+    $summary_message .= implode(', ', $parts) . ".";
+    set_message('success', $summary_message);
 }
 ?>
 
 <h2>Kết quả tìm kiếm cho "<?php echo htmlspecialchars($search_query); ?>"</h2>
 
-<?php if (empty($search_query)): ?>
-    <p>Vui lòng nhập từ khóa để tìm kiếm.</p>
-<?php else: ?>
-    <?php if (empty($devices_results) && empty($projects_results) && empty($suppliers_results)): ?>
-        <p>Không tìm thấy kết quả nào phù hợp.</p>
-    <?php else: ?>
 
         <?php if (!empty($devices_results)): ?>
             <h3>Thiết bị</h3>

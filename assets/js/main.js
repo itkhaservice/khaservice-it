@@ -38,4 +38,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Hamburger menu toggle
+    const hamburgerButton = document.getElementById('hamburger-menu');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    if (hamburgerButton && mobileMenu) {
+        hamburgerButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('active');
+            hamburgerButton.classList.toggle('active'); // Optional: Add active class to button for animation
+        });
+    }
+
 });

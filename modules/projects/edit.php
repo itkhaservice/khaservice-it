@@ -9,51 +9,47 @@ if ($project_id) {
 }
 
 if (!$project) {
-    echo "<p class='error'>Dự án không tìm thấy!</p>";
-    echo "<a href='index.php?page=projects/list' class='btn btn-secondary'>Quay lại danh sách</a>";
+    set_message('error', 'Dự án không tìm thấy!');
+    header("Location: index.php?page=projects/list");
     exit;
 }
-
-$errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Basic validation
     if (empty($_POST['ma_du_an'])) {
-        $errors[] = 'Mã dự án là bắt buộc.';
+        set_message('error', 'Mã dự án là bắt buộc.');
     }
     if (empty($_POST['ten_du_an'])) {
-        $errors[] = 'Tên dự án là bắt buộc.';
+        set_message('error', 'Tên dự án là bắt buộc.');
     }
 
-    if (empty($errors)) {
-        $sql = "UPDATE projects SET
-                    ma_du_an = ?, ten_du_an = ?, dia_chi = ?, loai_du_an = ?, ghi_chu = ?
-                WHERE id = ?";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            $_POST['ma_du_an'],
-            $_POST['ten_du_an'],
-            $_POST['dia_chi'],
-            $_POST['loai_du_an'],
-            $_POST['ghi_chu'],
-            $project_id
-        ]);
-
-        header("Location: index.php?page=projects/list");
-        exit;
+    // Only proceed if no errors have been set
+    if (!isset($_SESSION['messages']) || empty(array_filter($_SESSION['messages'], function($msg) { return $msg['type'] === 'error'; }))) {
+        try {
+            $sql = "UPDATE projects SET
+                        ma_du_an = ?, ten_du_an = ?, dia_chi = ?, loai_du_an = ?, ghi_chu = ?
+                    WHERE id = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                $_POST['ma_du_an'],
+                $_POST['ten_du_an'],
+                $_POST['dia_chi'],
+                $_POST['loai_du_an'],
+                $_POST['ghi_chu'],
+                $project_id
+            ]);
+            set_message('success', 'Dự án đã được cập nhật thành công!');
+            header("Location: index.php?page=projects/list");
+            exit;
+        } catch (PDOException $e) {
+            set_message('error', 'Lỗi khi cập nhật dự án: ' . $e->getMessage());
+        }
     }
 }
 ?>
 
 <h2>Sửa Dự án: <?php echo htmlspecialchars($project['ten_du_an']); ?></h2>
 
-<?php if (!empty($errors)): ?>
-    <div class="error">
-        <?php foreach ($errors as $error): ?>
-            <p><?php echo $error; ?></p>
-        <?php endforeach; ?>
-    </div>
-<?php endif; ?>
 
 <div class="form-container">
     <form action="index.php?page=projects/edit&id=<?php echo $project_id; ?>" method="POST" class="form-grid">

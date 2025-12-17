@@ -9,8 +9,8 @@ if ($log_id) {
 }
 
 if (!$log) {
-    echo "<p class='error'>Nhật ký bảo trì không tìm thấy!</p>";
-    echo "<a href='index.php?page=maintenance/history' class='btn btn-secondary'>Quay lại lịch sử</a>";
+    set_message('error', 'Nhật ký bảo trì không tìm thấy!');
+    header("Location: index.php?page=maintenance/history");
     exit;
 }
 
@@ -18,47 +18,43 @@ if (!$log) {
 $devices_stmt = $pdo->query("SELECT id, ma_tai_san, ten_thiet_bi FROM devices ORDER BY ten_thiet_bi");
 $devices = $devices_stmt->fetchAll();
 
-$errors = [];
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Basic validation
     if (empty($_POST['device_id'])) {
-        $errors[] = 'Thiết bị là bắt buộc.';
+        set_message('error', 'Thiết bị là bắt buộc.');
     }
     if (empty($_POST['ngay_su_co'])) {
-        $errors[] = 'Ngày sự cố là bắt buộc.';
+        set_message('error', 'Ngày sự cố là bắt buộc.');
     }
 
-    if (empty($errors)) {
-        $sql = "UPDATE maintenance_logs SET
-                    device_id = ?, ngay_su_co = ?, noi_dung = ?, hu_hong = ?, xu_ly = ?, chi_phi = ?
-                WHERE id = ?";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            $_POST['device_id'],
-            $_POST['ngay_su_co'],
-            $_POST['noi_dung'],
-            $_POST['hu_hong'],
-            $_POST['xu_ly'],
-            $_POST['chi_phi'] ?: null,
-            $log_id
-        ]);
-
-        header("Location: index.php?page=maintenance/history");
-        exit;
+    // Only proceed if no errors have been set
+    if (!isset($_SESSION['messages']) || empty(array_filter($_SESSION['messages'], function($msg) { return $msg['type'] === 'error'; }))) {
+        try {
+            $sql = "UPDATE maintenance_logs SET
+                        device_id = ?, ngay_su_co = ?, noi_dung = ?, hu_hong = ?, xu_ly = ?, chi_phi = ?
+                    WHERE id = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                $_POST['device_id'],
+                $_POST['ngay_su_co'],
+                $_POST['noi_dung'],
+                $_POST['hu_hong'],
+                $_POST['xu_ly'],
+                $_POST['chi_phi'] ?: null,
+                $log_id
+            ]);
+            set_message('success', 'Nhật ký bảo trì đã được cập nhật thành công!');
+            header("Location: index.php?page=maintenance/history");
+            exit;
+        } catch (PDOException $e) {
+            set_message('error', 'Lỗi khi cập nhật nhật ký bảo trì: ' . $e->getMessage());
+        }
     }
 }
 ?>
 
 <h2>Sửa Nhật ký Bảo trì</h2>
 
-<?php if (!empty($errors)): ?>
-    <div class="error">
-        <?php foreach ($errors as $error): ?>
-            <p><?php echo $error; ?></p>
-        <?php endforeach; ?>
-    </div>
-<?php endif; ?>
 
 <div class="form-container">
     <form action="index.php?page=maintenance/edit&id=<?php echo $log_id; ?>" method="POST" class="form-grid">

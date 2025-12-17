@@ -9,8 +9,8 @@ Tiến độ phát triển phần mềm KHASERVICE IT:
 [17/17/2025] - Hoàn thành các chức năng CRUD cho Nhật ký bảo trì (Maintenance Logs).
 [17/12/2025] - Triển khai chức năng quản lý file đính kèm cho Thiết bị.
 [17/12/2025] - Cải thiện giao diện người dùng (UI) theo phong cách Minimal và Responsive.
-[17/12/2025] - Triển khai chức năng tìm kiếm toàn cục (global search).
 [17/12/2025] - Khắc phục lỗi truy cập website do cấu hình .htaccess.
+[17/12/2025] - Triển khai chức năng tìm kiếm toàn cục (global search).
 [17/12/2025] - Bắt đầu triển khai chức năng Quản lý người dùng hệ thống.
 [17/12/2025] - Hoàn thành users/list.php.
 [17/12/2025] - Hoàn thành users/add.php.
@@ -30,6 +30,20 @@ Các công việc tiếp theo:
     [x] - users/edit.php
     [x] - users/delete.php
     [x] - Triển khai băm mật khẩu.
+[ ] - Cập nhật modules/users/add.php để băm mật khẩu trước khi lưu.
+[ ] - Cập nhật modules/users/edit.php để băm mật khẩu mới nếu có khi chỉnh sửa.
+[ ] - Tạo script một lần để chuyển đổi mật khẩu cũ trong database sang dạng băm.
+
+[ ] - Nâng cấp bảng dữ liệu (lọc, sắp xếp, export):
+    [x] - Giai đoạn 1 (UI): Thêm các thành phần giao diện cho devices/list.php.
+    [x] - Giai đoạn 1 (UI): Tinh chỉnh bố cục phân trang và số dòng/trang trên devices/list.php.
+    [x] - Giai đoạn 1 (UI): Tinh chỉnh bố cục khu vực lọc trên devices/list.php.
+    [x] - Giai đoạn 2 (Backend - Phân trang): Triển khai chức năng phân trang cho devices/list.php.
+    [x] - Giai đoạn 2 (Backend - Lọc): Triển khai chức năng lọc cho devices/list.php.
+    [x] - Giai đoạn 2 (Backend - Sắp xếp): Triển khai chức năng sắp xếp cho devices/list.php.
+    [x] - Giai đoạn 2 (Backend - Export): Triển khai chức năng export CSV cho devices/list.php.
+    [ ] - Giai đoạn 3: Áp dụng các tính năng nâng cao cho các bảng dữ liệu khác.
+
 [x] - Cập nhật header để thêm liên kết quản lý người dùng (chỉ cho admin).
 [x] - Tiếp tục tinh chỉnh UI/UX (ví dụ: responsive tốt hơn, micro-interactions).
     [x] - Kiểm tra và cải thiện responsive design (media queries, bảng dữ liệu).
@@ -39,5 +53,5 @@ Các công việc tiếp theo:
         [x] - Triển khai hệ thống thông báo dựa trên session (includes/messages.php).
         [x] - Tích hợp hệ thống thông báo vào public/index.php.
         [x] - Thêm CSS cho thông báo vào style.css.
-        [ ] - Tích hợp hệ thống thông báo vào các module CRUD.
-[ ] - Xem xét các tính năng khác từ prompt.txt nếu cần.
+        [x] - Tích hợp hệ thống thông báo vào các module CRUD.
+[x] - Xem xét các tính năng khác từ prompt.txt nếu cần.

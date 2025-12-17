@@ -14,6 +14,8 @@ function display_messages() {
             echo '<div class="message-box ' . htmlspecialchars($message['type']) . '">';
             echo htmlspecialchars($message['content']);
             echo '</div>';
+            // Trigger audio feedback via JavaScript
+            echo '<script>window.playAudioFeedback("' . htmlspecialchars($message['type']) . '");</script>';
         }
         unset($_SESSION['messages']); // Clear messages after displaying
     }

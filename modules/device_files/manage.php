@@ -3,13 +3,24 @@
 // and therefore expects $device_id to be available.
 
 if (!isset($device['id'])) {
-    echo "<p class='error'>Không thể quản lý file: ID thiết bị không xác định.</p>";
+    set_message('error', 'Không thể quản lý file: ID thiết bị không xác định.');
     return;
 }
 
 $device_id = $device['id'];
-$upload_errors = [];
-$upload_messages = [];
+
+// Constants for file upload validation
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_MIME_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'application/pdf',
+    'application/msword', // .doc
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+    'application/vnd.ms-excel', // .xls
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+];
 
 // Handle file upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_file'])) {
@@ -28,12 +39,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_file'])) {
 
     // Ensure the target directory exists
     if (!is_dir($target_dir)) {
-        mkdir($target_dir, 0777, true);
+        if (!mkdir($target_dir, 0777, true)) {
+            set_message('error', 'Không thể tạo thư mục tải lên: ' . $target_dir);
+            // Early exit if directory creation fails
+            return;
+        }
     }
 
     if (isset($_FILES['file_upload']) && $_FILES['file_upload']['error'] === UPLOAD_ERR_OK) {
         $file_tmp_name = $_FILES['file_upload']['tmp_name'];
         $file_name = basename($_FILES['file_upload']['name']);
+        $file_size = $_FILES['file_upload']['size'];
+        $file_type = mime_content_type($file_tmp_name); // Get MIME type from content
+
+        // Validate file size
+        if ($file_size > MAX_FILE_SIZE) {
+            set_message('error', "File '$file_name' vượt quá kích thước tối đa " . (MAX_FILE_SIZE / 1024 / 1024) . "MB.");
+            // Prevent further processing
+            return;
+        }
+
+        // Validate file type
+        if (!in_array($file_type, ALLOWED_MIME_TYPES)) {
+            set_message('error', "File '$file_name' có định dạng không được phép. Chỉ chấp nhận JPG, PNG, GIF, PDF, DOC, DOCX, XLS, XLSX.");
+            // Prevent further processing
+            return;
+        }
+
         $file_path = $target_dir . uniqid() . '_' . $file_name; // Add unique ID to prevent overwrites
 
         if (move_uploaded_file($file_tmp_name, $file_path)) {
@@ -41,13 +73,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_file'])) {
             $relative_file_path = "uploads/" . $target_sub_dir . basename($file_path);
             $stmt = $pdo->prepare("INSERT INTO device_files (device_id, loai_file, file_path) VALUES (?, ?, ?)");
             $stmt->execute([$device_id, $loai_file, $relative_file_path]);
-            $upload_messages[] = "File '$file_name' đã được tải lên thành công.";
+            set_message('success', "File '$file_name' đã được tải lên thành công.");
         } else {
-            $upload_errors[] = "Có lỗi khi di chuyển file '$file_name'.";
+            set_message('error', "Có lỗi khi di chuyển file '$file_name'.");
         }
     } else {
         if ($_FILES['file_upload']['error'] !== UPLOAD_ERR_NO_FILE) {
-            $upload_errors[] = "Lỗi tải lên file: " . $_FILES['file_upload']['error'];
+            set_message('error', "Lỗi tải lên file: " . $_FILES['file_upload']['error']);
         }
     }
 }
@@ -65,19 +97,19 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete_file' && isset($_GET['
         if (file_exists($full_path) && unlink($full_path)) {
             $delete_stmt = $pdo->prepare("DELETE FROM device_files WHERE id = ?");
             $delete_stmt->execute([$file_id_to_delete]);
-            $upload_messages[] = "File đã được xóa thành công.";
+            set_message('success', "File đã được xóa thành công.");
         } else {
             // If file doesn't exist on disk but in DB, delete from DB anyway.
             if (!file_exists($full_path)) {
                  $delete_stmt = $pdo->prepare("DELETE FROM device_files WHERE id = ?");
                  $delete_stmt->execute([$file_id_to_delete]);
-                 $upload_messages[] = "File không tồn tại trên server nhưng đã được xóa khỏi DB.";
+                 set_message('success', "File không tồn tại trên server nhưng đã được xóa khỏi DB.");
             } else {
-                $upload_errors[] = "Không thể xóa file khỏi server.";
+                set_message('error', "Không thể xóa file khỏi server.");
             }
         }
     } else {
-        $upload_errors[] = "File không tìm thấy trong database.";
+        set_message('error', "File không tìm thấy trong database.");
     }
     // Redirect to clean up URL
     header("Location: index.php?page=devices/view&id=" . $device_id);
@@ -92,22 +124,6 @@ $device_files = $files_stmt->fetchAll();
 
 <div class="file-management-section">
     <h3>Quản lý File đính kèm</h3>
-
-    <?php if (!empty($upload_errors)): ?>
-        <div class="error">
-            <?php foreach ($upload_errors as $error): ?>
-                <p><?php echo $error; ?></p>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
-
-    <?php if (!empty($upload_messages)): ?>
-        <div class="success">
-            <?php foreach ($upload_messages as $message): ?>
-                <p><?php echo $message; ?></p>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
 
     <div class="form-container">
         <form action="index.php?page=devices/view&id=<?php echo $device_id; ?>" method="POST" enctype="multipart/form-data" class="form-grid">

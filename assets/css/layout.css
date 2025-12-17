@@ -178,48 +178,100 @@
 
 @media (max-width: 768px) { /* Tablets and smaller */
     .main-header {
-        flex-direction: column;
-        align-items: flex-start; /* Align items to the start in column layout */
+        flex-wrap: wrap; /* Allow items to wrap */
+        justify-content: space-between;
         padding: 10px;
     }
 
     .main-header .logo {
-        margin-bottom: 10px;
+        margin-bottom: 0;
     }
 
-    .main-nav ul {
+    .main-header .search-box,
+    .main-header .user-info {
+        flex-basis: 100%; /* Take full width below logo/hamburger */
+        margin-top: 10px;
+        justify-content: flex-start; /* Align contents to start */
+    }
+
+    .main-header .user-info {
+        order: 3; /* Move user info below search box */
+    }
+    .main-header .search-box {
+        order: 2; /* Search box comes after nav */
+        margin: 10px 0;
+    }
+
+
+    /* Hamburger Menu */
+    .hamburger {
+        display: flex; /* Make hamburger visible */
+        flex-direction: column;
+        justify-content: space-around;
+        width: 30px;
+        height: 25px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        z-index: 10;
+    }
+
+    .hamburger span {
+        display: block;
+        width: 100%;
+        height: 3px;
+        background: var(--text-color);
+        border-radius: 3px;
+        transition: all 0.3s ease-in-out;
+    }
+
+    /* Hide the default navigation links */
+    .main-nav, .search-box {
+        display: none;
+    }
+
+    .mobile-nav-wrapper {
+        display: none; /* Hidden by default on mobile */
+        flex-basis: 100%; /* Take full width when shown */
+        order: 1; /* Position after logo/hamburger */
+        background-color: #fff;
+        box-shadow: 0 2px 4px var(--box-shadow-light);
+        border-radius: var(--border-radius-base);
+        margin-top: 10px;
+        padding: 10px 0;
+    }
+
+    .mobile-nav-wrapper.active {
+        display: block; /* Show when active */
+    }
+
+    .mobile-nav-wrapper .main-nav ul {
         flex-direction: column;
         width: 100%;
-        text-align: left; /* Align nav items to left */
+        text-align: left;
         margin-bottom: 10px;
-        border-top: 1px solid var(--border-color); /* Separator */
-        padding-top: 10px;
+        border-top: none; /* Remove separator */
+        padding-top: 0;
     }
 
-    .main-nav li {
-        margin: 5px 0;
+    .mobile-nav-wrapper .main-nav li {
+        margin: 0;
     }
 
-    .main-nav a {
-        padding: 8px 0; /* Increase clickable area */
+    .mobile-nav-wrapper .main-nav a {
+        padding: 10px 20px; /* Increase clickable area */
         display: block;
+        color: var(--text-color);
     }
 
-    .main-nav a::after { /* Adjust underline for block links */
-        left: 0;
-        bottom: -2px; /* Position below link text */
+    .mobile-nav-wrapper .main-nav a:hover {
+        background-color: var(--background-light);
     }
 
-    .search-box {
-        width: 100%; /* Full width on smaller screens */
-        margin: 10px 0;
-        max-width: none; /* Remove max-width constraint */
-    }
-
-    .user-info {
-        margin-top: 10px;
-        width: 100%; /* Full width for user info */
-        justify-content: flex-end; /* Align logout to right */
+    .mobile-nav-wrapper .search-box {
+        display: block; /* Show search box within mobile menu */
+        margin: 10px 20px;
     }
 
     .container {
@@ -227,20 +279,125 @@
     }
 }
 
-@media (max-width: 480px) { /* Mobile phones */
-    .main-header .logo a {
-        font-size: 1.4rem;
+@media (min-width: 769px) { /* Desktop specific styles */
+    .hamburger {
+        display: none; /* Hide hamburger on desktop */
     }
+    .mobile-nav-wrapper {
+        display: flex !important; /* Always show on desktop */
+        flex-grow: 1; /* Allow to take space */
+        justify-content: space-between;
+        align-items: center;
+        background-color: transparent;
+        box-shadow: none;
+        margin-top: 0;
+        padding: 0;
+        order: unset;
+    }
+    .mobile-nav-wrapper .main-nav {
+        display: block;
+    }
+    .main-nav ul {
+        display: flex; /* Flex row on desktop */
+        flex-direction: row;
+        border-top: none;
+    }
+    .mobile-nav-wrapper .search-box {
+        display: block;
+    }
+    .main-header .search-box { /* Revert search box margin for desktop */
+        margin: 0 20px;
+    }
+}
 
-    .user-info span {
-        display: none; /* Hide username on very small screens */
-    }
 
-    .main-header {
-        padding: 8px;
-    }
+/* Filter Section Styling */
+.filter-section {
+    background-color: #f9f9f9; /* Light background for the filter area */
+    padding: 15px;
+    border-radius: var(--border-radius-base);
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+}
 
-    .container {
-        padding: 8px;
-    }
+.filter-section form {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Space between filter elements */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+.filter-section form input[type="text"],
+.filter-section form select {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-small);
+    font-size: 0.95em;
+    flex-grow: 1; /* Allow inputs to grow */
+}
+
+.filter-section form button {
+    flex-shrink: 0; /* Prevent button from shrinking */
+}
+
+/* Pagination Styling */
+.pagination {
+    display: flex;
+    justify-content: space-between; /* Puts pagination links on left, rows-per-page on right */
+    align-items: center; /* Vertically align items */
+    margin-top: 20px;
+    padding: 10px 0;
+    flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+    gap: 10px; /* Space between flex items */
+}
+
+.pagination a, .pagination span {
+    display: inline-block;
+    padding: 8px 12px;
+    margin: 0 2px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-small);
+    text-decoration: none;
+    color: var(--text-color);
+    transition: background-color var(--transition-speed) var(--transition-easing),
+                color var(--transition-speed) var(--transition-easing);
+}
+
+.pagination a:hover:not(.active), .pagination a:focus {
+    background-color: var(--background-light);
+    color: var(--primary-color);
+}
+
+.pagination a.active {
+    background-color: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+
+.pagination a.disabled {
+    color: var(--text-light-color);
+    cursor: not-allowed;
+    background-color: var(--background-light);
+    border-color: var(--border-color);
+}
+
+.pagination .rows-per-page-form {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.pagination .rows-per-page-form select {
+    padding: 5px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-small);
+    background-color: #fff;
+    color: var(--text-color);
+}
+
+/* Ensure pagination links stay together if they wrap */
+.pagination > *:not(.rows-per-page-form) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
 }

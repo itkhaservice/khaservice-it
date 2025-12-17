@@ -1,11 +1,10 @@
 <?php
 // Check if user is admin
 if ($_SESSION['role'] !== 'admin') {
-    echo "<p class='error'>Bạn không có quyền truy cập chức năng này.</p>";
+    set_message('error', 'Bạn không có quyền truy cập chức năng này.');
+    header("Location: index.php?page=home"); // Redirect to home or a suitable page
     exit;
 }
-
-$errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username']);
@@ -14,46 +13,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Basic validation
     if (empty($username)) {
-        $errors[] = 'Tên đăng nhập là bắt buộc.';
+        set_message('error', 'Tên đăng nhập là bắt buộc.');
     }
     if (empty($password)) {
-        $errors[] = 'Mật khẩu là bắt buộc.';
+        set_message('error', 'Mật khẩu là bắt buộc.');
     } elseif (strlen($password) < 6) {
-        $errors[] = 'Mật khẩu phải có ít nhất 6 ký tự.';
+        set_message('error', 'Mật khẩu phải có ít nhất 6 ký tự.');
     }
 
     // Check if username already exists
-    if (empty($errors)) {
+    if (!isset($_SESSION['messages']) || empty(array_filter($_SESSION['messages'], function($msg) { return $msg['type'] === 'error'; }))) {
         $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
         $stmt->execute([$username]);
         if ($stmt->fetch()) {
-            $errors[] = 'Tên đăng nhập đã tồn tại.';
+            set_message('error', 'Tên đăng nhập đã tồn tại.');
         }
     }
 
-    if (empty($errors)) {
-        // Hash the password before storing
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+    if (!isset($_SESSION['messages']) || empty(array_filter($_SESSION['messages'], function($msg) { return $msg['type'] === 'error'; }))) {
+        try {
+            // Hash the password before storing
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        $sql = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$username, $hashed_password, $role]);
+            $sql = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$username, $hashed_password, $role]);
 
-        header("Location: index.php?page=users/list");
-        exit;
+            set_message('success', 'Người dùng đã được thêm mới thành công!');
+            header("Location: index.php?page=users/list");
+            exit;
+        } catch (PDOException $e) {
+            set_message('error', 'Lỗi khi thêm người dùng: ' . $e->getMessage());
+        }
     }
 }
 ?>
 
 <h2>Thêm Người dùng mới</h2>
 
-<?php if (!empty($errors)): ?>
-    <div class="error">
-        <?php foreach ($errors as $error): ?>
-            <p><?php echo $error; ?></p>
-        <?php endforeach; ?>
-    </div>
-<?php endif; ?>
 
 <div class="form-container">
     <form action="index.php?page=users/add" method="POST" class="form-grid">

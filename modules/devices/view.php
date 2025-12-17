@@ -18,8 +18,8 @@ if (isset($_GET['id'])) {
 }
 
 if (!$device) {
-    echo "<p class='error'>Thiết bị không tìm thấy!</p>";
-    echo "<a href='index.php?page=devices/list' class='btn btn-secondary'>Quay lại danh sách</a>";
+    set_message('error', 'Thiết bị không tìm thấy!');
+    header("Location: index.php?page=devices/list");
     exit;
 }
 ?>
@@ -82,4 +82,41 @@ if (!$device) {
 <?php
 // Include the file management section
 include_once __DIR__ . '/../device_files/manage.php';
+
+// Fetch maintenance logs for this device
+$maintenance_stmt = $pdo->prepare("SELECT * FROM maintenance_logs WHERE device_id = ? ORDER BY ngay_su_co DESC");
+$maintenance_stmt->execute([$device_id]);
+$maintenance_logs = $maintenance_stmt->fetchAll();
 ?>
+
+<div class="maintenance-history-section">
+    <h3>Lịch sử Bảo trì</h3>
+    <?php if (empty($maintenance_logs)): ?>
+        <p>Chưa có lịch sử bảo trì cho thiết bị này.</p>
+    <?php else: ?>
+        <table class="content-table">
+            <thead>
+                <tr>
+                    <th>Ngày sự cố</th>
+                    <th>Mô tả</th>
+                    <th>Hư hỏng</th>
+                    <th>Xử lý</th>
+                    <th>Chi phí</th>
+                    <th>Ngày tạo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($maintenance_logs as $log): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($log['ngay_su_co']); ?></td>
+                        <td><?php echo nl2br(htmlspecialchars($log['noi_dung'])); ?></td>
+                        <td><?php echo nl2br(htmlspecialchars($log['hu_hong'])); ?></td>
+                        <td><?php echo nl2br(htmlspecialchars($log['xu_ly'])); ?></td>
+                        <td><?php echo htmlspecialchars(number_format($log['chi_phi'], 0, ',', '.')); ?></td>
+                        <td><?php echo htmlspecialchars($log['created_at']); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
+</div>
