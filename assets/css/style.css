@@ -76,6 +76,12 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 600; /* Slightly bolder for readability */
 }
 
+/* Ensure all form elements and headings inherit the body font */
+input, select, textarea, button,
+h1, h2, h3, h4, h5, h6 {
+    font-family: inherit;
+}
+
 p {
     margin-bottom: 1rem;
 }
