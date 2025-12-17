@@ -38,4 +38,23 @@ if ($module_path && file_exists($module_path)) {
     echo "<p>Sử dụng thanh điều hướng để quản lý các mục.</p>";
 }
 
+// Custom Confirmation Modal HTML
+?>
+<div id="customConfirmModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Xác nhận hành động</h3>
+            <span class="close-button">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p id="modalMessage">Bạn có chắc chắn muốn thực hiện hành động này?</p>
+        </div>
+        <div class="modal-footer">
+            <button id="confirmBtn" class="btn btn-danger">Xác nhận</button>
+            <button id="cancelBtn" class="btn btn-secondary">Hủy</button>
+        </div>
+    </div>
+</div>
+
+<?php
 include_once __DIR__ . '/../includes/footer.php';

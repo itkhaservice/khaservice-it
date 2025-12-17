@@ -127,7 +127,7 @@ $statuses = $pdo->query("SELECT DISTINCT trang_thai FROM devices ORDER BY trang_
     <div class="table-actions">
         <a href="index.php?page=devices/add" class="add-button btn btn-primary">Thêm thiết bị mới</a>
         <button type="submit" name="export_selected" class="btn btn-secondary" id="export-selected-btn" style="display: none;" formaction="index.php?page=devices/export">Export ra CSV</button>
-        <button type="submit" name="delete_selected" class="btn btn-danger" id="delete-selected-btn" style="display: none;" formaction="index.php?page=devices/delete_multiple" onclick="return confirm('Bạn có chắc chắn muốn xóa các mục đã chọn không?');">Xóa mục đã chọn</button>
+        <button type="button" name="delete_selected" class="btn btn-danger" id="delete-selected-btn" style="display: none;">Xóa mục đã chọn</button>
         <span id="selected-count" style="margin-left: 15px; margin-right: 15px; font-weight: bold; display: none;"></span>
     </div>
 
@@ -180,7 +180,7 @@ $statuses = $pdo->query("SELECT DISTINCT trang_thai FROM devices ORDER BY trang_
                             <td class="actions">
                                 <a href="index.php?page=devices/view&id=<?php echo $device['id']; ?>" class="btn view-btn">Xem</a>
                                 <a href="index.php?page=devices/edit&id=<?php echo $device['id']; ?>" class="btn edit-btn">Sửa</a>
-                                <a href="index.php?page=devices/delete&id=<?php echo $device['id']; ?>" class="btn delete-btn" onclick="return confirm('Bạn có chắc muốn xóa thiết bị này?');">Xóa</a>
+                                <a href="index.php?page=devices/delete&id=<?php echo $device['id']; ?>" class="btn delete-btn">Xóa</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
