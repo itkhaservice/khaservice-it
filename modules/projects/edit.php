@@ -1,0 +1,89 @@
+<?php
+$project_id = $_GET['id'] ?? null;
+$project = null;
+
+if ($project_id) {
+    $stmt = $pdo->prepare("SELECT * FROM projects WHERE id = ?");
+    $stmt->execute([$project_id]);
+    $project = $stmt->fetch();
+}
+
+if (!$project) {
+    echo "<p class='error'>Dự án không tìm thấy!</p>";
+    echo "<a href='index.php?page=projects/list' class='btn btn-secondary'>Quay lại danh sách</a>";
+    exit;
+}
+
+$errors = [];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Basic validation
+    if (empty($_POST['ma_du_an'])) {
+        $errors[] = 'Mã dự án là bắt buộc.';
+    }
+    if (empty($_POST['ten_du_an'])) {
+        $errors[] = 'Tên dự án là bắt buộc.';
+    }
+
+    if (empty($errors)) {
+        $sql = "UPDATE projects SET
+                    ma_du_an = ?, ten_du_an = ?, dia_chi = ?, loai_du_an = ?, ghi_chu = ?
+                WHERE id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            $_POST['ma_du_an'],
+            $_POST['ten_du_an'],
+            $_POST['dia_chi'],
+            $_POST['loai_du_an'],
+            $_POST['ghi_chu'],
+            $project_id
+        ]);
+
+        header("Location: index.php?page=projects/list");
+        exit;
+    }
+}
+?>
+
+<h2>Sửa Dự án: <?php echo htmlspecialchars($project['ten_du_an']); ?></h2>
+
+<?php if (!empty($errors)): ?>
+    <div class="error">
+        <?php foreach ($errors as $error): ?>
+            <p><?php echo $error; ?></p>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
+<div class="form-container">
+    <form action="index.php?page=projects/edit&id=<?php echo $project_id; ?>" method="POST" class="form-grid">
+        <div class="form-group">
+            <label for="ma_du_an">Mã Dự án (*)</label>
+            <input type="text" id="ma_du_an" name="ma_du_an" value="<?php echo htmlspecialchars($project['ma_du_an']); ?>" required>
+        </div>
+        <div class="form-group">
+            <label for="ten_du_an">Tên Dự án (*)</label>
+            <input type="text" id="ten_du_an" name="ten_du_an" value="<?php echo htmlspecialchars($project['ten_du_an']); ?>" required>
+        </div>
+
+        <div class="form-group full-width">
+            <label for="dia_chi">Địa chỉ</label>
+            <textarea id="dia_chi" name="dia_chi"><?php echo htmlspecialchars($project['dia_chi']); ?></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="loai_du_an">Loại Dự án</label>
+            <input type="text" id="loai_du_an" name="loai_du_an" value="<?php echo htmlspecialchars($project['loai_du_an']); ?>">
+        </div>
+
+        <div class="form-group full-width">
+            <label for="ghi_chu">Ghi chú</label>
+            <textarea id="ghi_chu" name="ghi_chu"><?php echo htmlspecialchars($project['ghi_chu']); ?></textarea>
+        </div>
+
+        <div class="form-actions">
+            <a href="index.php?page=projects/list" class="btn btn-secondary">Hủy</a>
+            <button type="submit" class="btn btn-primary">Cập nhật Dự án</button>
+        </div>
+    </form>
+</div>

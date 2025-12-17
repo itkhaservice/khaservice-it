@@ -1,0 +1,73 @@
+/* assets/css/form.css */
+
+.form-container {
+    /* These base styles are now defined in style.css for .card, .form-container etc. */
+    /* background-color: #fff; */
+    padding: 2rem;
+    /* border-radius: var(--border-radius-card); */
+    /* box-shadow: 0 4px 6px var(--box-shadow-light); */
+    margin-bottom: 20px; /* Consistent spacing */
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* More flexible grid */
+    gap: 20px;
+}
+
+.form-group {
+    margin-bottom: 0; /* Remove extra margin, handled by gap */
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600; /* Use consistent font-weight */
+    color: var(--text-color);
+}
+
+/* Input, select, textarea styles are now largely handled by style.css */
+/* Overrides for specific needs can go here */
+input[type="text"],
+input[type="date"],
+input[type="number"],
+select,
+textarea {
+    width: 100%;
+    /* padding, border, border-radius, box-sizing, transition are in style.css */
+}
+
+textarea {
+    min-height: 120px; /* Slightly taller textarea */
+    resize: vertical;
+}
+
+.form-actions {
+    grid-column: 1 / -1;
+    text-align: right;
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-end; /* Align buttons to the right */
+    gap: 10px; /* Space between buttons */
+}
+
+/* Button styles are now in style.css */
+/* .btn, .btn-primary, .btn-secondary definitions removed as they are global */
+
+/* Responsive adjustments for forms */
+@media (max-width: 600px) {
+    .form-grid {
+        grid-template-columns: 1fr; /* Stack columns on small screens */
+    }
+    .form-actions {
+        flex-direction: column; /* Stack buttons on small screens */
+        gap: 10px;
+    }
+    .form-actions .btn {
+        width: 100%;
+    }
+}

@@ -1,0 +1,96 @@
+/* assets/css/login.css */
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh; /* Ensure it takes full viewport height */
+    margin: 0;
+    background-color: var(--background-light); /* Use global background color */
+}
+
+.login-container {
+    background-color: #fff;
+    padding: 2.5rem; /* Slightly more padding */
+    border-radius: var(--border-radius-card); /* Use global card border-radius */
+    box-shadow: 0 8px 15px var(--box-shadow-light); /* Slightly stronger shadow for emphasis */
+    width: 100%;
+    max-width: 400px; /* Max width for consistency */
+    text-align: center;
+}
+
+.login-container h2 {
+    text-align: center;
+    margin-bottom: 2rem; /* More space below heading */
+    color: var(--text-color);
+}
+
+.login-container .form-group {
+    margin-bottom: 1.5rem; /* More space between form groups */
+    text-align: left; /* Align labels/inputs to left */
+}
+
+.login-container label {
+    display: block;
+    margin-bottom: 0.6rem;
+    font-weight: 600; /* Consistent font-weight */
+    color: var(--text-color);
+}
+
+.login-container input[type="text"],
+.login-container input[type="password"] {
+    width: 100%;
+    padding: 0.8rem 1rem; /* Adjust padding */
+    border: 1px solid var(--border-color); /* Use global border color */
+    border-radius: var(--border-radius-base); /* Use global base border-radius */
+    box-sizing: border-box; /* Include padding in width */
+    transition: border-color var(--transition-speed) var(--transition-easing),
+                box-shadow var(--transition-speed) var(--transition-easing);
+}
+
+.login-container input[type="text"]:focus,
+.login-container input[type="password"]:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    outline: none;
+}
+
+.login-container button[type="submit"] {
+    width: 100%;
+    padding: 1rem; /* Larger button */
+    background-color: var(--primary-color); /* Use global primary color */
+    color: #fff;
+    border: none;
+    border-radius: var(--border-radius-base);
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: background-color var(--transition-speed) var(--transition-easing),
+                transform 0.1s ease-out;
+}
+
+.login-container button[type="submit"]:hover {
+    background-color: var(--primary-light-color);
+}
+
+.login-container button[type="submit"]:active {
+    transform: scale(0.98);
+}
+
+.login-container .error {
+    color: var(--error-text);
+    background-color: var(--error-bg-light);
+    border: 1px solid var(--error-color);
+    padding: 10px;
+    border-radius: var(--border-radius-base);
+    margin-bottom: 1.5rem; /* Consistent spacing */
+    font-size: 0.95em;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .login-container {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+}

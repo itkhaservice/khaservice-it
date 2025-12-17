@@ -1,0 +1,7 @@
+# Disable directory browsing
+Options -Indexes
+
+# Optional: Further restrict direct access to uploaded files if needed.
+# For example, to force downloads or serve through a script.
+# RewriteEngine On
+# RewriteRule ^uploads/(.*)$ /download.php?file=$1 [L,QSA]

@@ -1,0 +1,43 @@
+Tiến độ phát triển phần mềm KHASERVICE IT:
+
+[17/12/2025] - Khởi tạo dự án và cấu trúc thư mục.
+[17/12/2025] - Triển khai hệ thống đăng nhập/đăng xuất và quản lý phiên.
+[17/12/2025] - Tạo layout cơ bản (header, footer, router).
+[17/12/2025] - Hoàn thành các chức năng CRUD cho Thiết bị (Devices).
+[17/12/2025] - Hoàn thành các chức năng CRUD cho Dự án (Projects).
+[17/12/2025] - Hoàn thành các chức năng CRUD cho Nhà cung cấp (Suppliers).
+[17/17/2025] - Hoàn thành các chức năng CRUD cho Nhật ký bảo trì (Maintenance Logs).
+[17/12/2025] - Triển khai chức năng quản lý file đính kèm cho Thiết bị.
+[17/12/2025] - Cải thiện giao diện người dùng (UI) theo phong cách Minimal và Responsive.
+[17/12/2025] - Triển khai chức năng tìm kiếm toàn cục (global search).
+[17/12/2025] - Khắc phục lỗi truy cập website do cấu hình .htaccess.
+[17/12/2025] - Bắt đầu triển khai chức năng Quản lý người dùng hệ thống.
+[17/12/2025] - Hoàn thành users/list.php.
+[17/12/2025] - Hoàn thành users/add.php.
+[17/12/2025] - Hoàn thành users/edit.php.
+[17/12/2025] - Hoàn thành users/delete.php.
+[17/12/2025] - Cập nhật header để thêm liên kết quản lý người dùng (chỉ cho admin).
+[17/12/2025] - Kiểm tra và cải thiện responsive design cho các bảng dữ liệu.
+[17/12/2025] - Tinh chỉnh giao diện đăng nhập (login.php) và cập nhật logic xác thực mật khẩu.
+[17/12/2025] - Thêm Loading Spinner tối giản.
+[17/12/2025] - Triển khai hệ thống thông báo dựa trên session (includes/messages.php) và tích hợp vào public/index.php.
+[17/12/2025] - Thêm CSS cho thông báo vào style.css.
+
+Các công việc tiếp theo:
+[x] - Triển khai chức năng Quản lý người dùng hệ thống (CRUD Users).
+    [x] - users/list.php
+    [x] - users/add.php
+    [x] - users/edit.php
+    [x] - users/delete.php
+    [x] - Triển khai băm mật khẩu.
+[x] - Cập nhật header để thêm liên kết quản lý người dùng (chỉ cho admin).
+[x] - Tiếp tục tinh chỉnh UI/UX (ví dụ: responsive tốt hơn, micro-interactions).
+    [x] - Kiểm tra và cải thiện responsive design (media queries, bảng dữ liệu).
+    [x] - Tinh chỉnh giao diện đăng nhập (login.php).
+    [x] - Thêm Loading Spinner tối giản.
+    [x] - Đảm bảo hiển thị tốt các thông báo (success, error, warning).
+        [x] - Triển khai hệ thống thông báo dựa trên session (includes/messages.php).
+        [x] - Tích hợp hệ thống thông báo vào public/index.php.
+        [x] - Thêm CSS cho thông báo vào style.css.
+        [ ] - Tích hợp hệ thống thông báo vào các module CRUD.
+[ ] - Xem xét các tính năng khác từ prompt.txt nếu cần.
