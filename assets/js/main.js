@@ -117,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear previous event listeners to prevent multiple calls
         confirmBtn.onclick = null; 
         cancelBtn.onclick = null;
+        hideSpinner(); // Hide spinner when modal is closed/cancelled
     };
 
     if (closeButton) {
