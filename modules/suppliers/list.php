@@ -35,7 +35,7 @@ $suppliers = $stmt->fetchAll();
                     <td><?php echo htmlspecialchars($supplier['ghi_chu']); ?></td>
                     <td class="actions">
                         <a href="index.php?page=suppliers/edit&id=<?php echo $supplier['id']; ?>" class="btn edit-btn">Sửa</a>
-                        <a href="index.php?page=suppliers/delete&id=<?php echo $supplier['id']; ?>" class="btn delete-btn" onclick="return confirm('Bạn có chắc muốn xóa nhà cung cấp này?');">Xóa</a>
+                        <a href="index.php?page=suppliers/delete&id=<?php echo $supplier['id']; ?>" class="btn delete-btn">Xóa</a>
                     </td>
                 </tr>
             <?php endforeach; ?>

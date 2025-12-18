@@ -170,7 +170,7 @@ $device_files = $files_stmt->fetchAll();
                         </td>
                         <td><?php echo htmlspecialchars($file['uploaded_at']); ?></td>
                         <td class="actions">
-                            <a href="index.php?page=devices/view&id=<?php echo $device_id; ?>&action=delete_file&file_id=<?php echo $file['id']; ?>" class="delete" onclick="return confirm('Bạn có chắc muốn xóa file này?');">Xóa</a>
+                            <a href="index.php?page=devices/view&id=<?php echo $device_id; ?>&action=delete_file&file_id=<?php echo $file['id']; ?>" class="delete">Xóa</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>

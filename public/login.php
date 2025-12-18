@@ -72,30 +72,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập - KHASERVICE IT</title>
-    <link rel="stylesheet" href="/khaservice-it/assets/css/style.css"> <!-- Keep general styles -->
-    <link rel="stylesheet" href="/khaservice-it/assets/css/login.css"> <!-- Specific login styles -->
+    <link rel="stylesheet" href="../assets/css/style.css"> <!-- Keep general styles -->
+    <link rel="stylesheet" href="../assets/css/login.css"> <!-- Specific login styles -->
 </head>
 <body>
-<div class="login-container">
-    <h2>Đăng nhập</h2>
-
-    <?php if ($error): ?>
-        <p class="error"><?= htmlspecialchars($error) ?></p>
-    <?php endif; ?>
-
-    <form method="POST">
-        <input type="text" name="username" placeholder="Tên đăng nhập"
-               value="<?= htmlspecialchars($_POST['username'] ?? '') ?>" required>
-
-        <input type="password" name="password" placeholder="Mật khẩu" required>
-
-        <label>
-            <input type="checkbox" name="remember_me" value="1">
-            Ghi nhớ đăng nhập
-        </label>
-
-        <button type="submit">Đăng nhập</button>
-    </form>
-</div>
+    <div class="split-login-wrapper">
+        <div class="login-intro-section">
+            <div class="login-intro-content">
+                <div class="logo">KHASERVICE IT</div>
+                <div class="intro-text-block">
+                    <h1>Hệ thống Quản lý Thiết bị IT</h1>
+                    <p>Phần mềm này giúp công ty KHASERVICE quản lý tập trung toàn bộ thông tin thiết bị IT nội bộ.</p>
+                    <p>Theo dõi đầy đủ vòng đời thiết bị từ mua, lắp đặt, sử dụng, hư hỏng, đến sửa chữa hoặc thay thế</p>
+                    <p>Cho phép nhân viên IT tra cứu nhanh lịch sử thiết bị ngay tại hiện trường.</p>
+                </div>
+            </div>
+        </div>
+        <div class="login-form-section">
+            <div class="login-container">
+                <h2>Đăng nhập</h2>
+                <?php if ($error): ?>
+                    <p class="error"><?= htmlspecialchars($error) ?></p>
+                <?php endif; ?>
+                <form method="POST">
+                    <div class="form-group">
+                        <label for="username">Tên đăng nhập</label>
+                        <input type="text" id="username" name="username" placeholder="Tên đăng nhập"
+                               value="<?= htmlspecialchars($_POST['username'] ?? '') ?>" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Mật khẩu</label>
+                        <input type="password" id="password" name="password" placeholder="Mật khẩu" required>
+                    </div>
+                    <div class="form-group remember-me">
+                        <input type="checkbox" id="remember_me" name="remember_me" value="1">
+                        <label for="remember_me">Ghi nhớ đăng nhập</label>
+                    </div>
+                    <button type="submit">Đăng nhập</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

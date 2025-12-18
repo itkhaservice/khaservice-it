@@ -152,7 +152,7 @@ $project_types = $project_types_stmt->fetchAll(PDO::FETCH_COLUMN);
                     <td><?php echo htmlspecialchars($project['ghi_chu']); ?></td>
                     <td class="actions">
                         <a href="index.php?page=projects/edit&id=<?php echo $project['id']; ?>" class="btn edit-btn">Sửa</a>
-                        <a href="index.php?page=projects/delete&id=<?php echo $project['id']; ?>" class="btn delete-btn" onclick="return confirm('Bạn có chắc muốn xóa dự án này?');">Xóa</a>
+                        <a href="index.php?page=projects/delete&id=<?php echo $project['id']; ?>" class="btn delete-btn">Xóa</a>
                     </td>
                 </tr>
             <?php endforeach; ?>

@@ -1,49 +1,102 @@
 /* assets/css/login.css */
 
 body {
+    margin: 0;
+    background-color: var(--background-light);
+    font-family: var(--font-family-base); /* Ensure font family is applied */
+    color: var(--text-color);
+}
+
+.split-login-wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.login-intro-section {
+    flex: 1;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light-color) 100%); /* Use a subtle gradient */
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh; /* Ensure it takes full viewport height */
-    margin: 0;
-    background-color: var(--background-light); /* Use global background color */
+    padding: 2rem;
+    color: #fff;
+    text-align: center;
+}
+
+.login-intro-content {
+    max-width: 500px;
+}
+
+.login-intro-content .logo {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    color: #fff;
+}
+
+.login-intro-content h1 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.3;
+}
+
+.login-intro-content p {
+    font-size: 1rem;
+    line-height: 1.6;
+    opacity: 0.9;
+}
+
+.login-form-section {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    background-color: #f8f9fa; /* Lighter background for the form side */
 }
 
 .login-container {
     background-color: #fff;
-    padding: 2.5rem; /* Slightly more padding */
-    border-radius: var(--border-radius-card); /* Use global card border-radius */
-    box-shadow: 0 8px 15px var(--box-shadow-light); /* Slightly stronger shadow for emphasis */
+    padding: 3rem; /* More padding */
+    border-radius: var(--border-radius-card);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Stronger, softer shadow */
     width: 100%;
-    max-width: 400px; /* Max width for consistency */
+    max-width: 420px; /* Adjust max width for form container */
     text-align: center;
+    position: relative; /* For potential absolute positioning of elements */
 }
 
 .login-container h2 {
     text-align: center;
-    margin-bottom: 2rem; /* More space below heading */
+    margin-bottom: 2rem;
     color: var(--text-color);
+    font-size: 1.8rem;
+}
+
+.login-container .intro-text-block { /* Changed class name from .intro-text to .intro-text-block in HTML */
+    display: none; /* Hide the old intro text block as it's now in intro section */
 }
 
 .login-container .form-group {
-    margin-bottom: 1.5rem; /* More space between form groups */
-    text-align: left; /* Align labels/inputs to left */
+    margin-bottom: 1.5rem;
+    text-align: left;
 }
 
 .login-container label {
     display: block;
     margin-bottom: 0.6rem;
-    font-weight: 600; /* Consistent font-weight */
+    font-weight: 600;
     color: var(--text-color);
 }
 
 .login-container input[type="text"],
 .login-container input[type="password"] {
     width: 100%;
-    padding: 0.8rem 1rem; /* Adjust padding */
-    border: 1px solid var(--border-color); /* Use global border color */
-    border-radius: var(--border-radius-base); /* Use global base border-radius */
-    box-sizing: border-box; /* Include padding in width */
+    padding: 0.9rem 1.2rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-base);
+    box-sizing: border-box;
     transition: border-color var(--transition-speed) var(--transition-easing),
                 box-shadow var(--transition-speed) var(--transition-easing);
 }
@@ -51,14 +104,35 @@ body {
 .login-container input[type="text"]:focus,
 .login-container input[type="password"]:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.15); /* Softer focus shadow */
     outline: none;
+}
+
+.login-container .form-group.remember-me {
+    display: flex;
+    align-items: center;
+    margin-top: -0.5rem;
+    margin-bottom: 2rem; /* More space before button */
+}
+
+.login-container .form-group.remember-me input[type="checkbox"] {
+    margin-right: 0.7rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--primary-color);
+}
+
+.login-container .form-group.remember-me label {
+    display: inline-block;
+    margin-bottom: 0;
+    font-weight: 400;
+    color: var(--text-color-light);
 }
 
 .login-container button[type="submit"] {
     width: 100%;
-    padding: 1rem; /* Larger button */
-    background-color: var(--primary-color); /* Use global primary color */
+    padding: 1.1rem; /* Slightly larger button */
+    background-color: var(--primary-color);
     color: #fff;
     border: none;
     border-radius: var(--border-radius-base);
@@ -70,7 +144,7 @@ body {
 }
 
 .login-container button[type="submit"]:hover {
-    background-color: var(--primary-light-color);
+    background-color: var(--primary-dark-color); /* Darker on hover */
 }
 
 .login-container button[type="submit"]:active {
@@ -83,14 +157,45 @@ body {
     border: 1px solid var(--error-color);
     padding: 10px;
     border-radius: var(--border-radius-base);
-    margin-bottom: 1.5rem; /* Consistent spacing */
+    margin-bottom: 1.5rem;
     font-size: 0.95em;
 }
 
 /* Responsive adjustments */
+@media (max-width: 992px) { /* Adjust breakpoint for stacking */
+    .split-login-wrapper {
+        flex-direction: column;
+    }
+
+    .login-intro-section {
+        padding: 3rem 1.5rem;
+    }
+
+    .login-intro-content {
+        max-width: none; /* Allow full width */
+    }
+
+    .login-form-section {
+        padding: 2rem 1.5rem;
+    }
+
+    .login-container {
+        max-width: 400px; /* Restore max-width for smaller screens */
+        margin: auto; /* Center it */
+    }
+}
+
 @media (max-width: 480px) {
     .login-container {
-        margin: 1rem;
-        padding: 1.5rem;
+        padding: 2rem 1.5rem;
+        margin: 1rem auto;
+    }
+
+    .login-intro-content h1 {
+        font-size: 1.7rem;
+    }
+
+    .login-intro-content .logo {
+        font-size: 2rem;
     }
 }

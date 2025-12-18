@@ -37,7 +37,7 @@ $users = $stmt->fetchAll();
                         <td><?php echo htmlspecialchars($user['created_at']); ?></td>
                         <td class="actions">
                             <a href="index.php?page=users/edit&id=<?php echo $user['id']; ?>" class="btn edit-btn">Sửa</a>
-                            <a href="index.php?page=users/delete&id=<?php echo $user['id']; ?>" class="btn delete-btn" onclick="return confirm('Bạn có chắc muốn xóa người dùng này?');">Xóa</a>
+                            <a href="index.php?page=users/delete&id=<?php echo $user['id']; ?>" class="btn delete-btn">Xóa</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>

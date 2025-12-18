@@ -168,7 +168,7 @@ $devices_filter = $devices_filter_stmt->fetchAll();
                     <td><?php echo htmlspecialchars(number_format($log['chi_phi'], 0, ',', '.')); ?></td>
                     <td class="actions">
                         <a href="index.php?page=maintenance/edit&id=<?php echo $log['id']; ?>" class="btn edit-btn">Sửa</a>
-                        <a href="index.php?page=maintenance/delete&id=<?php echo $log['id']; ?>" class="btn delete-btn" onclick="return confirm('Bạn có chắc muốn xóa nhật ký này?');">Xóa</a>
+                        <a href="index.php?page=maintenance/delete&id=<?php echo $log['id']; ?>" class="btn delete-btn">Xóa</a>
                     </td>
                 </tr>
             <?php endforeach; ?>
