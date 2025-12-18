@@ -5,23 +5,64 @@ require '../config/db.php';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
 
-    // Find user by username first
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
-    $stmt->execute([$username]);
-    $user = $stmt->fetch();
+    // ==== Validate input ====
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
 
-    // Verify password if user exists
-    if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['username'] = $user['username'];
-        $_SESSION['role'] = $user['role'];
-        header("Location: index.php");
-        exit;
+    if ($username === '' || $password === '') {
+        $error = 'Vui lòng nhập đầy đủ thông tin.';
     } else {
-        $error = 'Tên đăng nhập hoặc mật khẩu không đúng.';
+
+        // ==== Find user ====
+        $stmt = $pdo->prepare("SELECT id, username, password, role FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // ==== Verify password ====
+        if ($user && password_verify($password, $user['password'])) {
+
+            // ==== Set session ====
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['role'] = $user['role'];
+
+            // ==== Remember Me ====
+            if (!empty($_POST['remember_me'])) {
+
+                $token = bin2hex(random_bytes(64));
+                $expires_at = date('Y-m-d H:i:s', strtotime('+30 days'));
+
+                // Xóa token cũ
+                $pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?")
+                    ->execute([$user['id']]);
+
+                // Lưu token mới
+                $pdo->prepare("
+                    INSERT INTO auth_tokens (user_id, token, expires_at)
+                    VALUES (?, ?, ?)
+                ")->execute([$user['id'], $token, $expires_at]);
+
+                // Set cookie
+                setcookie(
+                    'remember_me',
+                    $token,
+                    [
+                        'expires' => time() + 60 * 60 * 24 * 30,
+                        'path' => '/',
+                        'httponly' => true,
+                        'samesite' => 'Lax',
+                        'secure' => !empty($_SERVER['HTTPS'])
+                    ]
+                );
+            }
+
+            header('Location: index.php');
+            exit;
+
+        } else {
+            $error = 'Tên đăng nhập hoặc mật khẩu không đúng.';
+        }
     }
 }
 ?>
@@ -35,22 +76,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="/khaservice-it/assets/css/login.css"> <!-- Specific login styles -->
 </head>
 <body>
-    <div class="login-container">
-        <h2>Đăng nhập</h2>
-        <?php if ($error): ?>
-            <p class="error"><?php echo $error; ?></p>
-        <?php endif; ?>
-        <form action="login.php" method="POST">
-            <div class="form-group">
-                <label for="username">Tên đăng nhập</label>
-                <input type="text" id="username" name="username" required value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>">
-            </div>
-            <div class="form-group">
-                <label for="password">Mật khẩu</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit">Đăng nhập</button>
-        </form>
-    </div>
+<div class="login-container">
+    <h2>Đăng nhập</h2>
+
+    <?php if ($error): ?>
+        <p class="error"><?= htmlspecialchars($error) ?></p>
+    <?php endif; ?>
+
+    <form method="POST">
+        <input type="text" name="username" placeholder="Tên đăng nhập"
+               value="<?= htmlspecialchars($_POST['username'] ?? '') ?>" required>
+
+        <input type="password" name="password" placeholder="Mật khẩu" required>
+
+        <label>
+            <input type="checkbox" name="remember_me" value="1">
+            Ghi nhớ đăng nhập
+        </label>
+
+        <button type="submit">Đăng nhập</button>
+    </form>
+</div>
 </body>
 </html>

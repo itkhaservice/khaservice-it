@@ -1,70 +1,107 @@
 <?php
-// --- Pagination Logic ---
-$rows_per_page = isset($_GET['limit']) ? (int)$_GET['limit'] : 5;
-$current_page = isset($_GET['p']) ? (int)$_GET['p'] : 1;
+// ==================================================
+// PAGINATION
+// ==================================================
+$rows_per_page = (isset($_GET['limit']) && is_numeric($_GET['limit'])) ? (int)$_GET['limit'] : 5;
+$current_page  = (isset($_GET['p']) && is_numeric($_GET['p'])) ? (int)$_GET['p'] : 1;
+if ($current_page < 1) $current_page = 1;
 
-// --- Filtering Logic ---
-$filter_keyword = $_GET['filter_keyword'] ?? '';
-$filter_project = $_GET['filter_project'] ?? '';
-$filter_status = $_GET['filter_status'] ?? '';
+// ==================================================
+// FILTER INPUT (SANITIZE)
+// ==================================================
+$filter_keyword = trim($_GET['filter_keyword'] ?? '');
+$filter_project = trim($_GET['filter_project'] ?? '');
+$filter_status  = trim($_GET['filter_status'] ?? '');
 
+// ==================================================
+// BUILD WHERE CLAUSE DYNAMICALLY
+// ==================================================
 $where_clauses = [];
-$bind_params = [];
+$bind_params   = [];
 
-if (!empty($filter_keyword)) {
-    $where_clauses[] = "(d.ma_tai_san LIKE :keyword OR d.ten_thiet_bi LIKE :keyword)";
-    $bind_params[':keyword'] = '%' . $filter_keyword . '%';
+// Keyword
+if ($filter_keyword !== '') {
+    $where_clauses[] = "(d.ma_tai_san LIKE :kw_ma OR d.ten_thiet_bi LIKE :kw_ten)";
+    $bind_params[':kw_ma']  = '%' . $filter_keyword . '%';
+    $bind_params[':kw_ten'] = '%' . $filter_keyword . '%';
 }
-if (!empty($filter_project)) {
+
+
+// Project
+if ($filter_project !== '' && is_numeric($filter_project)) {
     $where_clauses[] = "d.project_id = :project_id";
-    $bind_params[':project_id'] = $filter_project;
+    $bind_params[':project_id'] = (int)$filter_project;
 }
-if (!empty($filter_status)) {
+
+// Status
+if ($filter_status !== '') {
     $where_clauses[] = "d.trang_thai = :trang_thai";
     $bind_params[':trang_thai'] = $filter_status;
 }
 
-$where_sql = count($where_clauses) > 0 ? ' WHERE ' . implode(' AND ', $where_clauses) : '';
+$where_sql = !empty($where_clauses)
+    ? ' WHERE ' . implode(' AND ', $where_clauses)
+    : '';
 
-// --- Sorting Logic ---
+// ==================================================
+// SORTING (ANTI SQL INJECTION)
+// ==================================================
 $allowed_sort_columns = [
-    'ma_tai_san' => 'd.ma_tai_san',
+    'ma_tai_san'   => 'd.ma_tai_san',
     'ten_thiet_bi' => 'd.ten_thiet_bi',
-    'ten_du_an' => 'p.ten_du_an',
-    'ten_npp' => 's.ten_npp',
-    'trang_thai' => 'd.trang_thai',
-    'created_at' => 'd.created_at' // Assuming 'created_at' is a column in 'devices' table
+    'ten_du_an'    => 'p.ten_du_an',
+    'ten_npp'      => 's.ten_npp',
+    'trang_thai'   => 'd.trang_thai',
+    'created_at'   => 'd.created_at'
 ];
-$sort_by = $_GET['sort_by'] ?? 'created_at';
-$sort_order = $_GET['sort_order'] ?? 'DESC';
 
-// Validate sort_by column
+$sort_by    = $_GET['sort_by'] ?? 'created_at';
+$sort_order = strtoupper($_GET['sort_order'] ?? 'DESC');
+
 if (!array_key_exists($sort_by, $allowed_sort_columns)) {
-    $sort_by = 'created_at'; // Default if invalid
+    $sort_by = 'created_at';
 }
-// Validate sort_order
-if (!in_array(strtoupper($sort_order), ['ASC', 'DESC'])) {
-    $sort_order = 'DESC'; // Default if invalid
+if (!in_array($sort_order, ['ASC', 'DESC'])) {
+    $sort_order = 'DESC';
 }
 
-$order_sql = " ORDER BY " . $allowed_sort_columns[$sort_by] . " " . $sort_order;
+$order_sql = " ORDER BY {$allowed_sort_columns[$sort_by]} $sort_order";
 
+// ==================================================
+// COUNT TOTAL ROWS
+// ==================================================
+$count_sql = "
+    SELECT COUNT(*)
+    FROM devices d
+    LEFT JOIN projects p ON d.project_id = p.id
+    LEFT JOIN suppliers s ON d.supplier_id = s.id
+    $where_sql
+";
 
-// --- Total Records Calculation ---
-$total_rows_stmt = $pdo->prepare("SELECT COUNT(*) FROM devices d" . $where_sql);
-$total_rows_stmt->execute($bind_params);
-$total_rows = $total_rows_stmt->fetchColumn();
-$total_pages = ceil($total_rows / $rows_per_page);
+$count_stmt = $pdo->prepare($count_sql);
+foreach ($bind_params as $key => $value) {
+    $count_stmt->bindValue($key, $value);
+}
+$count_stmt->execute();
 
-// Ensure current page is within valid range
-if ($current_page < 1) $current_page = 1;
-if ($current_page > $total_pages && $total_pages > 0) $current_page = $total_pages;
+$total_rows  = (int)$count_stmt->fetchColumn();
+$total_pages = max(1, ceil($total_rows / $rows_per_page));
 
+// Fix current page
+if ($current_page > $total_pages) {
+    $current_page = $total_pages;
+}
+
+// ==================================================
+// PAGINATION OFFSET
+// ==================================================
 $offset = ($current_page - 1) * $rows_per_page;
-if ($offset < 0) $offset = 0; // Ensure offset is not negative
+if ($offset < 0) $offset = 0;
 
-// --- Fetch Devices for the current page ---
-$sql = "
+// ==================================================
+// FETCH DEVICES DATA
+// ==================================================
+$data_sql = "
     SELECT
         d.id,
         d.ma_tai_san,
@@ -75,33 +112,41 @@ $sql = "
     FROM devices d
     LEFT JOIN projects p ON d.project_id = p.id
     LEFT JOIN suppliers s ON d.supplier_id = s.id
-    WHERE (d.ma_tai_san LIKE :keyword OR d.ten_thiet_bi LIKE :keyword)
-    " . $order_sql . "
+    $where_sql
+    $order_sql
     LIMIT :limit OFFSET :offset
 ";
-$stmt = $pdo->prepare($sql);
 
-echo "<pre>";
-if (method_exists($stmt, 'debugDumpParams')) {
-    echo "Dumping Params (after prepare):\n";
-    $stmt->debugDumpParams();
-} else {
-    echo "debugDumpParams not available.<br>";
-    echo "SQL:\n" . htmlspecialchars($sql) . "\n\n";
-    echo "Intended Params for execute:\n";
-    print_r($final_bind_params);
+$stmt = $pdo->prepare($data_sql);
+
+// Bind filter params
+foreach ($bind_params as $key => $value) {
+    $stmt->bindValue($key, $value);
 }
-echo "</pre>";
-die("DEBUGGING OUTPUT - Check above for SQL and Params.");
 
-$stmt->execute($final_bind_params);
-$devices = $stmt->fetchAll();
+// Bind pagination params (BẮT BUỘC INT)
+$stmt->bindValue(':limit',  $rows_per_page, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 
-// --- Fetch Projects and Statuses for dropdown filters ---
-$projects = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du_an")->fetchAll();
-$statuses = $pdo->query("SELECT DISTINCT trang_thai FROM devices ORDER BY trang_thai")->fetchAll();
+$stmt->execute();
+$devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// ==================================================
+// DATA FOR FILTER DROPDOWNS
+// ==================================================
+$projects = $pdo->query("
+    SELECT id, ten_du_an
+    FROM projects
+    ORDER BY ten_du_an
+")->fetchAll(PDO::FETCH_ASSOC);
+
+$statuses = $pdo->query("
+    SELECT DISTINCT trang_thai
+    FROM devices
+    ORDER BY trang_thai
+")->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
 
 <h2>Danh sách Thiết bị</h2>
 

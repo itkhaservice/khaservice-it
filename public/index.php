@@ -1,6 +1,7 @@
 <?php
-// Main router
-require_once __DIR__ . '/../includes/auth.php';
+session_start(); // Start session once at the top
+require_once __DIR__ . '/../includes/remember_me_check.php'; // Check for remember me cookie
+require_once __DIR__ . '/../includes/auth.php'; // Handle authentication
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/messages.php'; // Include messages helper
 

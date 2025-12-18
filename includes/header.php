@@ -1,7 +1,4 @@
-<?php
-// This script is included at the top of all protected pages.
-// It assumes a session has already been started by an auth script.
-?>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>

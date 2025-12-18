@@ -205,6 +205,7 @@ a:hover {
 
 .btn-primary:hover {
     background-color: var(--primary-light-color);
+    color: #fff; /* Added */
 }
 
 .btn-secondary {
