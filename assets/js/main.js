@@ -172,4 +172,74 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
+
+    // Quick Search Logic
+    const quickSearchInput = document.getElementById('quick-search-input');
+    const quickSearchResultsDiv = document.getElementById('quick-search-results');
+    let searchTimeout;
+
+    if (quickSearchInput && quickSearchResultsDiv) {
+        quickSearchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            const query = quickSearchInput.value.trim();
+
+            if (query.length < 2) { // Only search if query is at least 2 characters long
+                quickSearchResultsDiv.innerHTML = '';
+                quickSearchResultsDiv.style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                showSpinner(); // Show spinner while searching
+                fetch(`api/quick_search.php?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        hideSpinner(); // Hide spinner
+                        quickSearchResultsDiv.innerHTML = ''; // Clear previous results
+                        if (data.error) {
+                            quickSearchResultsDiv.innerHTML = `<div class="search-result-item error">${data.error}</div>`;
+                            quickSearchResultsDiv.style.display = 'block';
+                            return;
+                        }
+
+                        if (data.length > 0) {
+                            data.forEach(item => {
+                                const resultItem = document.createElement('a');
+                                resultItem.href = `index.php?page=devices/view&id=${item.id}`;
+                                resultItem.classList.add('search-result-item');
+                                resultItem.innerHTML = `
+                                    <span class="ma-tai-san">${item.ma_tai_san}</span> - 
+                                    <span class="ten-thiet-bi">${item.ten_thiet_bi}</span>
+                                `;
+                                quickSearchResultsDiv.appendChild(resultItem);
+                            });
+                            quickSearchResultsDiv.style.display = 'block'; // Show results
+                        } else {
+                            quickSearchResultsDiv.innerHTML = '<div class="search-result-item no-results">Không tìm thấy kết quả.</div>';
+                            quickSearchResultsDiv.style.display = 'block';
+                        }
+                    })
+                    .catch(error => {
+                        hideSpinner(); // Hide spinner
+                        console.error('Quick search fetch error:', error);
+                        quickSearchResultsDiv.innerHTML = '<div class="search-result-item error">Lỗi khi tìm kiếm.</div>';
+                        quickSearchResultsDiv.style.display = 'block';
+                    });
+            }, 300); // Debounce time of 300ms
+        });
+
+        // Hide results when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!quickSearchInput.contains(event.target) && !quickSearchResultsDiv.contains(event.target)) {
+                quickSearchResultsDiv.style.display = 'none';
+            }
+        });
+
+        // Show results again if input is focused and has text
+        quickSearchInput.addEventListener('focus', () => {
+            if (quickSearchResultsDiv.innerHTML !== '' && quickSearchResultsDiv.children.length > 0 && quickSearchInput.value.trim().length >= 2) {
+                quickSearchResultsDiv.style.display = 'block';
+            }
+        });
+    }
 });

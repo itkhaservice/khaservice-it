@@ -153,6 +153,78 @@ body {
     background-color: var(--secondary-color);
 }
 
+/* Quick Search Box in Header */
+.quick-search-box {
+    position: relative; /* For dropdown positioning */
+    margin: 0 20px;
+    flex-grow: 1;
+    max-width: 350px; /* Limit its width */
+}
+
+.quick-search-box input[type="text"] {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-base);
+    font-size: 0.95em;
+    outline: none;
+    transition: border-color var(--transition-speed) var(--transition-easing);
+}
+
+.quick-search-box input[type="text"]:focus {
+    border-color: var(--primary-color);
+}
+
+.search-results-dropdown {
+    position: absolute;
+    top: 100%; /* Position below the input */
+    left: 0;
+    width: 100%;
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-base);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 100; /* Ensure it's above other content */
+    display: none; /* Hidden by default */
+    max-height: 250px; /* Limit height and make scrollable */
+    overflow-y: auto;
+}
+
+.search-results-dropdown .search-result-item {
+    display: block;
+    padding: 10px 15px;
+    color: var(--text-color);
+    text-decoration: none;
+    border-bottom: 1px solid var(--background-light); /* Subtle separator */
+    transition: background-color var(--transition-speed) var(--transition-easing);
+}
+
+.search-results-dropdown .search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-results-dropdown .search-result-item:hover {
+    background-color: var(--background-light);
+    color: var(--primary-color);
+}
+
+.search-results-dropdown .search-result-item.no-results,
+.search-results-dropdown .search-result-item.error {
+    color: var(--text-light-color);
+    padding: 10px 15px;
+    text-align: center;
+}
+
+/* Responsive adjustments for quick search */
+@media (max-width: 768px) {
+    .quick-search-box {
+        order: 2; /* Place after nav in mobile layout */
+        flex-basis: 100%; /* Full width */
+        margin: 10px 0; /* Adjust margin */
+        max-width: none; /* Allow full width */
+    }
+}
+
 
 /* Main Content area */
 .main-content {

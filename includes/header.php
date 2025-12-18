@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý IT - KHASERVICE</title>
     <base href="/khaservice-it/public/" />
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPYXKCqfR8cvBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/layout.css">
     <link rel="stylesheet" href="../assets/css/table.css">
@@ -44,6 +46,13 @@
             <!-- </div> -->
         </div>
         <div class="user-info">
+            <!-- Quick Search Bar -->
+            <div class="quick-search-box">
+                <input type="text" id="quick-search-input" placeholder="Tìm kiếm nhanh: Mã TS, Serial...">
+                <div id="quick-search-results" class="search-results-dropdown">
+                    <!-- Search results will be loaded here by JavaScript -->
+                </div>
+            </div>
 
             <span><?php echo htmlspecialchars($_SESSION['username']); ?></span>
             <a href="/khaservice-it/public/logout.php">Đăng xuất</a>
