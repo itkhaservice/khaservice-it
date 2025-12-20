@@ -17,6 +17,11 @@
     <link rel="stylesheet" href="../assets/css/layout.css">
     
     <script src="../assets/js/audio_feedback.js" defer></script>
+    <style>
+        .settings-link { color: #64748b; font-size: 1.2rem; margin: 0 10px; transition: color 0.2s; }
+        .settings-link:hover { color: var(--primary-color); }
+        .logout-link { color: #ef4444; font-size: 1.2rem; }
+    </style>
 </head>
 <body>
     <header class="main-header">
@@ -37,12 +42,9 @@
         </nav>
 
         <div class="user-info">
-            <!-- <div class="quick-search-box">
-                <input type="text" id="quick-search-input" placeholder="Tìm nhanh mã TS, Serial...">
-                <div id="quick-search-results" class="search-results-dropdown"></div>
-            </div> -->
             <span class="username"><i class="far fa-user-circle"></i> <?php echo htmlspecialchars($_SESSION['username']); ?></span>
-            <a href="/khaservice-it/public/logout.php" class="logout-link"><i class="fas fa-sign-out-alt"></i></a>
+            <a href="/khaservice-it/public/index.php?page=users/settings" class="settings-link" title="Cài đặt tài khoản"><i class="fas fa-cog"></i></a>
+            <a href="/khaservice-it/public/logout.php" class="logout-link" title="Thoát"><i class="fas fa-sign-out-alt"></i></a>
         </div>
     </header>
     <main class="main-content">

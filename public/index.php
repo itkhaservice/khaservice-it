@@ -70,7 +70,21 @@ $requested_file = __DIR__ . '/../modules/' . $page . '.php';
 $base_path = realpath(__DIR__ . '/../modules');
 $module_path = realpath($requested_file);
 
+// --- PHÂN QUYỀN TẬP TRUNG (CENTRALIZED AUTHORIZATION) ---
 if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($module_path)) {
+    // 1. Chỉ Admin mới được vào các trang Quản lý Người dùng (TRỪ trang Settings cá nhân)
+    if (strpos($page, 'users/') !== false && $page !== 'users/settings') {
+        requireAdmin();
+    }
+    // 2. Chỉ Admin mới được vào các trang XÓA
+    elseif (strpos($page, 'delete') !== false) {
+        requireAdmin();
+    }
+    // 3. Chỉ IT trở lên mới được vào các trang THÊM, SỬA hoặc QUẢN LÝ FILE
+    elseif (strpos($page, 'add') !== false || strpos($page, 'edit') !== false || strpos($page, 'manage') !== false) {
+        requireIT();
+    }
+    
     include $module_path;
 } else { 
     // --- DASHBOARD VIEW ---
