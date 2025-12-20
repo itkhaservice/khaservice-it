@@ -1,23 +1,71 @@
 <?php
-if (isset($_GET['id'])) {
-    $log_id = $_GET['id'];
-
-    try {
-        $check_stmt = $pdo->prepare("SELECT id FROM maintenance_logs WHERE id = ?");
-        $check_stmt->execute([$log_id]);
-        if ($check_stmt->fetch()) {
-            $stmt = $pdo->prepare("DELETE FROM maintenance_logs WHERE id = ?");
-            $stmt->execute([$log_id]);
-            set_message('success', 'Nhật ký bảo trì đã được xóa thành công!');
-        } else {
-            set_message('error', 'Nhật ký bảo trì không tìm thấy để xóa.');
-        }
-    } catch (PDOException $e) {
-        set_message('error', 'Lỗi khi xóa nhật ký bảo trì: ' . $e->getMessage());
-    }
-} else {
-    set_message('error', 'Không có ID nhật ký bảo trì được cung cấp.');
+if (!isset($_GET['id'])) {
+    set_message('error', 'Không có ID phiếu bảo trì.');
+    header("Location: index.php?page=maintenance/history");
+    exit;
 }
 
-header("Location: index.php?page=maintenance/history");
-exit;
+$id = $_GET['id'];
+
+// Check existence
+$stmt = $pdo->prepare("
+    SELECT ml.*, d.ma_tai_san 
+    FROM maintenance_logs ml 
+    JOIN devices d ON ml.device_id = d.id 
+    WHERE ml.id = ?
+");
+$stmt->execute([$id]);
+$log = $stmt->fetch();
+
+if (!$log) {
+    set_message('error', 'Phiếu bảo trì không tồn tại.');
+    header("Location: index.php?page=maintenance/history");
+    exit;
+}
+
+if (isset($_POST['confirm_delete'])) {
+    try {
+        $stmt_del = $pdo->prepare("DELETE FROM maintenance_logs WHERE id = ?");
+        $stmt_del->execute([$id]);
+        set_message('success', 'Đã xóa lịch sử bảo trì thành công!');
+        header("Location: index.php?page=maintenance/history");
+        exit;
+    } catch (PDOException $e) {
+        set_message('error', 'Lỗi: ' . $e->getMessage());
+        header("Location: index.php?page=maintenance/view&id=$id");
+        exit;
+    }
+}
+?>
+
+<div class="delete-confirmation-container">
+    <div class="card delete-card">
+        <div class="delete-modal-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h2 class="delete-modal-title">Xác nhận xóa phiếu bảo trì?</h2>
+        <p class="delete-modal-text">
+            Bạn đang yêu cầu xóa phiếu bảo trì ngày <strong><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></strong> của thiết bị <strong><?php echo htmlspecialchars($log['ma_tai_san']); ?></strong>.
+        </p>
+        
+        <div class="delete-alert-box">
+            <i class="fas fa-info-circle"></i> 
+            <span>Hành động này sẽ xóa vĩnh viễn phiếu bảo trì này khỏi hệ thống. Không thể hoàn tác!</span>
+        </div>
+        
+        <form action="index.php?page=maintenance/delete&id=<?php echo $id; ?>" method="POST" class="delete-modal-actions">
+            <input type="hidden" name="confirm_delete" value="1">
+            <a href="index.php?page=maintenance/history" class="btn btn-secondary">Hủy bỏ</a>
+            <button type="submit" class="btn btn-danger">Xác nhận Xóa</button>
+        </form>
+    </div>
+</div>
+
+<style>
+.delete-confirmation-container {
+    display: flex; justify-content: center; align-items: center; padding: 60px 20px;
+}
+.delete-card {
+    max-width: 500px; width: 100%; text-align: center; padding: 40px !important;
+}
+</style>

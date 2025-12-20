@@ -101,20 +101,32 @@ body {
 
 /* ÉP CỨNG CHIỀU CAO 34PX */
 .filter-group select,
-.filter-group input[type="text"] {
+.filter-group input[type="text"],
+.filter-group input[type="date"] {
     display: block !important;
-    height: 34px !important;      /* CHIỀU CAO GỌN */
+    height: 34px !important;
     max-height: 34px !important;
     min-height: 34px !important;
     padding: 0 12px !important;
     width: 100% !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: var(--border-radius-base) !important;
-    font-size: 0.9rem !important;
-    line-height: 34px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    font-size: 0.85rem !important;
+    font-family: inherit !important;
     background-color: #fff !important;
     box-sizing: border-box !important;
-    margin: 0 !important;
+    color: var(--text-color) !important;
+}
+
+/* Tinh chỉnh riêng cho ô Date để icon lịch trông gọn hơn */
+.filter-group input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(0.4);
+    margin-left: 0;
+}
+
+.filter-group input[type="date"] {
+    position: relative;
 }
 
 .filter-actions {
@@ -583,6 +595,45 @@ body {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- BATCH ACTIONS TOOLBAR --- */
+.batch-actions {
+    display: none; /* Controlled by JS */
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: #f0fdf4; 
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.selected-count-label {
+    font-size: 0.95rem;
+    color: #166534;
+    font-weight: 500;
+}
+
+.selected-count-label strong {
+    background: var(--primary-color);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin: 0 4px;
+    font-size: 0.85rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 12px; 
+}
+
+.btn-sm {
+    height: 32px;
+    padding: 0 15px;
+    font-size: 0.8rem;
 }
 
 /* --- TOAST NOTIFICATIONS --- */

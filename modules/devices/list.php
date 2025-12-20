@@ -179,14 +179,15 @@ $all_columns = [
 <!-- Data Table -->
 <form action="index.php?page=devices/export" method="POST" id="devices-form">
     
-    <div class="batch-actions" id="batch-actions" style="display: none;">
+    <!-- Batch Actions Toolbar -->
+    <div class="batch-actions" id="batch-actions">
         <span class="selected-count-label">Đã chọn <strong id="selected-count">0</strong> thiết bị</span>
         <div class="action-buttons">
             <button type="submit" name="export_selected" class="btn btn-secondary btn-sm" formaction="index.php?page=devices/export">
                 <i class="fas fa-file-export"></i> Xuất CSV
             </button>
             <button type="button" name="delete_selected" class="btn btn-danger btn-sm" id="delete-selected-btn">
-                <i class="fas fa-trash-alt"></i> Xóa
+                <i class="fas fa-trash-alt"></i> Xóa đã chọn
             </button>
         </div>
     </div>
