@@ -79,84 +79,107 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <div class="dashboard-container">
-        <h2 style="margin-bottom: 30px; font-size: 1.8rem; color: #1e293b;">Tổng quan Hệ thống</h2>
-
-        <!-- 1. KPI Cards -->
-        <div class="kpi-cards">
-            <div class="kpi-card">
-                <span class="kpi-label">Tổng Thiết bị</span>
-                <span class="kpi-value"><?= number_format($total_devices) ?></span>
-                <span class="kpi-icon"><i class="fas fa-server"></i></span>
-            </div>
-            <div class="kpi-card warning">
-                <span class="kpi-label">Sắp hết Bảo hành</span>
-                <span class="kpi-value"><?= number_format($devices_nearing_warranty) ?></span>
-                <span class="kpi-icon"><i class="fas fa-clock"></i></span>
-            </div>
-            <div class="kpi-card error">
-                <span class="kpi-label">Hỏng / Thanh lý</span>
-                <span class="kpi-value"><?= number_format($broken_or_liquidated_devices) ?></span>
-                <span class="kpi-icon"><i class="fas fa-times-circle"></i></span>
-            </div>
-            <div class="kpi-card info">
-                <span class="kpi-label">Lượt Bảo trì</span>
-                <span class="kpi-value"><?= number_format($total_maintenance_logs) ?></span>
-                <span class="kpi-icon"><i class="fas fa-tools"></i></span>
-            </div>
+        <div class="page-header">
+            <h2 style="margin-bottom: 0;"><i class="fas fa-home"></i> Tổng quan Hệ thống</h2>
+            <div style="font-size: 0.9rem; color: #64748b;">Hôm nay: <?php echo date('d/m/Y'); ?></div>
         </div>
 
-        <br>
+        <!-- 1. KPI Cards Grid -->
+        <div class="kpi-grid">
+            <div class="stat-card primary">
+                <div class="stat-content">
+                    <span class="stat-label">Tổng Thiết bị</span>
+                    <span class="stat-value"><?= number_format($total_devices) ?></span>
+                </div>
+                <div class="stat-icon"><i class="fas fa-server"></i></div>
+            </div>
+            
+            <div class="stat-card warning">
+                <div class="stat-content">
+                    <span class="stat-label">Sắp hết Bảo hành</span>
+                    <span class="stat-value"><?= number_format($devices_nearing_warranty) ?></span>
+                </div>
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+            </div>
+
+            <div class="stat-card danger">
+                <div class="stat-content">
+                    <span class="stat-label">Hỏng / Thanh lý</span>
+                    <span class="stat-value"><?= number_format($broken_or_liquidated_devices) ?></span>
+                </div>
+                <div class="stat-icon"><i class="fas fa-exclamation-circle"></i></div>
+            </div>
+
+            <div class="stat-card info">
+                <div class="stat-content">
+                    <span class="stat-label">Lượt Bảo trì</span>
+                    <span class="stat-value"><?= number_format($total_maintenance_logs) ?></span>
+                </div>
+                <div class="stat-icon"><i class="fas fa-tools"></i></div>
+            </div>
+        </div>
 
         <!-- 2. Charts Section -->
         <div class="charts-grid">
-            <div class="chart-card">
-                <h3><i class="fas fa-chart-pie"></i> Tình trạng Thiết bị</h3>
-                <div class="canvas-container">
-                    <canvas id="deviceStatusChart"></canvas>
+            <!-- Main Chart: Device Types (Bar) -->
+            <div class="card">
+                <div class="dashboard-card-header">
+                    <h3><i class="fas fa-chart-bar" style="color: #3b82f6;"></i> Phân loại Thiết bị (Top 5)</h3>
+                </div>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="deviceTypeChart"></canvas>
                 </div>
             </div>
-            <div class="chart-card">
-                <h3><i class="fas fa-chart-bar"></i> Phân loại Thiết bị (Top 5)</h3>
-                <div class="canvas-container">
-                    <canvas id="deviceTypeChart"></canvas>
+
+            <!-- Side Chart: Status (Doughnut) -->
+            <div class="card">
+                <div class="dashboard-card-header">
+                    <h3><i class="fas fa-chart-pie" style="color: #10b981;"></i> Tình trạng</h3>
+                </div>
+                <div style="height: 300px; position: relative; display: flex; justify-content: center;">
+                    <canvas id="deviceStatusChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- 3. Activity & Actions -->
+        <!-- 3. Bottom Grid: Activity & Actions -->
         <div class="activity-grid">
-            <!-- Recent Activity -->
-            <div class="card" style="padding: 25px;">
-                <h3 style="margin-bottom: 20px; font-size: 1.2rem; display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-history" style="color: #3b82f6; background: #dbeafe; padding: 8px; border-radius: 8px;"></i> 
-                    Hoạt động Gần đây
-                </h3>
+            <!-- Recent Activity Feed -->
+            <div class="card">
+                <div class="dashboard-card-header">
+                    <h3><i class="fas fa-history" style="color: #6366f1;"></i> Hoạt động Gần đây</h3>
+                    <a href="index.php?page=maintenance/history" class="btn btn-sm btn-secondary">Xem tất cả</a>
+                </div>
+                
                 <?php if (empty($recent_activities)): ?>
-                    <p style="color: var(--text-light-color); font-style: italic; text-align: center; padding: 20px;">Chưa có hoạt động bảo trì nào.</p>
+                    <div style="text-align: center; padding: 30px; color: #94a3b8;">
+                        <i class="fas fa-clipboard-check" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <p>Chưa có hoạt động nào.</p>
+                    </div>
                 <?php else: ?>
-                    <ul class="activity-list">
+                    <ul class="feed-list">
                         <?php foreach ($recent_activities as $activity): ?>
-                            <li class="activity-item">
-                                <div class="activity-icon">
+                            <li class="feed-item">
+                                <div class="feed-icon">
                                     <i class="fas fa-wrench"></i>
                                 </div>
-                                <div class="activity-content">
+                                <div class="feed-content">
                                     <h4><?= htmlspecialchars($activity['ten_thiet_bi']) ?> (<?= htmlspecialchars($activity['ma_tai_san']) ?>)</h4>
                                     <p><?= htmlspecialchars($activity['noi_dung']) ?></p>
-                                    <span class="activity-time"><i class="far fa-clock"></i> <?= date('H:i d/m/Y', strtotime($activity['created_at'])) ?></span>
+                                    <span class="feed-time"><i class="far fa-clock"></i> <?= date('H:i d/m/Y', strtotime($activity['created_at'])) ?></span>
                                 </div>
                             </li>
                         <?php endforeach; ?>
                     </ul>
-                    <div style="margin-top: 20px; text-align: center;">
-                        <a href="index.php?page=maintenance/history" class="btn btn-secondary" style="font-size: 0.9rem;">Xem tất cả lịch sử</a>
-                    </div>
                 <?php endif; ?>
             </div>
 
             <!-- Action Zone -->
-            <div class="action-zone-card card">
-                <h3><i class="fas fa-bell"></i> Cần Xử lý Gấp</h3>
+            <div class="card">
+                <div class="dashboard-card-header">
+                    <h3><i class="fas fa-bell" style="color: #f59e0b;"></i> Cần Xử lý Gấp</h3>
+                </div>
+
                 <?php if (empty($overdue_warranty_devices) && empty($broken_with_liquidation_notes)): ?>
                     <div style="text-align: center; padding: 40px 20px;">
                         <i class="fas fa-check-circle" style="font-size: 3rem; color: #10b981; margin-bottom: 15px;"></i>
@@ -164,22 +187,29 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
                         <p style="color: #64748b; font-size: 0.9rem;">Không có cảnh báo khẩn cấp nào.</p>
                     </div>
                 <?php else: ?>
-                    <ul class="action-list" style="padding: 0 20px 20px 20px;">
+                    <ul class="action-list">
                         <?php foreach ($overdue_warranty_devices as $device): ?>
                             <li>
-                                <i class="fas fa-exclamation-triangle action-icon"></i>
-                                <a href="index.php?page=devices/view&id=<?= $device['id'] ?>">
-                                    <strong><?= htmlspecialchars($device['ma_tai_san']) ?></strong>
-                                    <span style="color: #d97706; font-size: 0.9rem;">Quá hạn BH: <?= date('d/m/Y', strtotime($device['bao_hanh_den'])) ?></span>
+                                <a href="index.php?page=devices/view&id=<?= $device['id'] ?>" class="action-item warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <div class="action-content">
+                                        <span class="action-title"><?= htmlspecialchars($device['ma_tai_san']) ?></span>
+                                        <span class="action-desc">Quá hạn BH: <?= date('d/m/Y', strtotime($device['bao_hanh_den'])) ?></span>
+                                    </div>
+                                    <i class="fas fa-chevron-right action-arrow"></i>
                                 </a>
                             </li>
                         <?php endforeach; ?>
+
                         <?php foreach ($broken_with_liquidation_notes as $device): ?>
                             <li>
-                                <i class="fas fa-trash-alt action-icon"></i>
-                                <a href="index.php?page=devices/view&id=<?= $device['id'] ?>">
-                                    <strong><?= htmlspecialchars($device['ma_tai_san']) ?></strong>
-                                    <span style="color: #dc2626; font-size: 0.9rem;">Cần Thanh lý</span>
+                                <a href="index.php?page=devices/view&id=<?= $device['id'] ?>" class="action-item danger">
+                                    <i class="fas fa-trash-alt"></i>
+                                    <div class="action-content">
+                                        <span class="action-title"><?= htmlspecialchars($device['ma_tai_san']) ?></span>
+                                        <span class="action-desc">Cần Thanh lý (Ghi chú có từ khóa 'thanh lý')</span>
+                                    </div>
+                                    <i class="fas fa-chevron-right action-arrow"></i>
                                 </a>
                             </li>
                         <?php endforeach; ?>
@@ -220,7 +250,7 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
                         legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } },
                         tooltip: { backgroundColor: '#1e293b', padding: 10, cornerRadius: 8 }
                     },
-                    cutout: '70%'
+                    cutout: '75%'
                 }
             });
 
@@ -243,7 +273,7 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
                         data: typeCounts,
                         backgroundColor: gradientBar,
                         borderRadius: 6,
-                        barPercentage: 0.6
+                        barPercentage: 0.5
                     }]
                 },
                 options: {

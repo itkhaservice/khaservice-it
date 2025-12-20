@@ -1,112 +1,76 @@
 <?php
 // ==================================================
-// PAGINATION
+// PAGINATION CONFIG
 // ==================================================
-$rows_per_page = (isset($_GET['limit']) && is_numeric($_GET['limit'])) ? (int)$_GET['limit'] : 5;
+$rows_per_page = (isset($_GET['limit']) && is_numeric($_GET['limit'])) ? (int)$_GET['limit'] : 10;
 $current_page  = (isset($_GET['p']) && is_numeric($_GET['p'])) ? (int)$_GET['p'] : 1;
 if ($current_page < 1) $current_page = 1;
 
 // ==================================================
-// FILTER INPUT (SANITIZE)
+// FILTER INPUT
 // ==================================================
 $filter_keyword = trim($_GET['filter_keyword'] ?? '');
 $filter_project = trim($_GET['filter_project'] ?? '');
 $filter_status  = trim($_GET['filter_status'] ?? '');
 
 // ==================================================
-// BUILD WHERE CLAUSE DYNAMICALLY
+// BUILD QUERY
 // ==================================================
 $where_clauses = [];
 $bind_params   = [];
 
-// Keyword
 if ($filter_keyword !== '') {
-    $where_clauses[] = "(d.ma_tai_san LIKE :kw_ma OR d.ten_thiet_bi LIKE :kw_ten)";
+    $where_clauses[] = "(d.ma_tai_san LIKE :kw_ma OR d.ten_thiet_bi LIKE :kw_ten OR d.serial LIKE :kw_serial OR d.model LIKE :kw_model)";
     $bind_params[':kw_ma']  = '%' . $filter_keyword . '%';
     $bind_params[':kw_ten'] = '%' . $filter_keyword . '%';
+    $bind_params[':kw_serial'] = '%' . $filter_keyword . '%';
+    $bind_params[':kw_model'] = '%' . $filter_keyword . '%';
 }
 
-
-// Project
 if ($filter_project !== '' && is_numeric($filter_project)) {
     $where_clauses[] = "d.project_id = :project_id";
     $bind_params[':project_id'] = (int)$filter_project;
 }
 
-// Status
 if ($filter_status !== '') {
     $where_clauses[] = "d.trang_thai = :trang_thai";
     $bind_params[':trang_thai'] = $filter_status;
 }
 
-$where_sql = !empty($where_clauses)
-    ? ' WHERE ' . implode(' AND ', $where_clauses)
-    : '';
+$where_sql = !empty($where_clauses) ? ' WHERE ' . implode(' AND ', $where_clauses) : '';
 
-// ==================================================
-// SORTING (ANTI SQL INJECTION)
-// ==================================================
+// Sorting
 $allowed_sort_columns = [
     'ma_tai_san'   => 'd.ma_tai_san',
     'ten_thiet_bi' => 'd.ten_thiet_bi',
     'ten_du_an'    => 'p.ten_du_an',
     'ten_npp'      => 's.ten_npp',
     'trang_thai'   => 'd.trang_thai',
-    'created_at'   => 'd.created_at'
+    'created_at'   => 'd.created_at',
+    'gia_mua'      => 'd.gia_mua',
+    'ngay_mua'     => 'd.ngay_mua'
 ];
-
 $sort_by    = $_GET['sort_by'] ?? 'created_at';
 $sort_order = strtoupper($_GET['sort_order'] ?? 'DESC');
-
-if (!array_key_exists($sort_by, $allowed_sort_columns)) {
-    $sort_by = 'created_at';
-}
-if (!in_array($sort_order, ['ASC', 'DESC'])) {
-    $sort_order = 'DESC';
-}
-
+if (!array_key_exists($sort_by, $allowed_sort_columns)) $sort_by = 'created_at';
+if (!in_array($sort_order, ['ASC', 'DESC'])) $sort_order = 'DESC';
 $order_sql = " ORDER BY {$allowed_sort_columns[$sort_by]} $sort_order";
 
-// ==================================================
-// COUNT TOTAL ROWS
-// ==================================================
-$count_sql = "
-    SELECT COUNT(*)
-    FROM devices d
-    LEFT JOIN projects p ON d.project_id = p.id
-    LEFT JOIN suppliers s ON d.supplier_id = s.id
-    $where_sql
-";
-
+// Count Total
+$count_sql = "SELECT COUNT(*) FROM devices d LEFT JOIN projects p ON d.project_id = p.id LEFT JOIN suppliers s ON d.supplier_id = s.id $where_sql";
 $count_stmt = $pdo->prepare($count_sql);
-foreach ($bind_params as $key => $value) {
-    $count_stmt->bindValue($key, $value);
-}
+foreach ($bind_params as $key => $value) $count_stmt->bindValue($key, $value);
 $count_stmt->execute();
-
 $total_rows  = (int)$count_stmt->fetchColumn();
 $total_pages = max(1, ceil($total_rows / $rows_per_page));
-
-// Fix current page
-if ($current_page > $total_pages) {
-    $current_page = $total_pages;
-}
-
-// ==================================================
-// PAGINATION OFFSET
-// ==================================================
+if ($current_page > $total_pages) $current_page = $total_pages;
 $offset = ($current_page - 1) * $rows_per_page;
 if ($offset < 0) $offset = 0;
 
-// ==================================================
-// FETCH DEVICES DATA
-// ==================================================
+// Fetch Data (FULL COLUMNS)
 $data_sql = "
     SELECT
-        d.id,
-        d.ma_tai_san,
-        d.ten_thiet_bi,
-        d.trang_thai,
+        d.*,
         p.ten_du_an,
         s.ten_npp
     FROM devices d
@@ -116,44 +80,41 @@ $data_sql = "
     $order_sql
     LIMIT :limit OFFSET :offset
 ";
-
 $stmt = $pdo->prepare($data_sql);
-
-// Bind filter params
-foreach ($bind_params as $key => $value) {
-    $stmt->bindValue($key, $value);
-}
-
-// Bind pagination params (BẮT BUỘC INT)
+foreach ($bind_params as $key => $value) $stmt->bindValue($key, $value);
 $stmt->bindValue(':limit',  $rows_per_page, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-
 $stmt->execute();
 $devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// ==================================================
-// DATA FOR FILTER DROPDOWNS
-// ==================================================
-$projects = $pdo->query("
-    SELECT id, ten_du_an
-    FROM projects
-    ORDER BY ten_du_an
-")->fetchAll(PDO::FETCH_ASSOC);
+// Dropdown Data
+$projects = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du_an")->fetchAll(PDO::FETCH_ASSOC);
+$statuses = $pdo->query("SELECT DISTINCT trang_thai FROM devices ORDER BY trang_thai")->fetchAll(PDO::FETCH_ASSOC);
 
-$statuses = $pdo->query("
-    SELECT DISTINCT trang_thai
-    FROM devices
-    ORDER BY trang_thai
-")->fetchAll(PDO::FETCH_ASSOC);
+// ==================================================
+// COLUMN CONFIGURATION
+// ==================================================
+$all_columns = [
+    'ma_tai_san'   => ['label' => 'Mã Tài sản', 'default' => true],
+    'ten_thiet_bi' => ['label' => 'Tên Thiết bị', 'default' => true],
+    'loai_thiet_bi'=> ['label' => 'Loại', 'default' => false],
+    'model'        => ['label' => 'Model', 'default' => false],
+    'serial'       => ['label' => 'Serial', 'default' => false],
+    'ten_du_an'    => ['label' => 'Dự án', 'default' => true],
+    'ten_npp'      => ['label' => 'Nhà cung cấp', 'default' => true],
+    'ngay_mua'     => ['label' => 'Ngày mua', 'default' => false],
+    'gia_mua'      => ['label' => 'Giá mua', 'default' => false],
+    'bao_hanh_den' => ['label' => 'Hạn BH', 'default' => false],
+    'trang_thai'   => ['label' => 'Trạng thái', 'default' => true],
+];
 ?>
-
 
 <div class="page-header">
     <h2><i class="fas fa-server"></i> Danh sách Thiết bị</h2>
     <a href="index.php?page=devices/add" class="btn btn-primary"><i class="fas fa-plus"></i> Thêm mới</a>
 </div>
 
-<!-- Filter Section -->
+<!-- Filter & Toolbar -->
 <div class="card filter-section">
     <form action="index.php" method="GET" class="filter-form">
         <input type="hidden" name="page" value="devices/list">
@@ -184,20 +145,40 @@ $statuses = $pdo->query("
 
         <div class="filter-group">
             <label><i class="fas fa-search"></i> Tìm kiếm</label>
-            <input type="text" name="filter_keyword" placeholder="Mã TS, Tên thiết bị..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
+            <input type="text" name="filter_keyword" placeholder="Mã TS, Tên, Model..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
         </div>
 
-        <div class="filter-actions">
+        <div class="filter-actions" style="margin-left: auto;"> <!-- Push actions to right -->
             <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Lọc</button>
-            <a href="index.php?page=devices/list" class="btn btn-secondary" title="Xóa bộ lọc"><i class="fas fa-undo"></i></a>
+            <a href="index.php?page=devices/list" class="btn btn-secondary" title="Reset"><i class="fas fa-undo"></i></a>
+            
+            <!-- Column Selector Dropdown -->
+            <div class="column-selector-container">
+                <button type="button" class="btn btn-secondary" onclick="toggleColumnMenu()" title="Tùy chọn cột">
+                    <i class="fas fa-columns"></i> Cột
+                </button>
+                <div id="columnMenu" class="dropdown-menu">
+                    <div class="dropdown-header">Hiển thị cột</div>
+                    <div class="column-list">
+                        <?php foreach ($all_columns as $colKey => $colConfig): ?>
+                            <label class="column-item">
+                                <input type="checkbox" 
+                                       class="col-checkbox" 
+                                       data-target="<?php echo $colKey; ?>" 
+                                       <?php echo $colConfig['default'] ? 'checked' : ''; ?>>
+                                <?php echo htmlspecialchars($colConfig['label']); ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
         </div>
     </form>
 </div>
 
-<!-- Main form for actions like export -->
+<!-- Data Table -->
 <form action="index.php?page=devices/export" method="POST" id="devices-form">
     
-    <!-- Batch Actions Toolbar -->
     <div class="batch-actions" id="batch-actions" style="display: none;">
         <span class="selected-count-label">Đã chọn <strong id="selected-count">0</strong> thiết bị</span>
         <div class="action-buttons">
@@ -211,44 +192,37 @@ $statuses = $pdo->query("
     </div>
 
     <div class="table-container card">
-        <table class="content-table">
+        <table class="content-table" id="devicesTable">
             <thead>
                 <tr>
                     <th width="40"><input type="checkbox" id="select-all"></th>
-                    <?php
-                    $columns = [
-                        'ma_tai_san' => 'Mã Tài sản',
-                        'ten_thiet_bi' => 'Tên Thiết bị',
-                        'ten_du_an' => 'Dự án',
-                        'ten_npp' => 'Nhà cung cấp',
-                        'trang_thai' => 'Trạng thái'
-                    ];
-
-                    foreach ($columns as $col_name => $col_label) {
-                        $new_sort_order = 'ASC';
-                        $sort_icon = '<i class="fas fa-sort" style="color: #ccc;"></i>';
-                        
-                        if ($sort_by == $col_name) {
-                            $new_sort_order = ($sort_order == 'ASC') ? 'DESC' : 'ASC';
-                            $sort_icon = ($sort_order == 'ASC') ? '<i class="fas fa-sort-up"></i>' : '<i class="fas fa-sort-down"></i>';
-                        }
-                        
-                        // Preserve existing GET parameters
-                        $current_query_params = $_GET;
-                        $current_query_params['sort_by'] = $col_name;
-                        $current_query_params['sort_order'] = $new_sort_order;
-                        $sort_link = 'index.php?' . http_build_query($current_query_params);
-                        
-                        echo '<th><a href="' . $sort_link . '" class="sort-link">' . htmlspecialchars($col_label) . ' ' . $sort_icon . '</a></th>';
-                    }
-                    ?>
+                    <?php foreach ($all_columns as $colKey => $colConfig): ?>
+                        <th class="col-header" data-col="<?php echo $colKey; ?>">
+                            <?php 
+                                // Sort Link Logic
+                                $new_sort_order = 'ASC';
+                                $sort_icon = '<i class="fas fa-sort" style="opacity:0.3"></i>';
+                                if ($sort_by == $colKey) {
+                                    $new_sort_order = ($sort_order == 'ASC') ? 'DESC' : 'ASC';
+                                    $sort_icon = ($sort_order == 'ASC') ? '<i class="fas fa-sort-up"></i>' : '<i class="fas fa-sort-down"></i>';
+                                }
+                                $current_query = $_GET;
+                                $current_query['sort_by'] = $colKey;
+                                $current_query['sort_order'] = $new_sort_order;
+                                $sort_link = 'index.php?' . http_build_query($current_query);
+                            ?>
+                            <a href="<?php echo $sort_link; ?>" class="sort-link">
+                                <?php echo htmlspecialchars($colConfig['label']); ?> <?php echo $sort_icon; ?>
+                            </a>
+                        </th>
+                    <?php endforeach; ?>
                     <th width="120" class="text-center">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($devices)): ?>
                     <tr>
-                        <td colspan="7" class="empty-state">
+                        <td colspan="<?php echo count($all_columns) + 2; ?>" class="empty-state">
                             <i class="fas fa-search" style="font-size: 3rem; color: #e2e8f0; margin-bottom: 10px;"></i>
                             <p>Không tìm thấy thiết bị nào phù hợp.</p>
                         </td>
@@ -257,11 +231,25 @@ $statuses = $pdo->query("
                     <?php foreach ($devices as $device): ?>
                         <tr>
                             <td><input type="checkbox" name="selected_devices[]" value="<?php echo $device['id']; ?>" class="row-checkbox"></td>
-                            <td class="font-medium text-primary"><?php echo htmlspecialchars($device['ma_tai_san']); ?></td>
-                            <td><?php echo htmlspecialchars($device['ten_thiet_bi']); ?></td>
-                            <td><?php echo htmlspecialchars($device['ten_du_an']); ?></td>
-                            <td><?php echo htmlspecialchars($device['ten_npp']); ?></td>
-                            <td>
+                            
+                            <!-- DATA COLUMNS -->
+                            <td data-col="ma_tai_san" class="font-medium text-primary"><?php echo htmlspecialchars($device['ma_tai_san']); ?></td>
+                            <td data-col="ten_thiet_bi"><?php echo htmlspecialchars($device['ten_thiet_bi']); ?></td>
+                            <td data-col="loai_thiet_bi"><?php echo htmlspecialchars($device['loai_thiet_bi']); ?></td>
+                            <td data-col="model"><?php echo htmlspecialchars($device['model']); ?></td>
+                            <td data-col="serial"><?php echo htmlspecialchars($device['serial']); ?></td>
+                            <td data-col="ten_du_an"><?php echo htmlspecialchars($device['ten_du_an']); ?></td>
+                            <td data-col="ten_npp"><?php echo htmlspecialchars($device['ten_npp']); ?></td>
+                            <td data-col="ngay_mua"><?php echo $device['ngay_mua'] ? date('d/m/Y', strtotime($device['ngay_mua'])) : '-'; ?></td>
+                            <td data-col="gia_mua"><?php echo number_format($device['gia_mua']); ?></td>
+                            <td data-col="bao_hanh_den">
+                                <?php if($device['bao_hanh_den']): ?>
+                                    <span class="<?php echo (strtotime($device['bao_hanh_den']) < time()) ? 'text-danger' : 'text-success'; ?>">
+                                        <?php echo date('d/m/Y', strtotime($device['bao_hanh_den'])); ?>
+                                    </span>
+                                <?php else: echo '-'; endif; ?>
+                            </td>
+                            <td data-col="trang_thai">
                                 <?php 
                                     $statusClass = 'status-default';
                                     if ($device['trang_thai'] === 'Đang sử dụng') $statusClass = 'status-active';
@@ -270,15 +258,11 @@ $statuses = $pdo->query("
                                 ?>
                                 <span class="badge <?php echo $statusClass; ?>"><?php echo htmlspecialchars($device['trang_thai']); ?></span>
                             </td>
+
                             <td class="actions text-center">
                                 <a href="index.php?page=devices/view&id=<?php echo $device['id']; ?>" class="btn-icon" title="Xem"><i class="fas fa-eye"></i></a>
                                 <a href="index.php?page=devices/edit&id=<?php echo $device['id']; ?>" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
-                                <button type="button" 
-                                        class="btn-icon text-danger" 
-                                        title="Xóa"
-                                        onclick="openDeleteModal(<?php echo $device['id']; ?>, '<?php echo htmlspecialchars($device['ten_thiet_bi']); ?>', '<?php echo htmlspecialchars($device['ma_tai_san']); ?>')">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
+                                <button type="button" class="btn-icon text-danger" onclick="openDeleteModal(<?php echo $device['id']; ?>, '<?php echo htmlspecialchars($device['ten_thiet_bi']); ?>', '<?php echo htmlspecialchars($device['ma_tai_san']); ?>')"><i class="fas fa-trash-alt"></i></button>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -288,60 +272,44 @@ $statuses = $pdo->query("
     </div>
 </form>
 
-<!-- Pagination Section -->
+<!-- Pagination -->
 <div class="pagination-container">
     <div class="rows-per-page">
-        <form action="index.php" method="GET" class="rows-per-page-form">
+        <form action="index.php" method="GET">
             <input type="hidden" name="page" value="devices/list">
-            <?php foreach ($_GET as $key => $value): ?>
-                <?php if ($key !== 'limit' && $key !== 'page'): ?>
-                    <input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>">
-                <?php endif; ?>
-            <?php endforeach; ?>
+            <?php foreach ($_GET as $key => $value): if(!in_array($key, ['limit','page'])) { ?>
+                <input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>">
+            <?php } endforeach; ?>
             <label>Hiển thị</label>
             <select name="limit" onchange="this.form.submit()" class="form-select-sm">
-                <option value="5" <?php echo $rows_per_page == 5 ? 'selected' : ''; ?>>5</option>
-                <option value="10" <?php echo $rows_per_page == 10 ? 'selected' : ''; ?>>10</option>
-                <option value="25" <?php echo $rows_per_page == 25 ? 'selected' : ''; ?>>25</option>
-                <option value="50" <?php echo $rows_per_page == 50 ? 'selected' : ''; ?>>50</option>
+                <?php foreach([5,10,25,50] as $lim): ?>
+                    <option value="<?php echo $lim; ?>" <?php echo $rows_per_page == $lim ? 'selected' : ''; ?>><?php echo $lim; ?></option>
+                <?php endforeach; ?>
             </select>
         </form>
     </div>
-
     <div class="pagination-links">
         <?php
-        $query_params = $_GET;
-        unset($query_params['p']); 
+        $query_params = $_GET; unset($query_params['p']); 
         $base_url = 'index.php?' . http_build_query($query_params);
         ?>
-
         <a href="<?php echo $base_url . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-left"></i></a>
         <a href="<?php echo $base_url . '&p=' . ($current_page - 1); ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>"><i class="fas fa-angle-left"></i></a>
-
         <?php for ($i = max(1, $current_page - 2); $i <= min($total_pages, $current_page + 2); $i++): ?>
             <a href="<?php echo $base_url . '&p=' . $i; ?>" class="page-link <?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
         <?php endfor; ?>
-
         <a href="<?php echo $base_url . '&p=' . ($current_page + 1); ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>"><i class="fas fa-angle-right"></i></a>
         <a href="<?php echo $base_url . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-right"></i></a>
     </div>
 </div>
 
-<!-- BEAUTIFUL DELETE MODAL -->
+<!-- Delete Modal (Included from previous step) -->
 <div id="deleteDeviceModal" class="modal">
     <div class="modal-content delete-modal-content">
-        <div class="delete-modal-icon">
-            <i class="fas fa-exclamation-triangle"></i>
-        </div>
+        <div class="delete-modal-icon"><i class="fas fa-exclamation-triangle"></i></div>
         <h2 class="delete-modal-title">Xác nhận xóa thiết bị?</h2>
-        <p class="delete-modal-text">
-            Bạn đang yêu cầu xóa thiết bị <strong id="modal-device-name"></strong> (<span id="modal-device-code"></span>).
-        </p>
-        <div class="delete-alert-box">
-            <i class="fas fa-info-circle"></i> 
-            <span>Hành động này sẽ xóa vĩnh viễn thiết bị và <strong>tất cả dữ liệu liên quan</strong>. Không thể hoàn tác!</span>
-        </div>
-        
+        <p class="delete-modal-text">Bạn đang yêu cầu xóa thiết bị <strong id="modal-device-name"></strong> (<span id="modal-device-code"></span>).</p>
+        <div class="delete-alert-box"><i class="fas fa-info-circle"></i> <span>Hành động này sẽ xóa vĩnh viễn thiết bị và <strong>tất cả dữ liệu liên quan</strong>. Không thể hoàn tác!</span></div>
         <form id="delete-device-form" action="" method="POST" class="delete-modal-actions">
             <input type="hidden" name="confirm_delete" value="1">
             <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Hủy bỏ</button>
@@ -351,7 +319,65 @@ $statuses = $pdo->query("
 </div>
 
 <script>
-// Main List Functionality
+// --- COLUMN VISIBILITY LOGIC ---
+function toggleColumnMenu() {
+    document.getElementById('columnMenu').classList.toggle('show');
+}
+
+// Close menu when clicking outside
+document.addEventListener('click', function(e) {
+    const container = document.querySelector('.column-selector-container');
+    if (container && !container.contains(e.target)) {
+        document.getElementById('columnMenu').classList.remove('show');
+    }
+});
+
+const checkboxes = document.querySelectorAll('.col-checkbox');
+
+function updateColumns() {
+    const visibleCols = {};
+    checkboxes.forEach(cb => {
+        const target = cb.getAttribute('data-target');
+        const isVisible = cb.checked;
+        visibleCols[target] = isVisible;
+
+        // Toggle Header
+        const th = document.querySelector(`th[data-col="${target}"]`);
+        if(th) th.style.display = isVisible ? '' : 'none';
+
+        // Toggle Cells
+        const cells = document.querySelectorAll(`td[data-col="${target}"]`);
+        cells.forEach(cell => {
+            cell.style.display = isVisible ? '' : 'none';
+        });
+    });
+    
+    // Save to LocalStorage
+    localStorage.setItem('deviceColumns', JSON.stringify(visibleCols));
+}
+
+// Init Columns on Load
+document.addEventListener('DOMContentLoaded', function() {
+    const savedCols = JSON.parse(localStorage.getItem('deviceColumns'));
+    
+    if (savedCols) {
+        checkboxes.forEach(cb => {
+            const target = cb.getAttribute('data-target');
+            if (savedCols.hasOwnProperty(target)) {
+                cb.checked = savedCols[target];
+            }
+        });
+    }
+    
+    updateColumns(); // Apply state
+
+    // Attach listeners
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateColumns);
+    });
+});
+
+// --- EXISTING LIST LOGIC (Select All, etc.) ---
 document.addEventListener('DOMContentLoaded', function() {
     const selectAllCheckbox = document.getElementById('select-all');
     const rowCheckboxes = document.querySelectorAll('.row-checkbox');
@@ -360,7 +386,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateActionButtons() {
         const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
-        
         if (checkedCount > 0) {
             batchActions.style.display = 'flex';
             selectedCountSpan.textContent = checkedCount;
@@ -377,16 +402,12 @@ document.addEventListener('DOMContentLoaded', function() {
             updateActionButtons();
         });
     }
-
     rowCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
-            if (!this.checked) {
-                selectAllCheckbox.checked = false;
-            }
+            if (!this.checked) selectAllCheckbox.checked = false;
             updateActionButtons();
         });
     });
-
     updateActionButtons();
 });
 
@@ -395,18 +416,13 @@ function openDeleteModal(id, name, code) {
     document.getElementById('modal-device-name').textContent = name;
     document.getElementById('modal-device-code').textContent = code;
     document.getElementById('delete-device-form').action = 'index.php?page=devices/delete&id=' + id;
-    
     document.getElementById('deleteDeviceModal').classList.add('show');
 }
-
 function closeDeleteModal() {
     document.getElementById('deleteDeviceModal').classList.remove('show');
 }
-
-// Close modal when clicking outside
 window.onclick = function(event) {
-    const modal = document.getElementById('deleteDeviceModal');
-    if (event.target == modal) {
+    if (event.target == document.getElementById('deleteDeviceModal')) {
         closeDeleteModal();
     }
 }
