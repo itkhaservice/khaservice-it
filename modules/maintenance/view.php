@@ -79,31 +79,44 @@ $current_user_name = $_SESSION['username'] ?? 'IT Support';
 </div>
 
 <!-- ========================================================================== -->
-<!-- MẪU IN PHIẾU CÔNG TÁC -->
+<!-- MẪU IN PHIẾU CÔNG TÁC (LAYOUT A4 CHUẨN - 1 TRANG) -->
 <!-- ========================================================================== -->
 <div class="print-only">
-    <div class="a4-page-layout">
+    <div class="a4-page-wrapper">
         
-        <div class="print-main-content">
-            <!-- HEADER -->
-            <div class="p-header">
-                <div class="ph-left">
-                    <div class="ph-logo">KHASERVICE</div>
-                    <div class="ph-slogan">Building - Management - Service</div>
-                    <div class="ph-no">Số: <?php echo str_pad($log['id'], 4, '0', STR_PAD_LEFT); ?>/CT-P.IT/<?php echo date('Y'); ?></div>
-                </div>
-                <div class="ph-right">
-                    <div class="ph-date">TP. HCM, ngày <?php echo date('d'); ?> tháng <?php echo date('m'); ?> năm <?php echo date('Y'); ?></div>
-                </div>
-            </div>
+        <!-- NỘI DUNG CHÍNH -->
+        <div class="print-content-flow">
+            <!-- HEADER (Nén khoảng cách) -->
+            <table class="p-header-table" style="margin-bottom: 0; border-bottom: 2px solid #000;">
+                <!-- Dòng 1: Logo -->
+                <tr>
+                    <td colspan="2" style="padding-bottom: 0;">
+                        <img src="../uploads/system/logo.png" alt="Logo" style="width: 160px; height: auto; display: block;">
+                    </td>
+                </tr>
+                
+                <!-- Dòng 2: Số phiếu & Ngày tháng (Ngang hàng) -->
+                <tr>
+                    <td style="text-align: left; vertical-align: bottom; padding: 2px 0;">
+                        <div class="p-ticket-no-clean">Số: <?php echo str_pad($log['id'], 4, '0', STR_PAD_LEFT); ?>/CT-P.IT/<?php echo date('Y'); ?></div>
+                    </td>
+                    <td style="text-align: right; vertical-align: bottom; padding: 2px 0;">
+                        <div class="p-date">TP.HCM, ngày <?php echo date('d'); ?> tháng <?php echo date('m'); ?> năm <?php echo date('Y'); ?></div>
+                    </td>
+                </tr>
+            </table>
 
-            <div class="p-title">PHIẾU CÔNG TÁC</div>
+            <div class="p-title" style="margin: 5px 0 10px 0;">PHIẾU CÔNG TÁC</div>
 
             <!-- DETAIL TABLE -->
             <table class="p-table">
-                <colgroup><col style="width: 18%"><col style="width: 32%"><col style="width: 18%"><col style="width: 32%"></colgroup>
+                <colgroup>
+                    <col style="width: 18%;">
+                    <col style="width: 32%;">
+                    <col style="width: 18%;">
+                    <col style="width: 32%;">
+                </colgroup>
                 
-                <!-- HÀNG 1: DỰ ÁN & BỘ PHẬN -->
                 <tr>
                     <td class="pt-label">Dự Án:</td>
                     <td class="p-line-single"><?php echo htmlspecialchars($log['ten_du_an']); ?></td>
@@ -111,7 +124,6 @@ $current_user_name = $_SESSION['username'] ?? 'IT Support';
                     <td class="p-line-single">IT / Kỹ thuật</td>
                 </tr>
 
-                <!-- HÀNG 2: ĐỊA CHỈ & NGƯỜI ĐẠI DIỆN (2 DÒNG) -->
                 <tr>
                     <td class="pt-label-top">Địa chỉ:</td>
                     <td class="p-line-double"><?php echo htmlspecialchars($log['dia_chi_du_an'] ?? ''); ?></td>
@@ -119,29 +131,44 @@ $current_user_name = $_SESSION['username'] ?? 'IT Support';
                     <td class="p-line-double" style="text-transform: uppercase;"><?php echo htmlspecialchars($current_user_name); ?></td>
                 </tr>
 
-                <!-- HÀNG 3: ĐẠI DIỆN (1 DÒNG) & CÔNG VIỆC (2 DÒNG - START ROWSPAN) -->
                 <tr>
                     <td class="pt-label">Đại diện:</td>
                     <td class="p-line-single"><?php echo htmlspecialchars($log['client_name'] ?? ''); ?></td>
-                    
                     <td class="pt-label-top" rowspan="2">Công việc:</td>
-                    <td class="p-line-double" rowspan="2"><?php echo htmlspecialchars($log['work_type'] ?? 'Bảo trì / Sửa chữa'); ?></td>
+                    <td class="p-line-double" rowspan="2" style="height: 60px;"><?php echo htmlspecialchars($log['work_type'] ?? 'Bảo trì / Sửa chữa'); ?></td>
                 </tr>
 
-                <!-- HÀNG 4: ĐIỆN THOẠI (1 DÒNG) -->
                 <tr>
                     <td class="pt-label">Điện thoại:</td>
                     <td class="p-line-single"><?php echo htmlspecialchars($log['client_phone'] ?? ''); ?></td>
-                    <!-- Cột bên phải đã bị chiếm bởi rowspan của Công việc -->
                 </tr>
 
-                <tr><td colspan="4" style="padding: 8px 0;"><div style="border-top: 1.5pt solid #000;"></div></td></tr>
+                <tr><td colspan="4" style="padding: 10px 0;"><div style="border-top: 2px solid #000;"></div></td></tr>
 
-                <!-- HÀNG THIẾT BỊ -->
-                <tr><td class="pt-label">Thiết bị:</td><td class="p-line-single"><?php echo htmlspecialchars($log['ten_thiet_bi']); ?></td><td class="pt-label">TG sử dụng:</td><td class="p-line-single"><?php echo $usage_time_str; ?></td></tr>
-                <tr><td class="pt-label">TG yêu cầu:</td><td class="p-line-single"><?php echo date('H:i d/m/Y', strtotime($log['ngay_su_co'])); ?></td><td class="pt-label">Hỗ trợ lần cuối:</td><td class="p-line-single"><?php echo $last_support_str; ?></td></tr>
-                <tr><td class="pt-label">TG có mặt:</td><td class="p-line-single"><?php echo $log['arrival_time'] ? date('H:i d/m/Y', strtotime($log['arrival_time'])) : ''; ?></td><td class="pt-label">Công việc:</td><td class="p-line-single">Xử lý sự cố</td></tr>
-                <tr><td class="pt-label">TG hoàn thành:</td><td class="p-line-single"><?php echo $log['completion_time'] ? date('H:i d/m/Y', strtotime($log['completion_time'])) : ''; ?></td><td class="pt-label">Người thực hiện:</td><td class="p-line-single" style="text-transform: uppercase;"><?php echo htmlspecialchars($current_user_name); ?></td></tr>
+                <tr>
+                    <td class="pt-label">Thiết bị:</td>
+                    <td class="p-line-single"><strong><?php echo htmlspecialchars($log['ten_thiet_bi']); ?></strong></td>
+                    <td class="pt-label">TG sử dụng:</td>
+                    <td class="p-line-single"><?php echo $usage_time_str; ?></td>
+                </tr>
+                <tr>
+                    <td class="pt-label">TG yêu cầu:</td>
+                    <td class="p-line-single"><?php echo date('H:i d/m/Y', strtotime($log['ngay_su_co'])); ?></td>
+                    <td class="pt-label">Hỗ trợ lần cuối:</td>
+                    <td class="p-line-single"><?php echo $last_support_str; ?></td>
+                </tr>
+                <tr>
+                    <td class="pt-label">TG có mặt:</td>
+                    <td class="p-line-single"><?php echo $log['arrival_time'] ? date('H:i d/m/Y', strtotime($log['arrival_time'])) : ''; ?></td>
+                    <td class="pt-label">Công việc:</td>
+                    <td class="p-line-single">Xử lý sự cố</td>
+                </tr>
+                <tr>
+                    <td class="pt-label">TG hoàn thành:</td>
+                    <td class="p-line-single"><?php echo $log['completion_time'] ? date('H:i d/m/Y', strtotime($log['completion_time'])) : ''; ?></td>
+                    <td class="pt-label">Người thực hiện:</td>
+                    <td class="p-line-single" style="text-transform: uppercase;"><?php echo htmlspecialchars($current_user_name); ?></td>
+                </tr>
             </table>
 
             <!-- CONTENT BOXES -->
@@ -165,14 +192,17 @@ $current_user_name = $_SESSION['username'] ?? 'IT Support';
             </div>
         </div> 
 
+        <!-- FOOTER SIGNATURE (Sát lề dưới) -->
         <div class="print-footer-signature">
             <div class="p-sig">
                 <strong>ĐẠI DIỆN BAN QUẢN LÝ</strong><br>
                 <span>(Ký, ghi rõ họ tên)</span>
+                <div class="sig-space"></div>
             </div>
             <div class="p-sig">
                 <strong>NGƯỜI LẬP PHIẾU</strong><br>
                 <span>(Ký, ghi rõ họ tên)</span>
+                <div class="sig-space"></div>
             </div>
         </div>
     </div>
@@ -205,64 +235,164 @@ function togglePrintDebug() { document.body.classList.toggle('debug-print-mode')
 .profile-actions { padding: 0 20px 20px 20px; }
 .print-only { display: none; }
 
-/* DEBUG PRINT MODE */
-body.debug-print-mode { background: #555 !important; padding: 20px !important; }
+/* DEBUG PRINT MODE: Hiển thị đúng kích thước A4 trên màn hình */
+body.debug-print-mode { background: #555 !important; padding: 40px 0 !important; overflow: auto; }
 body.debug-print-mode .web-view, body.debug-print-mode .main-header, body.debug-print-mode .footer { display: none !important; }
 body.debug-print-mode .print-only { 
-    display: block !important; width: 210mm; height: 297mm; background: #fff; margin: 0 auto; 
-    padding: 10mm 15mm 5mm 15mm; position: relative; box-sizing: border-box; overflow: hidden; 
+    display: block !important; 
+    width: 210mm; 
+    height: 297mm; /* Cố định chiều cao A4 */
+    background: #fff; 
+    margin: 0 auto; 
+    padding: 0; 
+    box-shadow: 0 0 20px rgba(0,0,0,0.5); 
+    box-sizing: border-box;
+    position: relative;
 }
-body.debug-print-mode .a4-page-layout { height: 100%; display: flex; flex-direction: column; }
+body.debug-print-mode .a4-page-wrapper {
+    padding: 10mm; /* Giả lập margin 1cm */
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
 
-/* PRINT STYLES */
+/* PRINT STYLES CHÍNH THỨC */
 @media print {
-    @page { size: A4; margin: 5mm 15mm 5mm 15mm; } 
-    body { background: #fff !important; margin: 0; padding: 0; font-family: "Times New Roman", Times, serif; font-size: 13pt; color: #000; }
-    .web-view, .main-header, .footer, .page-header, footer { display: none !important; }
+    @page { 
+        size: A4; 
+        margin: 10mm; /* Giữ lề 1cm */
+    }
+    html, body {
+        height: 100%;
+        overflow: hidden !important; /* QUAN TRỌNG: Cắt bỏ mọi nội dung tràn sang trang 2 */
+        margin: 0; 
+        padding: 0;
+    }
+    body { background: #fff !important; font-family: "Times New Roman", Times, serif; font-size: 11pt; color: #000; }
+    .web-view, .main-header, .footer, .page-header, footer, .header-actions { display: none !important; }
     
-    .print-only { display: block !important; width: 100%; height: 287mm; position: relative; }
-    .a4-page-layout { height: 100%; display: flex; flex-direction: column; }
+    /* Hiển thị vùng in */
+    .print-only { 
+        display: block !important; 
+        width: 100%; 
+        /* Giảm xuống 270mm để tạo vùng an toàn tuyệt đối, tránh nhảy trang */
+        height: 270mm; 
+        box-sizing: border-box;
+        font-family: "Times New Roman", Times, serif;
+        font-size: 13pt;
+        color: #000;
+        line-height: 1.4;
+        overflow: hidden; /* Ẩn phần thừa nếu có */
+        position: relative;
+    }
 
-    .p-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
-    .ph-logo { font-size: 18pt; font-weight: bold; text-transform: uppercase; }
-    .ph-slogan { font-size: 11pt; font-style: italic; }
-    .p-title { text-align: center; font-size: 26pt; font-weight: bold; margin: 10px 0; text-transform: uppercase; }
+    .a4-page-wrapper {
+        width: 100%;
+        height: 100%; 
+        display: flex;
+        flex-direction: column;
+    }
 
-    .p-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-    .p-table td { padding: 0; margin: 0; vertical-align: top; }
+    /* Container chính của nội dung sẽ giãn ra để chiếm chỗ */
+    .print-content-flow {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* --- CÁC THÀNH PHẦN NỘI DUNG --- */
+    .p-header-table { width: 100%; margin-bottom: 5px; flex-shrink: 0; }
+    .p-header-table td { vertical-align: bottom; }
     
-    /* LABEL ALIGNMENT */
-    .pt-label { font-weight: bold; white-space: nowrap; width: 1%; padding-right: 15px; vertical-align: bottom; height: 30px; }
-    .pt-label-top { font-weight: bold; white-space: nowrap; width: 1%; padding-right: 15px; vertical-align: top; padding-top: 6px; }
+    .p-date { font-size: 13pt; font-style: italic; margin-bottom: 0; }
+    .p-ticket-no-clean { font-size: 13pt; font-weight: bold; margin-bottom: 0; }
+
+    .p-title { text-align: center; font-size: 24pt; font-weight: bold; margin: 5px 0 10px 0; text-transform: uppercase; flex-shrink: 0; }
+
+    .p-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; flex-shrink: 0; table-layout: fixed; }
+    .p-table td { padding: 0; margin: 0; vertical-align: bottom; } /* Căn đáy */
     
+    /* LABEL ALIGNMENT - ĐỒNG NHẤT LINE-HEIGHT VỚI DÒNG KẺ */
+    .pt-label { 
+        font-weight: bold; 
+        white-space: nowrap; 
+        padding-right: 5px; 
+        height: 30px; 
+        line-height: 30px; 
+        font-size: 13pt; 
+        vertical-align: bottom; 
+    }
+    
+    .pt-label-top { 
+        font-weight: bold; 
+        white-space: nowrap; 
+        padding-right: 5px; 
+        vertical-align: top !important; 
+        padding-top: 0; 
+        line-height: 30px; 
+        font-size: 13pt; 
+    }
+    
+    /* DÒNG KẺ NGANG */
     .p-line-single {
         padding-left: 5px; width: auto;
-        height: 30px; line-height: 30px;
+        height: 30px; 
+        line-height: 30px; 
         background-image: repeating-linear-gradient(transparent, transparent 29px, #000 30px);
         background-attachment: local;
+        font-size: 13pt;
+        vertical-align: bottom;
     }
     
     .p-line-double {
         padding-left: 5px; width: auto;
-        height: 60px; line-height: 30px;
+        height: 60px; 
+        line-height: 30px;
         background-image: repeating-linear-gradient(transparent, transparent 29px, #000 30px);
         background-attachment: local;
-        vertical-align: top;
+        vertical-align: top !important;
+        font-size: 13pt;
     }
 
+    /* Wrapper của các Box sẽ giãn hết cỡ */
     .p-content-boxes { 
-        display: flex; flex-direction: column; gap: 15px; 
-        flex-grow: 1; /* Tự động giãn */
-        min-height: 140mm; margin-bottom: 5px; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 10px; 
+        flex-grow: 1; /* Quan trọng: Giãn để lấp đầy trang */
+        overflow: hidden;
     }
+    
     .p-box { border: 1.5pt solid #000; display: flex; flex-direction: column; }
-    .box-short { height: 30%; }
-    .box-long { flex-grow: 1; }
+    
+    /* Box I giãn mạnh nhất */
+    .box-short { 
+        flex-grow: 2; 
+        min-height: 80px; 
+    } 
+    
+    /* Box II giãn vừa phải */
+    .box-long { 
+        flex-grow: 1.5; 
+        min-height: 80px; 
+    }
 
-    .pb-title { font-weight: bold; background: #f0f0f0 !important; padding: 8px 12px; border-bottom: 1.5pt solid #000; -webkit-print-color-adjust: exact; }
-    .pb-content { padding: 5px 15px; flex-grow: 1; background-image: repeating-linear-gradient(transparent, transparent 35px, #ccc 36px); line-height: 36px; background-attachment: local; }
+    .pb-title { font-weight: bold; background: #e0e0e0 !important; padding: 4px 8px; border-bottom: 1.5pt solid #000; -webkit-print-color-adjust: exact; font-size: 13pt; }
+    .pb-content { padding: 4px 8px; flex-grow: 1; background-image: repeating-linear-gradient(transparent, transparent 29px, #bbb 30px); line-height: 30px; background-attachment: local; font-size: 13pt; }
 
-    .print-footer-signature { display: flex; justify-content: space-between; height: 100px; position: absolute; bottom: 0; left: 0; width: 100%; border: none !important; padding-top: 10px; }
-    .p-sig { text-align: center; width: 45%; border: none !important; }
+    /* --- FOOTER CHỮ KÝ --- */
+    .print-footer-signature { 
+        display: flex; 
+        justify-content: space-between; 
+        width: 100%; 
+        margin-top: 5px;
+        flex-shrink: 0; 
+    }
+    .p-sig { text-align: center; width: 45%; font-size: 13pt; }
+    .sig-space { 
+        height: 3.5cm; /* Giảm còn 3.5cm để đảm bảo an toàn tuyệt đối cho 1 trang */
+    }
 }
 </style>
