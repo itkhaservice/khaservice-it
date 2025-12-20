@@ -2,7 +2,7 @@
 // ==================================================
 // PAGINATION CONFIG
 // ==================================================
-$rows_per_page = (isset($_GET['limit']) && is_numeric($_GET['limit'])) ? (int)$_GET['limit'] : 10;
+$rows_per_page = (isset($_GET['limit']) && is_numeric($_GET['limit'])) ? (int)$_GET['limit'] : 5;
 $current_page  = (isset($_GET['p']) && is_numeric($_GET['p'])) ? (int)$_GET['p'] : 1;
 if ($current_page < 1) $current_page = 1;
 
@@ -275,7 +275,7 @@ $all_columns = [
 <!-- Pagination -->
 <div class="pagination-container">
     <div class="rows-per-page">
-        <form action="index.php" method="GET">
+        <form action="index.php" method="GET" class="rows-per-page-form">
             <input type="hidden" name="page" value="devices/list">
             <?php foreach ($_GET as $key => $value): if(!in_array($key, ['limit','page'])) { ?>
                 <input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>">
@@ -286,6 +286,7 @@ $all_columns = [
                     <option value="<?php echo $lim; ?>" <?php echo $rows_per_page == $lim ? 'selected' : ''; ?>><?php echo $lim; ?></option>
                 <?php endforeach; ?>
             </select>
+            <span>dòng / trang</span>
         </form>
     </div>
     <div class="pagination-links">
