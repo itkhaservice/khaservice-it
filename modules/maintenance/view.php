@@ -2,11 +2,12 @@
 $log = null;
 if (isset($_GET['id'])) {
     $log_id = $_GET['id'];
-    // Cập nhật truy vấn: JOIN projects từ maintenance_logs.project_id
     $stmt = $pdo->prepare("
         SELECT ml.*, d.ma_tai_san, d.ten_thiet_bi, d.loai_thiet_bi, d.model, d.ngay_mua,
                COALESCE(p_log.ten_du_an, p_dev.ten_du_an) as ten_du_an, 
-               COALESCE(p_log.dia_chi, p_dev.dia_chi) as dia_chi_du_an, 
+               COALESCE(p_log.dia_chi_duong, p_dev.dia_chi_duong) as dia_chi_duong,
+               COALESCE(p_log.dia_chi_phuong_xa, p_dev.dia_chi_phuong_xa) as dia_chi_phuong_xa,
+               COALESCE(p_log.dia_chi_tinh_tp, p_dev.dia_chi_tinh_tp) as dia_chi_tinh_tp,
                d.trang_thai as trang_thai_tb
         FROM maintenance_logs ml
         LEFT JOIN devices d ON ml.device_id = d.id
@@ -26,38 +27,45 @@ if (!$log) {
 
 // Xử lý logic hiển thị
 $is_custom_device = empty($log['device_id']);
-
-// Tên hiển thị trên WEB (để quản lý)
 $web_display_name = $is_custom_device ? ($log['custom_device_name'] ?? "Hỗ trợ chung") : $log['ten_thiet_bi'];
 $web_display_code = $is_custom_device ? "N/A" : $log['ma_tai_san'];
-
-// Dữ liệu hiển thị trên PHIẾU IN (theo yêu cầu bỏ trống)
 $print_device_name = $is_custom_device ? "" : $log['ten_thiet_bi'];
-$print_usage_time = "";
 
+// Logic gộp địa chỉ hiển thị
+$addr_parts = [];
+if(!empty($log['dia_chi_duong'])) $addr_parts[] = $log['dia_chi_duong'];
+if(!empty($log['dia_chi_phuong_xa'])) $addr_parts[] = $log['dia_chi_phuong_xa'];
+if(!empty($log['dia_chi_tinh_tp'])) $addr_parts[] = $log['dia_chi_tinh_tp'];
+
+$display_address = !empty($addr_parts) ? implode(', ', $addr_parts) : "";
+$display_city = !empty($log['dia_chi_tinh_tp']) ? $log['dia_chi_tinh_tp'] : "TP.HCM";
+$display_project_name = !empty($log['ten_du_an']) ? $log['ten_du_an'] : "Khác / Không xác định";
+
+$print_usage_time = "";
 if (!$is_custom_device && !empty($log['ngay_mua'])) {
-    $purchase_date = new DateTime($log['ngay_mua']);
-    $now = new DateTime();
-    $interval = $purchase_date->diff($now);
-    $print_usage_time = ($interval->y > 0 ? $interval->y . " năm " : "") . ($interval->m > 0 ? $interval->m . " tháng" : "");
-    if ($print_usage_time == "") $print_usage_time = "Mới mua";
+    try {
+        $purchase_date = new DateTime($log['ngay_mua']);
+        $now = new DateTime();
+        $interval = $purchase_date->diff($now);
+        $print_usage_time = ($interval->y > 0 ? $interval->y . " năm " : "") . ($interval->m > 0 ? $interval->m . " tháng" : "");
+        if ($print_usage_time == "") $print_usage_time = "Mới mua";
+    } catch (Exception $e) { $print_usage_time = ""; }
 }
 
 // Lấy lần hỗ trợ cuối
 $last_support_str = 'Lần đầu';
+$stmt_last = null;
 if (!$is_custom_device) {
     $stmt_last = $pdo->prepare("SELECT ngay_su_co FROM maintenance_logs WHERE device_id = ? AND id < ? ORDER BY ngay_su_co DESC LIMIT 1");
     $stmt_last->execute([$log['device_id'], $log['id']]);
 } elseif (!empty($log['project_id'])) {
     $stmt_last = $pdo->prepare("SELECT ngay_su_co FROM maintenance_logs WHERE project_id = ? AND id < ? ORDER BY ngay_su_co DESC LIMIT 1");
     $stmt_last->execute([$log['project_id'], $log['id']]);
-} else {
-    $stmt_last = null;
 }
 
 if ($stmt_last) {
     $last_support_date = $stmt_last->fetchColumn();
-    $last_support_str = $last_support_date ? date('d/m/Y', strtotime($last_support_date)) : 'Lần đầu';
+    if ($last_support_date) $last_support_str = date('d/m/Y', strtotime($last_support_date));
 }
 
 $current_user_name = $_SESSION['username'] ?? 'IT Support';
@@ -99,7 +107,7 @@ $current_user_name = $_SESSION['username'] ?? 'IT Support';
                     </div>
                 </div>
                 <div class="profile-details">
-                    <div class="detail-row"><span class="d-label">Dự án</span><span class="d-value"><?php echo htmlspecialchars($log['ten_du_an']); ?></span></div>
+                    <div class="detail-row"><span class="d-label">Dự án</span><span class="d-value"><?php echo htmlspecialchars($display_project_name); ?></span></div>
                     <div class="detail-row"><span class="d-label">Đại diện dự án</span><span class="d-value"><?php echo htmlspecialchars($log['client_name'] ?? '---'); ?></span></div>
                     <div class="detail-row"><span class="d-label">Liên hệ</span><span class="d-value"><?php echo htmlspecialchars($log['client_phone'] ?? '---'); ?></span></div>
                     <div class="detail-row"><span class="d-label">TG Có mặt</span><span class="d-value"><?php echo $log['arrival_time'] ? date('H:i d/m/Y', strtotime($log['arrival_time'])) : '-'; ?></span></div>
@@ -121,22 +129,19 @@ $current_user_name = $_SESSION['username'] ?? 'IT Support';
         
         <!-- NỘI DUNG CHÍNH -->
         <div class="print-content-flow">
-            <!-- HEADER (Nén khoảng cách) -->
+            <!-- HEADER -->
             <table class="p-header-table" style="margin-bottom: 0; border-bottom: 2px solid #000;">
-                <!-- Dòng 1: Logo -->
                 <tr>
                     <td colspan="2" style="padding-bottom: 0;">
                         <img src="../uploads/system/logo.png" alt="Logo" style="width: 160px; height: auto; display: block;">
                     </td>
                 </tr>
-                
-                <!-- Dòng 2: Số phiếu & Ngày tháng (Ngang hàng) -->
                 <tr>
                     <td style="text-align: left; vertical-align: bottom; padding: 2px 0;">
                         <div class="p-ticket-no-clean">Số: <?php echo str_pad($log['id'], 4, '0', STR_PAD_LEFT); ?>/CT-P.IT/<?php echo date('Y'); ?></div>
                     </td>
                     <td style="text-align: right; vertical-align: bottom; padding: 2px 0;">
-                        <div class="p-date">TP.HCM, ngày <?php echo date('d'); ?> tháng <?php echo date('m'); ?> năm <?php echo date('Y'); ?></div>
+                        <div class="p-date"><?php echo htmlspecialchars($display_city); ?>, ngày <?php echo date('d'); ?> tháng <?php echo date('m'); ?> năm <?php echo date('Y'); ?></div>
                     </td>
                 </tr>
             </table>
@@ -145,41 +150,30 @@ $current_user_name = $_SESSION['username'] ?? 'IT Support';
 
             <!-- DETAIL TABLE -->
             <table class="p-table">
-                <colgroup>
-                    <col style="width: 18%;">
-                    <col style="width: 32%;">
-                    <col style="width: 18%;">
-                    <col style="width: 32%;">
-                </colgroup>
-                
+                <colgroup><col style="width: 18%;"><col style="width: 32%;"><col style="width: 18%;"><col style="width: 32%;"></colgroup>
                 <tr>
                     <td class="pt-label">Dự Án:</td>
-                    <td class="p-line-single"><?php echo htmlspecialchars($log['ten_du_an']); ?></td>
+                    <td class="p-line-single"><?php echo htmlspecialchars($display_project_name); ?></td>
                     <td class="pt-label">Bộ phận:</td>
                     <td class="p-line-single">IT / Kỹ thuật</td>
                 </tr>
-
                 <tr>
                     <td class="pt-label-top">Địa chỉ:</td>
-                    <td class="p-line-double"><?php echo htmlspecialchars($log['dia_chi_du_an'] ?? ''); ?></td>
+                    <td class="p-line-double"><?php echo htmlspecialchars($display_address); ?></td>
                     <td class="pt-label-top">Người đại diện:</td>
                     <td class="p-line-double" style="text-transform: uppercase;"><?php echo htmlspecialchars($current_user_name); ?></td>
                 </tr>
-
                 <tr>
                     <td class="pt-label">Đại diện:</td>
                     <td class="p-line-single"><?php echo htmlspecialchars($log['client_name'] ?? ''); ?></td>
                     <td class="pt-label-top" rowspan="2">Công việc:</td>
                     <td class="p-line-double" rowspan="2" style="height: 60px;"><?php echo htmlspecialchars($log['work_type'] ?? 'Bảo trì / Sửa chữa'); ?></td>
                 </tr>
-
                 <tr>
                     <td class="pt-label">Điện thoại:</td>
                     <td class="p-line-single"><?php echo htmlspecialchars($log['client_phone'] ?? ''); ?></td>
                 </tr>
-
                 <tr><td colspan="4" style="padding: 10px 0;"><div style="border-top: 2px solid #000;"></div></td></tr>
-
                 <tr>
                     <td class="pt-label">Thiết bị:</td>
                     <td class="p-line-single"><strong><?php echo htmlspecialchars($print_device_name); ?></strong></td>
@@ -210,11 +204,8 @@ $current_user_name = $_SESSION['username'] ?? 'IT Support';
             <div class="p-content-boxes">
                 <div class="p-box box-short">
                     <div class="pb-title">I. YÊU CẦU CỦA DỰ ÁN</div>
-                    <div class="pb-content lined-paper">
-                        <?php echo nl2br(htmlspecialchars($log['noi_dung'])); ?>
-                    </div>
+                    <div class="pb-content lined-paper"><?php echo nl2br(htmlspecialchars($log['noi_dung'])); ?></div>
                 </div>
-
                 <div class="p-box box-long">
                     <div class="pb-title">II. CÔNG VIỆC THỰC HIỆN / KẾT QUẢ</div>
                     <div class="pb-content lined-paper">
@@ -227,18 +218,9 @@ $current_user_name = $_SESSION['username'] ?? 'IT Support';
             </div>
         </div> 
 
-        <!-- FOOTER SIGNATURE (Sát lề dưới) -->
         <div class="print-footer-signature">
-            <div class="p-sig">
-                <strong>ĐẠI DIỆN BAN QUẢN LÝ</strong><br>
-                <span>(Ký, ghi rõ họ tên)</span>
-                <div class="sig-space"></div>
-            </div>
-            <div class="p-sig">
-                <strong>NGƯỜI LẬP PHIẾU</strong><br>
-                <span>(Ký, ghi rõ họ tên)</span>
-                <div class="sig-space"></div>
-            </div>
+            <div class="p-sig"><strong>ĐẠI DIỆN BAN QUẢN LÝ</strong><br><span>(Ký, ghi rõ họ tên)</span><div class="sig-space"></div></div>
+            <div class="p-sig"><strong>NGƯỜI LẬP PHIẾU</strong><br><span>(Ký, ghi rõ họ tên)</span><div class="sig-space"></div></div>
         </div>
     </div>
 </div>
@@ -272,167 +254,43 @@ function togglePrintDebug() { document.body.classList.toggle('debug-print-mode')
 /* CSS CHO PHẦN IN ẤN */
 .print-only { display: none; }
 
-/* DEBUG PRINT MODE: Hiển thị đúng kích thước A4 trên màn hình */
+/* DEBUG PRINT MODE */
 body.debug-print-mode { background: #555 !important; padding: 40px 0 !important; overflow: auto; }
 body.debug-print-mode .web-view, body.debug-print-mode .main-header, body.debug-print-mode .footer { display: none !important; }
 body.debug-print-mode .print-only { 
-    display: block !important; 
-    width: 210mm; 
-    height: 297mm; /* Cố định chiều cao A4 */
-    background: #fff; 
-    margin: 0 auto; 
-    padding: 0; 
-    box-shadow: 0 0 20px rgba(0,0,0,0.5); 
-    box-sizing: border-box;
-    position: relative;
+    display: block !important; width: 210mm; height: 297mm; background: #fff; margin: 0 auto; 
+    padding: 0; box-shadow: 0 0 20px rgba(0,0,0,0.5); box-sizing: border-box; position: relative;
 }
-body.debug-print-mode .a4-page-wrapper {
-    padding: 10mm; /* Giả lập margin 1cm */
-    height: 100%;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-}
+body.debug-print-mode .a4-page-wrapper { padding: 10mm; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
 
-/* PRINT STYLES CHÍNH THỨC */
+/* PRINT STYLES */
 @media print {
-    @page { 
-        size: A4; 
-        margin: 10mm; /* Giữ lề 1cm */
-    }
-    html, body {
-        height: 100%;
-        overflow: hidden !important; /* QUAN TRỌNG: Cắt bỏ mọi nội dung tràn sang trang 2 */
-        margin: 0; 
-        padding: 0;
-    }
+    @page { size: A4; margin: 10mm; }
+    html, body { height: 100%; overflow: hidden !important; margin: 0; padding: 0; }
     body { background: #fff !important; font-family: "Times New Roman", Times, serif; font-size: 11pt; color: #000; }
     .web-view, .main-header, .footer, .page-header, footer, .header-actions { display: none !important; }
-    
-    /* Hiển thị vùng in */
-    .print-only { 
-        display: block !important; 
-        width: 100%; 
-        /* Giảm xuống 270mm để tạo vùng an toàn tuyệt đối, tránh nhảy trang */
-        height: 270mm; 
-        box-sizing: border-box;
-        font-family: "Times New Roman", Times, serif;
-        font-size: 13pt;
-        color: #000;
-        line-height: 1.4;
-        overflow: hidden; /* Ẩn phần thừa nếu có */
-        position: relative;
-    }
-
-    .a4-page-wrapper {
-        width: 100%;
-        height: 100%; 
-        display: flex;
-        flex-direction: column;
-    }
-
-    /* Container chính của nội dung sẽ giãn ra để chiếm chỗ */
-    .print-content-flow {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    }
-
-    /* --- CÁC THÀNH PHẦN NỘI DUNG --- */
+    .print-only { display: block !important; width: 100%; height: 270mm; box-sizing: border-box; font-family: "Times New Roman", Times, serif; font-size: 13pt; color: #000; line-height: 1.4; overflow: hidden; position: relative; }
+    .a4-page-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; }
+    .print-content-flow { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
     .p-header-table { width: 100%; margin-bottom: 5px; flex-shrink: 0; }
     .p-header-table td { vertical-align: bottom; }
-    
     .p-date { font-size: 13pt; font-style: italic; margin-bottom: 0; }
     .p-ticket-no-clean { font-size: 13pt; font-weight: bold; margin-bottom: 0; }
-
     .p-title { text-align: center; font-size: 24pt; font-weight: bold; margin: 5px 0 10px 0; text-transform: uppercase; flex-shrink: 0; }
-
     .p-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; flex-shrink: 0; table-layout: fixed; }
-    .p-table td { padding: 0; margin: 0; vertical-align: bottom; } /* Căn đáy */
-    
-    /* LABEL ALIGNMENT - ĐỒNG NHẤT LINE-HEIGHT VỚI DÒNG KẺ */
-    .pt-label { 
-        font-weight: bold; 
-        white-space: nowrap; 
-        padding-right: 5px; 
-        height: 30px; 
-        line-height: 30px; 
-        font-size: 13pt; 
-        vertical-align: bottom; 
-    }
-    
-    .pt-label-top { 
-        font-weight: bold; 
-        white-space: nowrap; 
-        padding-right: 5px; 
-        vertical-align: top !important; 
-        padding-top: 0; 
-        line-height: 30px; 
-        font-size: 13pt; 
-    }
-    
-    /* DÒNG KẺ NGANG */
-    .p-line-single {
-        padding-left: 5px; width: auto;
-        height: 30px; 
-        line-height: 30px; 
-        background-image: repeating-linear-gradient(transparent, transparent 29px, #000 30px);
-        background-attachment: local;
-        font-size: 13pt;
-        vertical-align: bottom;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-    }
-    
-    .p-line-double {
-        padding-left: 5px; width: auto;
-        height: 60px; 
-        line-height: 30px;
-        background-image: repeating-linear-gradient(transparent, transparent 29px, #000 30px);
-        background-attachment: local;
-        vertical-align: top !important;
-        font-size: 13pt;
-    }
-
-    /* Wrapper của các Box sẽ giãn hết cỡ */
-    .p-content-boxes { 
-        display: flex; 
-        flex-direction: column; 
-        gap: 10px; 
-        flex-grow: 1; /* Quan trọng: Giãn để lấp đầy trang */
-        overflow: hidden;
-    }
-    
+    .p-table td { padding: 0; margin: 0; vertical-align: bottom; }
+    .pt-label { font-weight: bold; white-space: nowrap; padding-right: 5px; height: 30px; line-height: 30px; font-size: 13pt; vertical-align: bottom; }
+    .pt-label-top { font-weight: bold; white-space: nowrap; padding-right: 5px; vertical-align: top !important; padding-top: 0; line-height: 30px; font-size: 13pt; }
+    .p-line-single { padding-left: 5px; width: auto; height: 30px; line-height: 30px; background-image: repeating-linear-gradient(transparent, transparent 29px, #000 30px); background-attachment: local; font-size: 13pt; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; vertical-align: bottom; }
+    .p-line-double { padding-left: 5px; width: auto; height: 60px; line-height: 30px; background-image: repeating-linear-gradient(transparent, transparent 29px, #000 30px); background-attachment: local; vertical-align: top !important; font-size: 13pt; }
+    .p-content-boxes { display: flex; flex-direction: column; gap: 10px; flex-grow: 1; overflow: hidden; }
     .p-box { border: 1.5pt solid #000; display: flex; flex-direction: column; }
-    
-    /* Box I giãn mạnh nhất */
-    .box-short { 
-        flex-grow: 2; 
-        min-height: 80px; 
-    } 
-    
-    /* Box II giãn vừa phải */
-    .box-long { 
-        flex-grow: 1.5; 
-        min-height: 80px; 
-    }
-
+    .box-short { flex-grow: 2; min-height: 80px; } 
+    .box-long { flex-grow: 1.5; min-height: 80px; }
     .pb-title { font-weight: bold; background: #e0e0e0 !important; padding: 4px 8px; border-bottom: 1.5pt solid #000; -webkit-print-color-adjust: exact; font-size: 13pt; }
     .pb-content { padding: 4px 8px; flex-grow: 1; background-image: repeating-linear-gradient(transparent, transparent 29px, #bbb 30px); line-height: 30px; background-attachment: local; font-size: 13pt; }
-
-    /* --- FOOTER CHỮ KÝ --- */
-    .print-footer-signature { 
-        display: flex; 
-        justify-content: space-between; 
-        width: 100%; 
-        margin-top: 5px;
-        flex-shrink: 0; 
-    }
+    .print-footer-signature { display: flex; justify-content: space-between; width: 100%; margin-top: 5px; flex-shrink: 0; }
     .p-sig { text-align: center; width: 45%; font-size: 13pt; }
-    .sig-space { 
-        height: 3.5cm; /* Giảm còn 3.5cm để đảm bảo an toàn tuyệt đối cho 1 trang */
-    }
+    .sig-space { height: 3.5cm; }
 }
 </style>

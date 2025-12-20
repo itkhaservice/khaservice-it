@@ -95,20 +95,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <p class="error"><?= htmlspecialchars($error) ?></p>
                 <?php endif; ?>
                 <form method="POST">
-                    <div class="form-group">
-                        <label for="username">Tên đăng nhập</label>
-                        <input type="text" id="username" name="username" placeholder="Tên đăng nhập"
-                               value="<?= htmlspecialchars($_POST['username'] ?? '') ?>" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Mật khẩu</label>
-                        <input type="password" id="password" name="password" placeholder="Mật khẩu" required>
-                    </div>
-                    <div class="form-group remember-me">
-                        <input type="checkbox" id="remember_me" name="remember_me" value="1">
-                        <label for="remember_me">Ghi nhớ đăng nhập</label>
-                    </div>
-                    <button type="submit">Đăng nhập</button>
+            <div class="login-form-group">
+                <label for="username">Tên đăng nhập</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" name="username" required placeholder="Nhập username" autocomplete="username">
+                </div>
+            </div>
+
+            <div class="login-form-group">
+                <label for="password">Mật khẩu</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" name="password" required placeholder="Nhập mật khẩu" autocomplete="current-password">
+                </div>
+            </div>
+
+            <div class="remember-me-container">
+                <input type="checkbox" id="remember_me" name="remember_me" value="1">
+                <label for="remember_me">Ghi nhớ đăng nhập</label>
+            </div>
+
+            <button type="submit" class="btn-login">Đăng nhập</button>
                 </form>
             </div>
         </div>

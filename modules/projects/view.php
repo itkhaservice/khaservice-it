@@ -57,7 +57,12 @@ $total_devices = $stmt_count->fetchColumn();
 
                     <div class="info-item full-width">
                         <span class="info-label"><i class="fas fa-map-marker-alt"></i> Địa chỉ</span>
-                        <span class="info-value"><?php echo htmlspecialchars($project['dia_chi']); ?></span>
+                        <span class="info-value">
+                            <?php 
+                                $addr = array_filter([$project['dia_chi_duong'], $project['dia_chi_phuong_xa'], $project['dia_chi_tinh_tp']]);
+                                echo htmlspecialchars(!empty($addr) ? implode(', ', $addr) : 'Chưa cập nhật địa chỉ');
+                            ?>
+                        </span>
                     </div>
                     
                     <div class="info-item full-width">

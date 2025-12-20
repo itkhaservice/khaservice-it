@@ -4,11 +4,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_message('error', 'Vui lòng nhập Mã và Tên dự án.');
     } else {
         try {
-            $stmt = $pdo->prepare("INSERT INTO projects (ma_du_an, ten_du_an, dia_chi, loai_du_an, ghi_chu) VALUES (?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO projects (ma_du_an, ten_du_an, dia_chi_duong, dia_chi_phuong_xa, dia_chi_tinh_tp, loai_du_an, ghi_chu) VALUES (?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $_POST['ma_du_an'],
                 $_POST['ten_du_an'],
-                $_POST['dia_chi'],
+                $_POST['dia_chi_duong'],
+                $_POST['dia_chi_phuong_xa'],
+                $_POST['dia_chi_tinh_tp'],
                 $_POST['loai_du_an'],
                 $_POST['ghi_chu']
             ]);
@@ -60,9 +62,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label for="dia_chi">Địa chỉ</label>
-                        <input type="text" id="dia_chi" name="dia_chi" value="<?php echo htmlspecialchars($_POST['dia_chi'] ?? ''); ?>">
+                    <!-- ĐỊA CHỈ PHÂN TÁCH -->
+                    <div class="form-group full-width">
+                        <label style="font-weight: 700; color: var(--primary-color); margin-bottom: 10px; display: block;">Địa chỉ chi tiết</label>
+                        <div class="address-grid">
+                            <div class="address-item">
+                                <label for="dia_chi_duong">Số nhà / Đường</label>
+                                <input type="text" id="dia_chi_duong" name="dia_chi_duong" placeholder="VD: 123 Lê Lợi" value="<?php echo htmlspecialchars($_POST['dia_chi_duong'] ?? ''); ?>">
+                            </div>
+                            <div class="address-item">
+                                <label for="dia_chi_phuong_xa">Phường / Xã</label>
+                                <input type="text" id="dia_chi_phuong_xa" name="dia_chi_phuong_xa" placeholder="VD: Phường 1" value="<?php echo htmlspecialchars($_POST['dia_chi_phuong_xa'] ?? ''); ?>">
+                            </div>
+                            <div class="address-item">
+                                <label for="dia_chi_tinh_tp">Quận / Huyện / Tỉnh / TP</label>
+                                <input type="text" id="dia_chi_tinh_tp" name="dia_chi_tinh_tp" placeholder="VD: Quận 1, TP.HCM" value="<?php echo htmlspecialchars($_POST['dia_chi_tinh_tp'] ?? ''); ?>">
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group full-width">
@@ -76,6 +92,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <style>
+.address-grid {
+    display: flex;
+    gap: 20px;
+    margin-top: 5px;
+}
+.address-item {
+    flex: 1;
+}
+.address-item label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: #94a3b8;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
+}
 .card-header-custom {
     padding-bottom: 15px;
     margin-bottom: 20px;
@@ -92,5 +124,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     border-color: #cbd5e1;
     font-weight: 600;
     color: var(--primary-dark-color);
+}
+@media (max-width: 768px) {
+    .address-grid { flex-direction: column; gap: 10px; }
 }
 </style>

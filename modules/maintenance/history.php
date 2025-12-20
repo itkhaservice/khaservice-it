@@ -1,255 +1,200 @@
 <?php
-// ==================================================
-// PAGINATION CONFIG
-// ==================================================
-$rows_per_page = (isset($_GET['limit']) && is_numeric($_GET['limit'])) ? (int)$_GET['limit'] : 10;
+$rows_per_page = (isset($_GET['limit']) && is_numeric($_GET['limit'])) ? (int)$_GET['limit'] : 5;
 $current_page  = (isset($_GET['p']) && is_numeric($_GET['p'])) ? (int)$_GET['p'] : 1;
 if ($current_page < 1) $current_page = 1;
 
-// ==================================================
-// FILTER INPUT
-// ==================================================
 $filter_keyword = trim($_GET['filter_keyword'] ?? '');
 $filter_project = trim($_GET['filter_project'] ?? '');
-$filter_group   = trim($_GET['filter_group'] ?? '');
 $filter_date_from = trim($_GET['filter_date_from'] ?? '');
 $filter_date_to   = trim($_GET['filter_date_to'] ?? '');
 
-// ==================================================
-// BUILD QUERY
-// ==================================================
 $where_clauses = [];
 $bind_params   = [];
 
-// Keyword Search (Tìm trong tên TB, mã tài sản, tên tùy chỉnh, nội dung...)
 if ($filter_keyword !== '') {
-    $where_clauses[] = "(d.ten_thiet_bi LIKE :kw OR d.ma_tai_san LIKE :kw OR ml.custom_device_name LIKE :kw OR ml.noi_dung LIKE :kw OR ml.hu_hong LIKE :kw OR ml.xu_ly LIKE :kw)";
-    $bind_params[':kw'] = '%' . $filter_keyword . '%';
+    $where_clauses[] = "(d.ten_thiet_bi LIKE :kw1 OR d.ma_tai_san LIKE :kw2 OR ml.custom_device_name LIKE :kw3 OR ml.noi_dung LIKE :kw4 OR ml.hu_hong LIKE :kw5 OR ml.xu_ly LIKE :kw6)";
+    $bind_params[':kw1'] = $bind_params[':kw2'] = $bind_params[':kw3'] = $bind_params[':kw4'] = $bind_params[':kw5'] = $bind_params[':kw6'] = '%' . $filter_keyword . '%';
 }
-
-// Filter by Project (Lấy trực tiếp từ maintenance_logs.project_id)
 if ($filter_project !== '' && is_numeric($filter_project)) {
     $where_clauses[] = "ml.project_id = :project_id";
     $bind_params[':project_id'] = (int)$filter_project;
 }
-
-// Filter by Device Group
-if ($filter_group !== '') {
-    $where_clauses[] = "d.nhom_thiet_bi = :group";
-    $bind_params[':group'] = $filter_group;
-}
-
-// Filter by Date Range
-if ($filter_date_from !== '') {
-    $where_clauses[] = "ml.ngay_su_co >= :date_from";
-    $bind_params[':date_from'] = $filter_date_from;
-}
-if ($filter_date_to !== '') {
-    $where_clauses[] = "ml.ngay_su_co <= :date_to";
-    $bind_params[':date_to'] = $filter_date_to;
-}
+if ($filter_date_from !== '') { $where_clauses[] = "ml.ngay_su_co >= :date_from"; $bind_params[':date_from'] = $filter_date_from; }
+if ($filter_date_to !== '') { $where_clauses[] = "ml.ngay_su_co <= :date_to"; $bind_params[':date_to'] = $filter_date_to; }
 
 $where_sql = !empty($where_clauses) ? ' WHERE ' . implode(' AND ', $where_clauses) : '';
 
-// Sorting
-$allowed_sort_columns = [
-    'ten_thiet_bi' => 'd.ten_thiet_bi',
-    'ma_tai_san'   => 'd.ma_tai_san',
-    'ngay_su_co'   => 'ml.ngay_su_co',
-    'chi_phi'      => 'ml.chi_phi',
-    'ten_du_an'    => 'p.ten_du_an'
-];
-$sort_by    = $_GET['sort_by'] ?? 'ngay_su_co';
-$sort_order = strtoupper($_GET['sort_order'] ?? 'DESC');
-if (!array_key_exists($sort_by, $allowed_sort_columns)) $sort_by = 'ngay_su_co';
-if (!in_array($sort_order, ['ASC', 'DESC'])) $sort_order = 'DESC';
-$order_sql = " ORDER BY {$allowed_sort_columns[$sort_by]} $sort_order";
-
-// Count Total
-$count_sql = "
-    SELECT COUNT(ml.id) 
-    FROM maintenance_logs ml 
-    LEFT JOIN devices d ON ml.device_id = d.id 
-    LEFT JOIN projects p ON ml.project_id = p.id
-    $where_sql
-";
+$count_sql = "SELECT COUNT(*) FROM maintenance_logs ml LEFT JOIN devices d ON ml.device_id = d.id $where_sql";
 $count_stmt = $pdo->prepare($count_sql);
-foreach ($bind_params as $key => $value) $count_stmt->bindValue($key, $value);
+foreach ($bind_params as $k => $v) $count_stmt->bindValue($k, $v);
 $count_stmt->execute();
 $total_rows  = (int)$count_stmt->fetchColumn();
 $total_pages = max(1, ceil($total_rows / $rows_per_page));
 if ($current_page > $total_pages) $current_page = $total_pages;
 $offset = ($current_page - 1) * $rows_per_page;
-if ($offset < 0) $offset = 0;
 
-// Fetch Data (Ưu tiên lấy dự án từ log, tên đối tượng từ custom_name)
-$data_sql = "
-    SELECT ml.*, d.ma_tai_san, d.ten_thiet_bi, d.nhom_thiet_bi, p.ten_du_an 
-    FROM maintenance_logs ml 
-    LEFT JOIN devices d ON ml.device_id = d.id 
-    LEFT JOIN projects p ON ml.project_id = p.id
-    $where_sql 
-    $order_sql 
-    LIMIT :limit OFFSET :offset
-";
+$data_sql = "SELECT ml.*, d.ma_tai_san, d.ten_thiet_bi, d.nhom_thiet_bi, p.ten_du_an FROM maintenance_logs ml LEFT JOIN devices d ON ml.device_id = d.id LEFT JOIN projects p ON ml.project_id = p.id $where_sql ORDER BY ml.ngay_su_co DESC LIMIT :limit OFFSET :offset";
 $stmt = $pdo->prepare($data_sql);
-foreach ($bind_params as $key => $value) $stmt->bindValue($key, $value);
+foreach ($bind_params as $k => $v) $stmt->bindValue($k, $v);
 $stmt->bindValue(':limit',  $rows_per_page, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
 $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Dropdown Data
-$projects_filter = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du_an")->fetchAll(PDO::FETCH_ASSOC);
+$projects_list = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du_an")->fetchAll(PDO::FETCH_ASSOC);
 
-// Column Config
 $all_columns = [
     'ten_thiet_bi' => ['label' => 'Thiết bị / Đối tượng', 'default' => true],
     'ma_tai_san'   => ['label' => 'Mã Tài sản', 'default' => true],
     'ten_du_an'    => ['label' => 'Dự án', 'default' => true],
-    'nhom_thiet_bi'=> ['label' => 'Nhóm', 'default' => false],
     'ngay_su_co'   => ['label' => 'Ngày yêu cầu', 'default' => true],
-    'noi_dung'     => ['label' => 'Mô tả', 'default' => true],
     'chi_phi'      => ['label' => 'Chi phí', 'default' => true]
 ];
 ?>
 
 <div class="page-header">
-    <h2><i class="fas fa-history"></i> Lịch sử Hỗ trợ & Bảo trì</h2>
-    <a href="index.php?page=maintenance/add" class="btn btn-primary"><i class="fas fa-plus"></i> Tạo Phiếu mới</a>
+    <h2><i class="fas fa-history"></i> Lịch sử Bảo trì</h2>
+    <?php if(isIT()): ?><a href="index.php?page=maintenance/add" class="btn btn-primary"><i class="fas fa-plus"></i> Tạo Phiếu</a><?php endif; ?>
 </div>
 
-<!-- Filter & Toolbar -->
 <div class="card filter-section">
     <form action="index.php" method="GET" class="filter-form">
         <input type="hidden" name="page" value="maintenance/history">
-        
         <div class="filter-group">
-            <label><i class="fas fa-building"></i> Dự án</label>
+            <label>Dự án</label>
             <select name="filter_project">
                 <option value="">-- Tất cả --</option>
-                <?php foreach ($projects_filter as $p): ?>
-                    <option value="<?php echo $p['id']; ?>" <?php echo ($filter_project == $p['id']) ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($p['ten_du_an']); ?>
-                    </option>
+                <?php foreach ($projects_list as $p): ?>
+                    <option value="<?php echo $p['id']; ?>" <?php echo ($filter_project == $p['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($p['ten_du_an']); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
-
-        <div class="filter-group">
-            <label><i class="far fa-calendar-alt"></i> Từ ngày</label>
-            <input type="date" name="filter_date_from" value="<?php echo htmlspecialchars($filter_date_from); ?>">
-        </div>
-
-        <div class="filter-group">
-            <label><i class="far fa-calendar-alt"></i> Đến ngày</label>
-            <input type="date" name="filter_date_to" value="<?php echo htmlspecialchars($filter_date_to); ?>">
-        </div>
-
-        <div class="filter-group" style="flex: 2; min-width: 250px;">
-            <label><i class="fas fa-search"></i> Tìm kiếm</label>
-            <input type="text" name="filter_keyword" placeholder="Thiết bị, nội dung, yêu cầu..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
-        </div>
-
-        <div class="filter-actions">
-            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Lọc</button>
-            <a href="index.php?page=maintenance/history" class="btn btn-secondary" title="Reset"><i class="fas fa-undo"></i></a>
+        <div class="filter-group" style="flex: 2;"><label>Tìm kiếm</label><input type="text" name="filter_keyword" value="<?php echo htmlspecialchars($filter_keyword); ?>"></div>
+        <div class="filter-actions" style="margin-left: auto;">
+            <button type="submit" class="btn btn-primary">Lọc</button>
+            <a href="index.php?page=maintenance/history" class="btn btn-secondary"><i class="fas fa-undo"></i></a>
+            <div class="column-selector-container">
+                <button type="button" class="btn btn-secondary" onclick="toggleColumnMenu()"><i class="fas fa-columns"></i> Cột</button>
+                <div id="columnMenu" class="dropdown-menu">
+                    <div class="dropdown-header">Hiển thị cột</div>
+                    <div class="column-list">
+                        <?php foreach ($all_columns as $k => $c): ?>
+                            <label class="column-item"><input type="checkbox" class="col-checkbox" data-target="<?php echo $k; ?>" <?php echo $c['default'] ? 'checked' : ''; ?>> <?php echo htmlspecialchars($c['label']); ?></label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
         </div>
     </form>
 </div>
 
-<!-- Data Table -->
-<div class="table-container card">
-    <table class="content-table" id="maintenanceTable">
-        <thead>
-            <tr>
-                <?php foreach ($all_columns as $colKey => $colConfig): ?>
-                    <th class="col-header" data-col="<?php echo $colKey; ?>">
-                        <?php echo htmlspecialchars($colConfig['label']); ?>
-                    </th>
-                <?php endforeach; ?>
-                <th width="100" class="text-center">Thao tác</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (empty($logs)): ?>
+<form action="index.php?page=maintenance/export" method="POST" id="maintenance-form">
+    <div class="batch-actions" id="batch-actions" style="display: none;">
+        <span class="selected-count-label">Đã chọn <strong id="selected-count">0</strong> mục</span>
+        <div class="action-buttons">
+            <button type="button" class="btn btn-secondary btn-sm" id="clear-selection-btn"><i class="fas fa-times"></i> Bỏ chọn</button>
+            <button type="submit" name="export_selected" class="btn btn-secondary btn-sm"><i class="fas fa-file-export"></i> Xuất file</button>
+            <?php if(isAdmin()): ?>
+                <button type="button" class="btn btn-danger btn-sm" id="delete-selected-btn">Xóa đã chọn</button>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="table-container card">
+        <table class="content-table" id="maintenanceTable">
+            <thead>
                 <tr>
-                    <td colspan="<?php echo count($all_columns) + 1; ?>" class="empty-state">
-                        <i class="fas fa-clipboard-list" style="font-size: 3rem; color: #e2e8f0; margin-bottom: 10px;"></i>
-                        <p>Không tìm thấy dữ liệu.</p>
-                    </td>
+                    <th width="40"><input type="checkbox" id="select-all"></th>
+                    <?php foreach ($all_columns as $k => $c): ?>
+                        <th data-col="<?php echo $k; ?>"><?php echo htmlspecialchars($c['label']); ?></th>
+                    <?php endforeach; ?>
+                    <th width="100" class="text-center">Thao tác</th>
                 </tr>
-            <?php else: ?>
-                <?php foreach ($logs as $log): ?>
-                    <?php 
-                        $display_name = !empty($log['device_id']) ? $log['ten_thiet_bi'] : ($log['custom_device_name'] ?: "Hỗ trợ chung");
-                        $display_code = !empty($log['device_id']) ? $log['ma_tai_san'] : "N/A";
-                    ?>
+            </thead>
+            <tbody>
+                <?php foreach ($logs as $log): 
+                    $d_name = !empty($log['device_id']) ? $log['ten_thiet_bi'] : ($log['custom_device_name'] ?: "Hỗ trợ chung");
+                    $d_code = !empty($log['device_id']) ? $log['ma_tai_san'] : "N/A";
+                ?>
                     <tr>
-                        <td data-col="ten_thiet_bi" class="font-bold"><?php echo htmlspecialchars($display_name); ?></td>
-                        <td data-col="ma_tai_san" class="font-medium text-primary"><?php echo htmlspecialchars($display_code); ?></td>
-                        <td data-col="ten_du_an" class="text-muted"><?php echo htmlspecialchars($log['ten_du_an'] ?: "N/A"); ?></td>
-                        <td data-col="nhom_thiet_bi"><?php echo htmlspecialchars($log['nhom_thiet_bi'] ?: "---"); ?></td>
+                        <td><input type="checkbox" name="ids[]" value="<?php echo $log['id']; ?>" class="row-checkbox"></td>
+                        <td data-col="ten_thiet_bi" class="font-bold"><?php echo htmlspecialchars($d_name); ?></td>
+                        <td data-col="ma_tai_san" class="text-primary"><?php echo htmlspecialchars($d_code); ?></td>
+                        <td data-col="ten_du_an"><?php echo htmlspecialchars($log['ten_du_an']); ?></td>
                         <td data-col="ngay_su_co"><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></td>
-                        <td data-col="noi_dung" class="text-muted small"><?php echo htmlspecialchars($log['noi_dung']); ?></td>
                         <td data-col="chi_phi" class="font-bold text-warning"><?php echo number_format($log['chi_phi']); ?> ₫</td>
-                        
                         <td class="actions text-center">
-                            <a href="index.php?page=maintenance/view&id=<?php echo $log['id']; ?>" class="btn-icon" title="Xem"><i class="fas fa-eye"></i></a>
-                            <a href="index.php?page=maintenance/edit&id=<?php echo $log['id']; ?>" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
-                            <button type="button" class="btn-icon text-danger" onclick="openDeleteModal(<?php echo $log['id']; ?>, '<?php echo htmlspecialchars($display_code); ?>', '<?php echo htmlspecialchars($log['ngay_su_co']); ?>')" title="Xóa">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
+                            <a href="index.php?page=maintenance/view&id=<?php echo $log['id']; ?>" class="btn-icon"><i class="fas fa-eye"></i></a>
+                            <?php if(isIT()): ?><a href="index.php?page=maintenance/edit&id=<?php echo $log['id']; ?>" class="btn-icon"><i class="fas fa-edit"></i></a><?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
-            <?php endif; ?>
-        </tbody>
-    </table>
-</div>
-
-<!-- Pagination -->
-<div class="pagination-container">
-    <div class="pagination-links">
-        <?php
-        $query_params = $_GET; unset($query_params['p']); 
-        $base_url = 'index.php?' . http_build_query($query_params);
-        ?>
-        <a href="<?php echo $base_url . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-left"></i></a>
-        <?php for ($i = max(1, $current_page - 2); $i <= min($total_pages, $current_page + 2); $i++): ?>
-            <a href="<?php echo $base_url . '&p=' . $i; ?>" class="page-link <?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
-        <?php endfor; ?>
-        <a href="<?php echo $base_url . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-right"></i></a>
+            </tbody>
+        </table>
     </div>
-</div>
+</form>
 
-<!-- Delete Modal -->
-<div id="deleteLogModal" class="modal">
-    <div class="modal-content delete-modal-content">
-        <div class="delete-modal-icon"><i class="fas fa-exclamation-triangle"></i></div>
-        <h2 class="delete-modal-title">Xác nhận xóa phiếu?</h2>
-        <p class="delete-modal-text">Bạn đang yêu cầu xóa phiếu <strong id="modal-log-code"></strong> ngày <span id="modal-log-date"></span>.</p>
-        <div class="delete-modal-actions">
-            <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Hủy bỏ</button>
-            <form id="delete-log-form" action="" method="POST" style="display:inline;">
-                <input type="hidden" name="confirm_delete" value="1">
-                <button type="submit" class="btn btn-danger">Xác nhận Xóa</button>
-            </form>
-        </div>
+<div class="pagination-container">
+    <div class="rows-per-page">
+        <form action="index.php" method="GET" class="rows-per-page-form">
+            <input type="hidden" name="page" value="maintenance/history">
+            <?php foreach ($_GET as $key => $value): if(!in_array($key, ['limit','page'])) { ?>
+                <input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>">
+            <?php } endforeach; ?>
+            <label>Hiển thị</label>
+            <select name="limit" onchange="this.form.submit()" class="form-select-sm">
+                <?php foreach([5,10,25,50,100] as $lim): ?>
+                    <option value="<?php echo $lim; ?>" <?php echo $rows_per_page == $lim ? 'selected' : ''; ?>><?php echo $lim; ?></option>
+                <?php endforeach; ?>
+            </select>
+            <span>dòng / trang</span>
+        </form>
+    </div>
+    <div class="pagination-links">
+        <?php $q = $_GET; unset($q['p']); $base = 'index.php?' . http_build_query($q); ?>
+        <a href="<?php echo $base . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>" title="Trang đầu"><i class="fas fa-angle-double-left"></i></a>
+        <a href="<?php echo $base . '&p=' . max(1, $current_page - 1); ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>" title="Trang trước"><i class="fas fa-angle-left"></i></a>
+        <?php for ($i = max(1, $current_page - 2); $i <= min($total_pages, $current_page + 2); $i++): ?>
+            <a href="<?php echo $base . '&p=' . $i; ?>" class="page-link <?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
+        <?php endfor; ?>
+        <a href="<?php echo $base . '&p=' . min($total_pages, $current_page + 1); ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang sau"><i class="fas fa-angle-right"></i></a>
+        <a href="<?php echo $base . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang cuối"><i class="fas fa-angle-double-right"></i></a>
     </div>
 </div>
 
 <script>
-function openDeleteModal(id, code, date) {
-    document.getElementById('modal-log-code').textContent = code;
-    document.getElementById('modal-log-date').textContent = date;
-    document.getElementById('delete-log-form').action = 'index.php?page=maintenance/delete&id=' + id;
-    document.getElementById('deleteLogModal').classList.add('show');
+function toggleColumnMenu() { document.getElementById('columnMenu').classList.toggle('show'); }
+const colCbs = document.querySelectorAll('.col-checkbox');
+function updateCols() {
+    const s = {};
+    colCbs.forEach(cb => {
+        const t = cb.dataset.target; s[t] = cb.checked;
+        document.querySelectorAll(`[data-col="${t}"]`).forEach(el => el.style.display = cb.checked ? '' : 'none');
+    });
+    localStorage.setItem('maintenanceColumns', JSON.stringify(s));
 }
-function closeDeleteModal() {
-    document.getElementById('deleteLogModal').classList.remove('show');
-}
-window.onclick = function(event) {
-    if (event.target == document.getElementById('deleteLogModal')) closeDeleteModal();
-}
+colCbs.forEach(cb => cb.addEventListener('change', updateCols));
+document.addEventListener('DOMContentLoaded', () => {
+    const saved = JSON.parse(localStorage.getItem('maintenanceColumns'));
+    if(saved) colCbs.forEach(cb => { if(saved.hasOwnProperty(cb.dataset.target)) cb.checked = saved[cb.dataset.target]; });
+    updateCols();
+    const selectAll = document.getElementById('select-all');
+    const rowCbs = document.querySelectorAll('.row-checkbox');
+    const batch = document.getElementById('batch-actions');
+    const count = document.getElementById('selected-count');
+    const clearBtn = document.getElementById('clear-selection-btn');
+
+    function updateBatch() {
+        const n = document.querySelectorAll('.row-checkbox:checked').length;
+        if(batch) batch.style.display = n > 0 ? 'flex' : 'none';
+        if(count) count.textContent = n;
+    }
+    if(selectAll) selectAll.addEventListener('change', () => { rowCbs.forEach(cb => cb.checked = selectAll.checked); updateBatch(); });
+    rowCbs.forEach(cb => cb.addEventListener('change', updateBatch));
+    if(clearBtn) clearBtn.addEventListener('click', () => { if(selectAll) selectAll.checked = false; rowCbs.forEach(cb => cb.checked = false); updateBatch(); });
+    const delBtn = document.getElementById('delete-selected-btn');
+    if(delBtn) delBtn.addEventListener('click', () => { if(confirm(`Xóa các mục đã chọn?`)) { 
+        const f = document.getElementById('maintenance-form'); f.action = 'index.php?page=maintenance/delete_multiple'; f.submit();
+    }});
+});
 </script>
