@@ -2,12 +2,16 @@
 $log = null;
 if (isset($_GET['id'])) {
     $log_id = $_GET['id'];
+    // Cập nhật truy vấn: JOIN projects từ maintenance_logs.project_id
     $stmt = $pdo->prepare("
         SELECT ml.*, d.ma_tai_san, d.ten_thiet_bi, d.loai_thiet_bi, d.model, d.ngay_mua,
-               p.ten_du_an, p.dia_chi as dia_chi_du_an, d.trang_thai as trang_thai_tb
+               COALESCE(p_log.ten_du_an, p_dev.ten_du_an) as ten_du_an, 
+               COALESCE(p_log.dia_chi, p_dev.dia_chi) as dia_chi_du_an, 
+               d.trang_thai as trang_thai_tb
         FROM maintenance_logs ml
         LEFT JOIN devices d ON ml.device_id = d.id
-        LEFT JOIN projects p ON d.project_id = p.id
+        LEFT JOIN projects p_log ON ml.project_id = p_log.id
+        LEFT JOIN projects p_dev ON d.project_id = p_dev.id
         WHERE ml.id = ?
     ");
     $stmt->execute([$log_id]);
@@ -20,19 +24,41 @@ if (!$log) {
     exit;
 }
 
-$usage_time_str = "";
-if (!empty($log['ngay_mua'])) {
+// Xử lý logic hiển thị
+$is_custom_device = empty($log['device_id']);
+
+// Tên hiển thị trên WEB (để quản lý)
+$web_display_name = $is_custom_device ? ($log['custom_device_name'] ?? "Hỗ trợ chung") : $log['ten_thiet_bi'];
+$web_display_code = $is_custom_device ? "N/A" : $log['ma_tai_san'];
+
+// Dữ liệu hiển thị trên PHIẾU IN (theo yêu cầu bỏ trống)
+$print_device_name = $is_custom_device ? "" : $log['ten_thiet_bi'];
+$print_usage_time = "";
+
+if (!$is_custom_device && !empty($log['ngay_mua'])) {
     $purchase_date = new DateTime($log['ngay_mua']);
     $now = new DateTime();
     $interval = $purchase_date->diff($now);
-    $usage_time_str = ($interval->y > 0 ? $interval->y . " năm " : "") . ($interval->m > 0 ? $interval->m . " tháng" : "");
-    if ($usage_time_str == "") $usage_time_str = "Mới mua";
+    $print_usage_time = ($interval->y > 0 ? $interval->y . " năm " : "") . ($interval->m > 0 ? $interval->m . " tháng" : "");
+    if ($print_usage_time == "") $print_usage_time = "Mới mua";
 }
 
-$stmt_last = $pdo->prepare("SELECT ngay_su_co FROM maintenance_logs WHERE device_id = ? AND id < ? ORDER BY ngay_su_co DESC LIMIT 1");
-$stmt_last->execute([$log['device_id'], $log['id']]);
-$last_support_date = $stmt_last->fetchColumn();
-$last_support_str = $last_support_date ? date('d/m/Y', strtotime($last_support_date)) : 'Lần đầu';
+// Lấy lần hỗ trợ cuối
+$last_support_str = 'Lần đầu';
+if (!$is_custom_device) {
+    $stmt_last = $pdo->prepare("SELECT ngay_su_co FROM maintenance_logs WHERE device_id = ? AND id < ? ORDER BY ngay_su_co DESC LIMIT 1");
+    $stmt_last->execute([$log['device_id'], $log['id']]);
+} elseif (!empty($log['project_id'])) {
+    $stmt_last = $pdo->prepare("SELECT ngay_su_co FROM maintenance_logs WHERE project_id = ? AND id < ? ORDER BY ngay_su_co DESC LIMIT 1");
+    $stmt_last->execute([$log['project_id'], $log['id']]);
+} else {
+    $stmt_last = null;
+}
+
+if ($stmt_last) {
+    $last_support_date = $stmt_last->fetchColumn();
+    $last_support_str = $last_support_date ? date('d/m/Y', strtotime($last_support_date)) : 'Lần đầu';
+}
 
 $current_user_name = $_SESSION['username'] ?? 'IT Support';
 ?>
@@ -65,14 +91,23 @@ $current_user_name = $_SESSION['username'] ?? 'IT Support';
         </div>
         <div class="side-content">
             <div class="card device-profile-card">
-                <div class="profile-header"><div class="device-icon-large"><i class="fas fa-server"></i></div><div class="profile-title"><h3><?php echo htmlspecialchars($log['ten_thiet_bi']); ?></h3><span class="code"><?php echo htmlspecialchars($log['ma_tai_san']); ?></span></div></div>
+                <div class="profile-header">
+                    <div class="device-icon-large"><i class="fas fa-<?php echo $is_custom_device ? 'cube' : 'server'; ?>"></i></div>
+                    <div class="profile-title">
+                        <h3><?php echo htmlspecialchars($web_display_name); ?></h3>
+                        <span class="code"><?php echo htmlspecialchars($web_display_code); ?></span>
+                    </div>
+                </div>
                 <div class="profile-details">
+                    <div class="detail-row"><span class="d-label">Dự án</span><span class="d-value"><?php echo htmlspecialchars($log['ten_du_an']); ?></span></div>
                     <div class="detail-row"><span class="d-label">Đại diện dự án</span><span class="d-value"><?php echo htmlspecialchars($log['client_name'] ?? '---'); ?></span></div>
                     <div class="detail-row"><span class="d-label">Liên hệ</span><span class="d-value"><?php echo htmlspecialchars($log['client_phone'] ?? '---'); ?></span></div>
-                    <div class="detail-row"><span class="d-label">TG Có mặt</span><span class="d-value"><?php echo $log['arrival_time'] ? date('H:i d/m', strtotime($log['arrival_time'])) : '-'; ?></span></div>
-                    <div class="detail-row"><span class="d-label">Hoàn thành</span><span class="d-value"><?php echo $log['completion_time'] ? date('H:i d/m', strtotime($log['completion_time'])) : '-'; ?></span></div>
+                    <div class="detail-row"><span class="d-label">TG Có mặt</span><span class="d-value"><?php echo $log['arrival_time'] ? date('H:i d/m/Y', strtotime($log['arrival_time'])) : '-'; ?></span></div>
+                    <div class="detail-row"><span class="d-label">Hoàn thành</span><span class="d-value"><?php echo $log['completion_time'] ? date('H:i d/m/Y', strtotime($log['completion_time'])) : '-'; ?></span></div>
                 </div>
+                <?php if (!$is_custom_device): ?>
                 <div class="profile-actions"><a href="index.php?page=devices/view&id=<?php echo $log['device_id']; ?>" class="btn btn-primary" style="display: flex; width: auto; justify-content: center;"><i class="fas fa-external-link-alt"></i> Xem hồ sơ thiết bị</a></div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -147,13 +182,13 @@ $current_user_name = $_SESSION['username'] ?? 'IT Support';
 
                 <tr>
                     <td class="pt-label">Thiết bị:</td>
-                    <td class="p-line-single"><strong><?php echo htmlspecialchars($log['ten_thiet_bi']); ?></strong></td>
+                    <td class="p-line-single"><strong><?php echo htmlspecialchars($print_device_name); ?></strong></td>
                     <td class="pt-label">TG sử dụng:</td>
-                    <td class="p-line-single"><?php echo $usage_time_str; ?></td>
+                    <td class="p-line-single"><?php echo $print_usage_time; ?></td>
                 </tr>
                 <tr>
                     <td class="pt-label">TG yêu cầu:</td>
-                    <td class="p-line-single"><?php echo date('H:i d/m/Y', strtotime($log['ngay_su_co'])); ?></td>
+                    <td class="p-line-single"><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></td>
                     <td class="pt-label">Hỗ trợ lần cuối:</td>
                     <td class="p-line-single"><?php echo $last_support_str; ?></td>
                 </tr>
@@ -184,7 +219,7 @@ $current_user_name = $_SESSION['username'] ?? 'IT Support';
                     <div class="pb-title">II. CÔNG VIỆC THỰC HIỆN / KẾT QUẢ</div>
                     <div class="pb-content lined-paper">
                         <?php 
-                        if(!empty($log['hu_hong'])) echo "<strong>- Hư hỏng:</strong> " . nl2br(htmlspecialchars($log['hu_hong'])) . "<br>";
+                        if(!empty($log['hu_hong'])) echo "<strong>- Tình trạng:</strong> " . nl2br(htmlspecialchars($log['hu_hong'])) . "<br><br>";
                         if(!empty($log['xu_ly'])) echo "<strong>- Xử lý:</strong> " . nl2br(htmlspecialchars($log['xu_ly']));
                         ?>
                     </div>
@@ -213,7 +248,7 @@ function togglePrintDebug() { document.body.classList.toggle('debug-print-mode')
 </script>
 
 <style>
-/* WEB STYLES (Keep existing) */
+/* WEB STYLES */
 .maintenance-view { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; align-items: start; }
 .ticket-card { padding: 0; overflow: hidden; }
 .ticket-header { background: #f8fafc; padding: 20px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; }
@@ -233,6 +268,8 @@ function togglePrintDebug() { document.body.classList.toggle('debug-print-mode')
 .detail-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px; }
 .d-value { font-weight: 500; color: #334155; }
 .profile-actions { padding: 0 20px 20px 20px; }
+
+/* CSS CHO PHẦN IN ẤN */
 .print-only { display: none; }
 
 /* DEBUG PRINT MODE: Hiển thị đúng kích thước A4 trên màn hình */
@@ -344,6 +381,9 @@ body.debug-print-mode .a4-page-wrapper {
         background-attachment: local;
         font-size: 13pt;
         vertical-align: bottom;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
     
     .p-line-double {
