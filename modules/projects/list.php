@@ -59,7 +59,10 @@ $all_columns = [
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="filter-group" style="flex: 2;"><label>Tìm kiếm</label><input type="text" name="filter_keyword" value="<?php echo htmlspecialchars($filter_keyword); ?>"></div>
+        <div class="filter-group" style="flex: 2;">
+            <label>Tìm kiếm</label>
+            <input type="text" name="filter_keyword" placeholder="Mã, tên, địa chỉ..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
+        </div>
         <div class="filter-actions" style="margin-left: auto;">
             <button type="submit" class="btn btn-primary">Lọc</button>
             <a href="index.php?page=projects/list" class="btn btn-secondary"><i class="fas fa-undo"></i></a>

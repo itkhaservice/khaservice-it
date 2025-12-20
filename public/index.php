@@ -44,11 +44,21 @@ if (($page ?? 'home') === 'home') {
                 d.ma_tai_san, 
                 d.ten_thiet_bi 
             FROM maintenance_logs ml
-            JOIN devices d ON ml.device_id = d.id
+            LEFT JOIN devices d ON ml.device_id = d.id
             ORDER BY ml.created_at DESC 
             LIMIT 5
         ");
         $recent_activities = $recent_activities_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // 6. Services Expiring Soon (New)
+        $expiring_services_stmt = $pdo->query("
+            SELECT id, ten_dich_vu, ngay_het_han, DATEDIFF(ngay_het_han, CURDATE()) as days_left 
+            FROM services 
+            WHERE ngay_het_han <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+            ORDER BY ngay_het_han ASC 
+            LIMIT 5
+        ");
+        $expiring_services = $expiring_services_stmt->fetchAll(PDO::FETCH_ASSOC);
 
     } catch (PDOException $e) {
         error_log("Dashboard data fetch error: " . $e->getMessage());
@@ -222,6 +232,22 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
                                     <div class="action-content">
                                         <span class="action-title"><?= htmlspecialchars($device['ma_tai_san']) ?></span>
                                         <span class="action-desc">Cần Thanh lý (Ghi chú có từ khóa 'thanh lý')</span>
+                                    </div>
+                                    <i class="fas fa-chevron-right action-arrow"></i>
+                                </a>
+                            </li>
+                        <?php endforeach; ?>
+
+                        <?php foreach ($expiring_services as $service): ?>
+                            <li>
+                                <a href="index.php?page=services/list" class="action-item <?= ($service['days_left'] <= 0) ? 'danger' : 'warning' ?>">
+                                    <i class="fas fa-cloud"></i>
+                                    <div class="action-content">
+                                        <span class="action-title"><?= htmlspecialchars($service['ten_dich_vu']) ?></span>
+                                        <span class="action-desc">
+                                            <?= ($service['days_left'] <= 0) ? 'ĐÃ HẾT HẠN' : 'Hết hạn sau ' . $service['days_left'] . ' ngày' ?>
+                                            (<?= date('d/m/Y', strtotime($service['ngay_het_han'])) ?>)
+                                        </span>
                                     </div>
                                     <i class="fas fa-chevron-right action-arrow"></i>
                                 </a>

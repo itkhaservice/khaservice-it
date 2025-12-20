@@ -2,14 +2,14 @@
 // File: config/db.php
 // Mục đích: Thiết lập kết nối đến Cơ sở dữ liệu (CSDL)
 
-$host = 'localhost';        // Host của MySQL Server (thường là localhost)
-$dbname = 'khaservice_it';  // Tên CSDL đã tạo
-$username = 'root';         // Tên người dùng của MySQL
-$password = '';             // Mật khẩu của người dùng MySQL (để trống nếu dùng XAMPP mặc định)
-$charset = 'utf8mb4';       // Bảng mã ký tự
+$host = '127.0.0.1';     // Dùng IP để tốc độ nhanh hơn trên local
+$port = '3307';            // Cổng mặc định của bộ đóng gói
+$dbname = 'khaservice_it';
+$username = 'root';
+$password = '';
+$charset = 'utf8mb4';
 
-// Tạo chuỗi Data Source Name (DSN)
-$dsn = "mysql:host=$host;dbname=$dbname;charset=$charset";
+$dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=$charset";
 
 // Tùy chọn cho PDO
 $options = [

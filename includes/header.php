@@ -33,6 +33,7 @@
             <ul>
                 <li><a href="/khaservice-it/public/index.php?page=devices/list">Thiết bị</a></li>
                 <li><a href="/khaservice-it/public/index.php?page=maintenance/history">Bảo trì</a></li>
+                <li><a href="/khaservice-it/public/index.php?page=services/list">Dịch vụ</a></li>
                 <li><a href="/khaservice-it/public/index.php?page=projects/list">Dự án</a></li>
                 <li><a href="/khaservice-it/public/index.php?page=suppliers/list">Nhà cung cấp</a></li>
                 <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
