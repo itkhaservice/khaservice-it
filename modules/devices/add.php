@@ -15,7 +15,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_message('error', 'Tên thiết bị là bắt buộc.');
     }
 
-    // Check if there are any errors before proceeding
     if (!isset($_SESSION['messages']) || empty(array_filter($_SESSION['messages'], function($msg) { return $msg['type'] === 'error'; }))) {
         try {
             $sql = "INSERT INTO devices (
@@ -50,98 +49,185 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<h2>Thêm Thiết bị mới</h2>
-
-<div class="form-container">
-    <form action="index.php?page=devices/add" method="POST" class="form-grid">
-        <div class="form-group">
-            <label for="ma_tai_san">Mã Tài sản (*)</label>
-            <input type="text" id="ma_tai_san" name="ma_tai_san" required value="<?php echo htmlspecialchars($_POST['ma_tai_san'] ?? ''); ?>">
-        </div>
-        <div class="form-group">
-            <label for="ten_thiet_bi">Tên Thiết bị (*)</label>
-            <input type="text" id="ten_thiet_bi" name="ten_thiet_bi" required value="<?php echo htmlspecialchars($_POST['ten_thiet_bi'] ?? ''); ?>">
-        </div>
-
-        <div class="form-group">
-            <label for="nhom_thiet_bi">Nhóm Thiết bị</label>
-            <select id="nhom_thiet_bi" name="nhom_thiet_bi">
-                <option value="Văn phòng" <?php echo (($_POST['nhom_thiet_bi'] ?? '') == 'Văn phòng') ? 'selected' : ''; ?>>Văn phòng</option>
-                <option value="Bãi xe" <?php echo (($_POST['nhom_thiet_bi'] ?? '') == 'Bãi xe') ? 'selected' : ''; ?>>Bãi xe</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="loai_thiet_bi">Loại Thiết bị</label>
-            <input type="text" id="loai_thiet_bi" name="loai_thiet_bi" placeholder="PC, UPS, Camera..." value="<?php echo htmlspecialchars($_POST['loai_thiet_bi'] ?? ''); ?>">
-        </div>
-
-        <div class="form-group">
-            <label for="model">Model</label>
-            <input type="text" id="model" name="model" value="<?php echo htmlspecialchars($_POST['model'] ?? ''); ?>">
-        </div>
-
-        <div class="form-group">
-            <label for="serial">Serial Number</label>
-            <input type="text" id="serial" name="serial" value="<?php echo htmlspecialchars($_POST['serial'] ?? ''); ?>">
-        </div>
-
-        <div class="form-group">
-            <label for="project_id">Dự án</label>
-            <select id="project_id" name="project_id">
-                <option value="">-- Chọn dự án --</option>
-                <?php foreach ($projects as $project): ?>
-                    <option value="<?php echo $project['id']; ?>" <?php echo (($_POST['project_id'] ?? '') == $project['id']) ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($project['ten_du_an']); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="supplier_id">Nhà cung cấp</label>
-            <select id="supplier_id" name="supplier_id">
-                <option value="">-- Chọn nhà cung cấp --</option>
-                <?php foreach ($suppliers as $supplier): ?>
-                    <option value="<?php echo $supplier['id']; ?>" <?php echo (($_POST['supplier_id'] ?? '') == $supplier['id']) ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($supplier['ten_npp']); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="ngay_mua">Ngày mua</label>
-            <input type="date" id="ngay_mua" name="ngay_mua" value="<?php echo htmlspecialchars($_POST['ngay_mua'] ?? ''); ?>">
-        </div>
-
-        <div class="form-group">
-            <label for="gia_mua">Giá mua (VNĐ)</label>
-            <input type="number" id="gia_mua" name="gia_mua" step="1000" value="<?php echo htmlspecialchars($_POST['gia_mua'] ?? ''); ?>">
-        </div>
-
-        <div class="form-group">
-            <label for="bao_hanh_den">Bảo hành đến</label>
-            <input type="date" id="bao_hanh_den" name="bao_hanh_den" value="<?php echo htmlspecialchars($_POST['bao_hanh_den'] ?? ''); ?>">
-        </div>
-
-        <div class="form-group">
-            <label for="trang_thai">Trạng thái</label>
-            <select id="trang_thai" name="trang_thai">
-                <option value="Đang sử dụng" <?php echo (($_POST['trang_thai'] ?? '') == 'Đang sử dụng') ? 'selected' : ''; ?>>Đang sử dụng</option>
-                <option value="Hỏng" <?php echo (($_POST['trang_thai'] ?? '') == 'Hỏng') ? 'selected' : ''; ?>>Hỏng</option>
-                <option value="Thanh lý" <?php echo (($_POST['trang_thai'] ?? '') == 'Thanh lý') ? 'selected' : ''; ?>>Thanh lý</option>
-            </select>
-        </div>
-
-        <div class="form-group full-width">
-            <label for="ghi_chu">Ghi chú</label>
-            <textarea id="ghi_chu" name="ghi_chu"><?php echo htmlspecialchars($_POST['ghi_chu'] ?? ''); ?></textarea>
-        </div>
-
-        <div class="form-actions">
-            <a href="index.php?page=devices/list" class="btn btn-secondary">Hủy</a>
-            <button type="submit" class="btn btn-primary">Lưu Thiết bị</button>
-        </div>
-    </form>
+<div class="page-header">
+    <h2><i class="fas fa-plus-circle"></i> Thêm Thiết bị mới</h2>
+    <div class="header-actions">
+        <a href="index.php?page=devices/list" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+        <button type="submit" form="add-device-form" class="btn btn-primary"><i class="fas fa-save"></i> Lưu Thiết bị</button>
+    </div>
 </div>
+
+<form action="index.php?page=devices/add" method="POST" id="add-device-form" class="edit-layout">
+    
+    <!-- Left Column: Device Identity -->
+    <div class="left-panel">
+        <div class="card">
+            <div class="card-header-custom">
+                <h3><i class="fas fa-microchip"></i> Thông tin Thiết bị</h3>
+            </div>
+            <div class="card-body-custom">
+                <div class="form-group">
+                    <label for="ma_tai_san">Mã Tài sản <span class="required">*</span></label>
+                    <input type="text" id="ma_tai_san" name="ma_tai_san" value="<?php echo htmlspecialchars($_POST['ma_tai_san'] ?? ''); ?>" required class="input-highlight" placeholder="VD: KHAS-DA01-PC-001">
+                </div>
+                
+                <div class="form-group">
+                    <label for="ten_thiet_bi">Tên Thiết bị <span class="required">*</span></label>
+                    <input type="text" id="ten_thiet_bi" name="ten_thiet_bi" value="<?php echo htmlspecialchars($_POST['ten_thiet_bi'] ?? ''); ?>" required placeholder="VD: Dell OptiPlex 3050">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="nhom_thiet_bi">Nhóm Thiết bị</label>
+                        <select id="nhom_thiet_bi" name="nhom_thiet_bi">
+                            <option value="Văn phòng" <?php echo (($_POST['nhom_thiet_bi'] ?? '') == 'Văn phòng') ? 'selected' : ''; ?>>Văn phòng</option>
+                            <option value="Bãi xe" <?php echo (($_POST['nhom_thiet_bi'] ?? '') == 'Bãi xe') ? 'selected' : ''; ?>>Bãi xe</option>
+                        </select>
+                    </div>
+                    <div class="form-group half">
+                        <label for="loai_thiet_bi">Loại Thiết bị</label>
+                        <input type="text" id="loai_thiet_bi" name="loai_thiet_bi" value="<?php echo htmlspecialchars($_POST['loai_thiet_bi'] ?? ''); ?>" placeholder="PC, UPS...">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="model">Model</label>
+                        <input type="text" id="model" name="model" value="<?php echo htmlspecialchars($_POST['model'] ?? ''); ?>">
+                    </div>
+                    <div class="form-group half">
+                        <label for="serial">Serial Number</label>
+                        <input type="text" id="serial" name="serial" value="<?php echo htmlspecialchars($_POST['serial'] ?? ''); ?>">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                     <label for="ghi_chu">Ghi chú</label>
+                     <textarea id="ghi_chu" name="ghi_chu" rows="5" placeholder="Ghi chú thêm..."><?php echo htmlspecialchars($_POST['ghi_chu'] ?? ''); ?></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Management Info -->
+    <div class="right-panel">
+        <div class="card">
+            <div class="card-header-custom">
+                <h3><i class="fas fa-tasks"></i> Quản lý & Mua sắm</h3>
+            </div>
+            <div class="card-body-custom">
+                 <div class="form-group">
+                    <label for="trang_thai">Trạng thái</label>
+                    <select id="trang_thai" name="trang_thai">
+                        <option value="Đang sử dụng" <?php echo (($_POST['trang_thai'] ?? '') == 'Đang sử dụng') ? 'selected' : ''; ?>>Đang sử dụng</option>
+                        <option value="Hỏng" <?php echo (($_POST['trang_thai'] ?? '') == 'Hỏng') ? 'selected' : ''; ?>>Hỏng</option>
+                        <option value="Thanh lý" <?php echo (($_POST['trang_thai'] ?? '') == 'Thanh lý') ? 'selected' : ''; ?>>Thanh lý</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="project_id">Dự án</label>
+                    <select id="project_id" name="project_id">
+                        <option value="">-- Chọn dự án --</option>
+                        <?php foreach ($projects as $project): ?>
+                            <option value="<?php echo $project['id']; ?>" <?php echo (($_POST['project_id'] ?? '') == $project['id']) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($project['ten_du_an']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="supplier_id">Nhà cung cấp</label>
+                    <select id="supplier_id" name="supplier_id">
+                        <option value="">-- Chọn nhà cung cấp --</option>
+                        <?php foreach ($suppliers as $supplier): ?>
+                            <option value="<?php echo $supplier['id']; ?>" <?php echo (($_POST['supplier_id'] ?? '') == $supplier['id']) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($supplier['ten_npp']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="ngay_mua">Ngày mua</label>
+                        <input type="date" id="ngay_mua" name="ngay_mua" value="<?php echo htmlspecialchars($_POST['ngay_mua'] ?? ''); ?>">
+                    </div>
+                    <div class="form-group half">
+                        <label for="bao_hanh_den">Bảo hành đến</label>
+                        <input type="date" id="bao_hanh_den" name="bao_hanh_den" value="<?php echo htmlspecialchars($_POST['bao_hanh_den'] ?? ''); ?>">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="gia_mua">Giá mua (VNĐ)</label>
+                    <div class="input-icon-wrapper">
+                        <input type="number" id="gia_mua" name="gia_mua" step="1000" value="<?php echo htmlspecialchars($_POST['gia_mua'] ?? ''); ?>">
+                        <i class="fas fa-tag input-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<style>
+/* Layout Styles - Specific to Edit/Add Page */
+.edit-layout {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr; /* 60% - 40% split */
+    gap: 30px; /* Increased gap */
+    align-items: start;
+}
+
+.left-panel, .right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.card-header-custom {
+    padding-bottom: 20px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.card-header-custom h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.card-header-custom h3 i {
+    color: #fff;
+    background: var(--gradient-primary);
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(36, 162, 92, 0.3);
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+}
+
+.input-highlight {
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    color: var(--primary-dark-color);
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .edit-layout {
+        grid-template-columns: 1fr;
+    }
+}
+</style>

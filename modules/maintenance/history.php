@@ -82,29 +82,41 @@ $devices_filter = $devices_filter_stmt->fetchAll();
 
 ?>
 
-<h2>Lịch sử Bảo trì Thiết bị</h2>
+<div class="page-header">
+    <h2><i class="fas fa-tools"></i> Lịch sử Bảo trì</h2>
+    <a href="index.php?page=maintenance/add" class="btn btn-primary"><i class="fas fa-plus"></i> Tạo Phiếu Bảo trì</a>
+</div>
 
 <!-- Filter Section -->
-<div class="filter-section">
-    <form action="index.php" method="GET">
+<div class="card filter-section">
+    <form action="index.php" method="GET" class="filter-form">
         <input type="hidden" name="page" value="maintenance/history">
-        <select name="filter_device">
-            <option value="">-- Lọc theo thiết bị --</option>
-            <?php foreach ($devices_filter as $device): ?>
-                <option value="<?php echo $device['id']; ?>" <?php echo ($filter_device == $device['id']) ? 'selected' : ''; ?>>
-                    <?php echo htmlspecialchars($device['ten_thiet_bi']); ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-        <input type="text" name="filter_keyword" placeholder="Lọc theo tên, mã, mô tả..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
-        <button type="submit" class="btn btn-secondary">Lọc</button>
-        <button type="button" class="btn btn-secondary" onclick="window.location.href='index.php?page=maintenance/history'">Xóa bộ lọc</button>
+        
+        <div class="filter-group">
+            <label><i class="fas fa-server"></i> Thiết bị</label>
+            <select name="filter_device">
+                <option value="">-- Tất cả thiết bị --</option>
+                <?php foreach ($devices_filter as $device): ?>
+                    <option value="<?php echo $device['id']; ?>" <?php echo ($filter_device == $device['id']) ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($device['ten_thiet_bi']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label><i class="fas fa-search"></i> Tìm kiếm</label>
+            <input type="text" name="filter_keyword" placeholder="Mô tả, mã TS, hư hỏng..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Lọc</button>
+            <a href="index.php?page=maintenance/history" class="btn btn-secondary" title="Xóa bộ lọc"><i class="fas fa-undo"></i></a>
+        </div>
     </form>
 </div>
 
-<a href="index.php?page=maintenance/add" class="add-button btn btn-primary">Thêm Nhật ký Bảo trì mới</a>
-
-<div class="content-table-wrapper">
+<div class="table-container card">
     <table class="content-table">
         <thead>
             <tr>
@@ -113,13 +125,12 @@ $devices_filter = $devices_filter_stmt->fetchAll();
                     'ten_thiet_bi' => 'Thiết bị',
                     'ma_tai_san' => 'Mã Tài sản',
                     'ngay_su_co' => 'Ngày sự cố',
-                    'noi_dung' => 'Mô tả sự cố', // This column is displayed, but we sort by 'ngay_su_co' or 'ten_thiet_bi' etc.
+                    'noi_dung' => 'Mô tả sự cố',
                     'hu_hong' => 'Hư hỏng',
                     'xu_ly' => 'Xử lý',
                     'chi_phi' => 'Chi phí (VNĐ)'
                 ];
 
-                // Manually define sortable columns and their corresponding database fields
                 $sortable_columns = [
                     'ten_thiet_bi' => 'Thiết bị',
                     'ma_tai_san' => 'Mã Tài sản',
@@ -129,95 +140,93 @@ $devices_filter = $devices_filter_stmt->fetchAll();
 
                 foreach ($columns as $col_name => $col_label) {
                     $new_sort_order = 'ASC';
-                    $sort_indicator = '';
+                    $sort_icon = '';
                     $sort_link = '';
 
-                    // Only create sort link if the column is sortable
                     if (array_key_exists($col_name, $sortable_columns)) {
+                        $sort_icon = '<i class="fas fa-sort" style="color: #ccc;"></i>';
                         if ($sort_by == $col_name) {
                             $new_sort_order = ($sort_order == 'ASC') ? 'DESC' : 'ASC';
-                            $sort_indicator = ($sort_order == 'ASC') ? ' &#x25B2;' : ' &#x25BC;';
+                            $sort_icon = ($sort_order == 'ASC') ? '<i class="fas fa-sort-up"></i>' : '<i class="fas fa-sort-down"></i>';
                         }
                         $current_query_params = $_GET;
                         $current_query_params['sort_by'] = $col_name;
                         $current_query_params['sort_order'] = $new_sort_order;
                         $sort_link = 'index.php?' . http_build_query($current_query_params);
-                        echo '<th><a href="' . $sort_link . '">' . htmlspecialchars($col_label) . $sort_indicator . '</a></th>';
+                        echo '<th><a href="' . $sort_link . '" class="sort-link">' . htmlspecialchars($col_label) . ' ' . $sort_icon . '</a></th>';
                     } else {
                         echo '<th>' . htmlspecialchars($col_label) . '</th>';
                     }
                 }
                 ?>
-                <th>Thao tác</th>
+                <th width="100" class="text-center">Thao tác</th>
             </tr>
         </thead>
-    <tbody>
-        <?php if (empty($logs)): ?>
-            <tr>
-                <td colspan="8" style="text-align: center;">Chưa có nhật ký bảo trì nào.</td>
-            </tr>
-        <?php else: ?>
-            <?php foreach ($logs as $log): ?>
+        <tbody>
+            <?php if (empty($logs)): ?>
                 <tr>
-                    <td><?php echo htmlspecialchars($log['ten_thiet_bi']); ?></td>
-                    <td><?php echo htmlspecialchars($log['ma_tai_san']); ?></td>
-                    <td><?php echo htmlspecialchars($log['ngay_su_co']); ?></td>
-                    <td><?php echo nl2br(htmlspecialchars($log['noi_dung'])); ?></td>
-                    <td><?php echo nl2br(htmlspecialchars($log['hu_hong'])); ?></td>
-                    <td><?php echo nl2br(htmlspecialchars($log['xu_ly'])); ?></td>
-                    <td><?php echo htmlspecialchars(number_format($log['chi_phi'], 0, ',', '.')); ?></td>
-                    <td class="actions">
-                        <a href="index.php?page=maintenance/edit&id=<?php echo $log['id']; ?>" class="btn edit-btn">Sửa</a>
-                        <a href="index.php?page=maintenance/delete&id=<?php echo $log['id']; ?>" class="btn delete-btn">Xóa</a>
+                    <td colspan="8" class="empty-state">
+                        <i class="fas fa-clipboard-list" style="font-size: 3rem; color: #e2e8f0; margin-bottom: 10px;"></i>
+                        <p>Chưa có dữ liệu bảo trì nào.</p>
                     </td>
                 </tr>
-            <?php endforeach; ?>
-        <?php endif; ?>
-    </tbody>
-</table>
+            <?php else: ?>
+                <?php foreach ($logs as $log): ?>
+                    <tr>
+                        <td class="font-medium text-primary"><?php echo htmlspecialchars($log['ten_thiet_bi']); ?></td>
+                        <td><?php echo htmlspecialchars($log['ma_tai_san']); ?></td>
+                        <td><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></td>
+                        <td><?php echo nl2br(htmlspecialchars($log['noi_dung'])); ?></td>
+                        <td><?php echo nl2br(htmlspecialchars($log['hu_hong'])); ?></td>
+                        <td><?php echo nl2br(htmlspecialchars($log['xu_ly'])); ?></td>
+                        <td class="text-right font-bold text-warning"><?php echo number_format($log['chi_phi'], 0, ',', '.'); ?></td>
+                        <td class="actions text-center">
+                            <a href="index.php?page=maintenance/view&id=<?php echo $log['id']; ?>" class="btn-icon" title="Xem chi tiết"><i class="fas fa-eye"></i></a>
+                            <a href="index.php?page=maintenance/edit&id=<?php echo $log['id']; ?>" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
+                            <a href="index.php?page=maintenance/delete&id=<?php echo $log['id']; ?>" class="btn-icon delete-btn" title="Xóa"><i class="fas fa-trash-alt"></i></a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </tbody>
+    </table>
 </div>
 
 <!-- Pagination Section -->
-<div class="pagination">
-    <div class="pagination-links">
-        <?php
-        // Build URL with existing filters and sort parameters
-        $query_params = $_GET;
-        unset($query_params['p']); // Unset page number for base URL
-        $base_url = 'index.php?' . http_build_query($query_params);
-        ?>
-
-        <a href="<?php echo $base_url . '&p=1'; ?>" <?php echo $current_page <= 1 ? 'class="disabled"' : ''; ?>>&laquo; Đầu</a>
-        <a href="<?php echo $base_url . '&p=' . ($current_page - 1); ?>" <?php echo $current_page <= 1 ? 'class="disabled"' : ''; ?>>&laquo; Trước</a>
-
-        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-            <a href="<?php echo $base_url . '&p=' . $i; ?>" class="<?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
-        <?php endfor; ?>
-
-        <a href="<?php echo $base_url . '&p=' . ($current_page + 1); ?>" <?php echo $current_page >= $total_pages ? 'class="disabled"' : ''; ?>>Sau &raquo;</a>
-        <a href="<?php echo $base_url . '&p=' . $total_pages; ?>" <?php echo $current_page >= $total_pages ? 'class="disabled"' : ''; ?>>Cuối &raquo;</a>
-    </div>
-
-    <div class="pagination-controls">
+<div class="pagination-container">
+    <div class="rows-per-page">
         <form action="index.php" method="GET" class="rows-per-page-form">
             <input type="hidden" name="page" value="maintenance/history">
-            <!-- Persist other filters and sort parameters -->
             <?php foreach ($_GET as $key => $value): ?>
                 <?php if ($key !== 'limit' && $key !== 'page'): ?>
                     <input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>">
                 <?php endif; ?>
             <?php endforeach; ?>
-            <span class="rows-per-page">
-                <span>Hiển thị</span>
-                <select name="limit" onchange="this.form.submit()">
-                    <option value="5" <?php echo $rows_per_page == 5 ? 'selected' : ''; ?>>5</option>
-                    <option value="10" <?php echo $rows_per_page == 10 ? 'selected' : ''; ?>>10</option>
-                    <option value="25" <?php echo $rows_per_page == 25 ? 'selected' : ''; ?>>25</option>
-                    <option value="50" <?php echo $rows_per_page == 50 ? 'selected' : ''; ?>>50</option>
-                    <option value="100" <?php echo $rows_per_page == 100 ? 'selected' : ''; ?>>100</option>
-                </select>
-                <span>dòng mỗi trang.</span>
-            </span>
+            <label>Hiển thị</label>
+            <select name="limit" onchange="this.form.submit()" class="form-select-sm">
+                <option value="5" <?php echo $rows_per_page == 5 ? 'selected' : ''; ?>>5</option>
+                <option value="10" <?php echo $rows_per_page == 10 ? 'selected' : ''; ?>>10</option>
+                <option value="25" <?php echo $rows_per_page == 25 ? 'selected' : ''; ?>>25</option>
+                <option value="50" <?php echo $rows_per_page == 50 ? 'selected' : ''; ?>>50</option>
+            </select>
         </form>
+    </div>
+
+    <div class="pagination-links">
+        <?php
+        $query_params = $_GET;
+        unset($query_params['p']); 
+        $base_url = 'index.php?' . http_build_query($query_params);
+        ?>
+
+        <a href="<?php echo $base_url . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-left"></i></a>
+        <a href="<?php echo $base_url . '&p=' . ($current_page - 1); ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>"><i class="fas fa-angle-left"></i></a>
+
+        <?php for ($i = max(1, $current_page - 2); $i <= min($total_pages, $current_page + 2); $i++): ?>
+            <a href="<?php echo $base_url . '&p=' . $i; ?>" class="page-link <?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
+        <?php endfor; ?>
+
+        <a href="<?php echo $base_url . '&p=' . ($current_page + 1); ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>"><i class="fas fa-angle-right"></i></a>
+        <a href="<?php echo $base_url . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-right"></i></a>
     </div>
 </div>

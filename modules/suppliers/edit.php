@@ -45,13 +45,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<h2>Sửa Nhà cung cấp: <?php echo htmlspecialchars($supplier['ten_npp']); ?></h2>
+<div class="page-header">
+    <h2><i class="fas fa-edit"></i> Sửa Nhà cung cấp: <?php echo htmlspecialchars($supplier['ten_npp']); ?></h2>
+    <a href="index.php?page=suppliers/list" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+</div>
 
-
-<div class="form-container">
+<div class="card form-container">
     <form action="index.php?page=suppliers/edit&id=<?php echo $supplier_id; ?>" method="POST" class="form-grid">
-        <div class="form-group">
-            <label for="ten_npp">Tên Nhà phân phối (*)</label>
+        <div class="form-group full-width">
+            <label for="ten_npp">Tên Nhà phân phối <span class="required">*</span></label>
             <input type="text" id="ten_npp" name="ten_npp" value="<?php echo htmlspecialchars($supplier['ten_npp']); ?>" required>
         </div>
         <div class="form-group">
@@ -64,19 +66,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="text" id="dien_thoai" name="dien_thoai" value="<?php echo htmlspecialchars($supplier['dien_thoai']); ?>">
         </div>
 
-        <div class="form-group">
+        <div class="form-group full-width">
             <label for="email">Email</label>
             <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($supplier['email']); ?>">
         </div>
 
         <div class="form-group full-width">
             <label for="ghi_chu">Ghi chú</label>
-            <textarea id="ghi_chu" name="ghi_chu"><?php echo htmlspecialchars($supplier['ghi_chu']); ?></textarea>
+            <textarea id="ghi_chu" name="ghi_chu" rows="3"><?php echo htmlspecialchars($supplier['ghi_chu']); ?></textarea>
         </div>
 
         <div class="form-actions">
             <a href="index.php?page=suppliers/list" class="btn btn-secondary">Hủy</a>
-            <button type="submit" class="btn btn-primary">Cập nhật Nhà cung cấp</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Cập nhật</button>
         </div>
     </form>
 </div>

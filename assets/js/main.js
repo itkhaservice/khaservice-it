@@ -54,28 +54,39 @@ document.addEventListener('DOMContentLoaded', () => {
         const messageBoxes = messageContainer.querySelectorAll('.message-box');
         messageBoxes.forEach(messageBox => {
             let timer;
-
+            
+            // Function to trigger fade out
             function hideMessage() {
+                messageBox.style.animation = 'none'; // Stop slideIn animation
+                messageBox.style.transition = 'all 0.5s ease'; // Ensure transition works
                 messageBox.style.opacity = '0';
-                messageBox.style.transform = 'translateX(100%)';
-                setTimeout(() => messageBox.remove(), 300); // Remove after transition
+                messageBox.style.transform = 'translateX(120%)'; // Slide out further
+                
+                // Remove from DOM after animation finishes
+                setTimeout(() => {
+                    if (messageBox.parentNode) {
+                        messageBox.parentNode.removeChild(messageBox);
+                    }
+                }, 500); 
             }
 
             function startHideTimer() {
-                timer = setTimeout(hideMessage, 5000); // Hide after 5 seconds
+                timer = setTimeout(hideMessage, 4000); // 4 seconds visibility
             }
 
             function stopHideTimer() {
                 clearTimeout(timer);
             }
 
-            // Start timer immediately
+            // Start timer
             startHideTimer();
 
-            // Pause timer on hover
-            messageBox.addEventListener('mouseover', stopHideTimer);
-            // Resume timer on mouse out
-            messageBox.addEventListener('mouseout', startHideTimer);
+            // Hover effects
+            messageBox.addEventListener('mouseenter', stopHideTimer);
+            messageBox.addEventListener('mouseleave', startHideTimer);
+            
+            // Click to close immediately
+            messageBox.addEventListener('click', hideMessage);
         });
     }
 

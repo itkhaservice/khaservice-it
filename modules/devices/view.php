@@ -24,99 +24,355 @@ if (!$device) {
 }
 ?>
 
-<div class="view-container">
-    <div class="view-header">
-        <h2>Chi tiết Thiết bị: <?php echo htmlspecialchars($device['ten_thiet_bi']); ?></h2>
-        <a href="index.php?page=devices/edit&id=<?php echo $device['id']; ?>" class="btn btn-primary">Sửa Thiết bị</a>
-    </div>
-
-    <dl class="view-grid">
-        <dt>Mã Tài sản:</dt>
-        <dd><?php echo htmlspecialchars($device['ma_tai_san']); ?></dd>
-
-        <dt>Tên Thiết bị:</dt>
-        <dd><?php echo htmlspecialchars($device['ten_thiet_bi']); ?></dd>
-
-        <dt>Nhóm Thiết bị:</dt>
-        <dd><?php echo htmlspecialchars($device['nhom_thiet_bi']); ?></dd>
-
-        <dt>Loại Thiết bị:</dt>
-        <dd><?php echo htmlspecialchars($device['loai_thiet_bi']); ?></dd>
-
-        <dt>Model:</dt>
-        <dd><?php echo htmlspecialchars($device['model']); ?></dd>
-
-        <dt>Serial Number:</dt>
-        <dd><?php echo htmlspecialchars($device['serial']); ?></dd>
-
-        <dt>Dự án:</dt>
-        <dd><?php echo htmlspecialchars($device['ten_du_an'] ?? 'N/A'); ?></dd>
-
-        <dt>Nhà cung cấp:</dt>
-        <dd><?php echo htmlspecialchars($device['ten_npp'] ?? 'N/A'); ?></dd>
-
-        <dt>Ngày mua:</dt>
-        <dd><?php echo htmlspecialchars($device['ngay_mua']); ?></dd>
-
-        <dt>Giá mua (VNĐ):</dt>
-        <dd><?php echo htmlspecialchars(number_format($device['gia_mua'], 0, ',', '.')); ?></dd>
-
-        <dt>Bảo hành đến:</dt>
-        <dd><?php echo htmlspecialchars($device['bao_hanh_den']); ?></dd>
-
-        <dt>Trạng thái:</dt>
-        <dd><?php echo htmlspecialchars($device['trang_thai']); ?></dd>
-
-        <dt>Ghi chú:</dt>
-        <dd><?php echo nl2br(htmlspecialchars($device['ghi_chu'])); ?></dd>
-
-        <dt>Ngày tạo hồ sơ:</dt>
-        <dd><?php echo htmlspecialchars($device['created_at']); ?></dd>
-    </dl>
-
-    <div class="view-actions">
-        <a href="index.php?page=devices/list" class="btn btn-secondary">Quay lại danh sách</a>
+<div class="page-header">
+    <h2><i class="fas fa-info-circle"></i> Chi tiết Thiết bị</h2>
+    <div class="header-actions">
+        <a href="index.php?page=devices/list" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+        <a href="index.php?page=devices/edit&id=<?php echo $device['id']; ?>" class="btn btn-primary"><i class="fas fa-edit"></i> Chỉnh sửa</a>
     </div>
 </div>
 
-<?php
-// Include the file management section
-include_once __DIR__ . '/../device_files/manage.php';
+<div class="view-grid-layout">
+    <!-- Left Column: Device Info & Files -->
+    <div class="info-column">
+        <!-- Main Info Card -->
+        <div class="card info-card">
+            <div class="card-header-custom">
+                <h3><i class="fas fa-microchip"></i> Thông tin Chung</h3>
+                <?php 
+                    $statusClass = 'status-default';
+                    if ($device['trang_thai'] === 'Đang sử dụng') $statusClass = 'status-active';
+                    elseif ($device['trang_thai'] === 'Hỏng') $statusClass = 'status-error';
+                    elseif ($device['trang_thai'] === 'Thanh lý') $statusClass = 'status-warning';
+                ?>
+                <span class="badge <?php echo $statusClass; ?>"><?php echo htmlspecialchars($device['trang_thai']); ?></span>
+            </div>
+            
+            <div class="card-body-custom">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label"><i class="fas fa-barcode"></i> Mã Tài sản</span>
+                        <span class="info-value highlight"><?php echo htmlspecialchars($device['ma_tai_san']); ?></span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label"><i class="fas fa-desktop"></i> Tên Thiết bị</span>
+                        <span class="info-value strong"><?php echo htmlspecialchars($device['ten_thiet_bi']); ?></span>
+                    </div>
 
-// Fetch maintenance logs for this device
-$maintenance_stmt = $pdo->prepare("SELECT * FROM maintenance_logs WHERE device_id = ? ORDER BY ngay_su_co DESC");
-$maintenance_stmt->execute([$device_id]);
-$maintenance_logs = $maintenance_stmt->fetchAll();
-?>
+                    <div class="info-item">
+                        <span class="info-label"><i class="fas fa-layer-group"></i> Loại / Nhóm</span>
+                        <span class="info-value"><?php echo htmlspecialchars($device['loai_thiet_bi']); ?> <span class="text-muted">/ <?php echo htmlspecialchars($device['nhom_thiet_bi']); ?></span></span>
+                    </div>
 
-<div class="maintenance-history-section">
-    <h3>Lịch sử Bảo trì</h3>
-    <?php if (empty($maintenance_logs)): ?>
-        <p>Chưa có lịch sử bảo trì cho thiết bị này.</p>
-    <?php else: ?>
-        <table class="content-table">
-            <thead>
-                <tr>
-                    <th>Ngày sự cố</th>
-                    <th>Mô tả</th>
-                    <th>Hư hỏng</th>
-                    <th>Xử lý</th>
-                    <th>Chi phí</th>
-                    <th>Ngày tạo</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($maintenance_logs as $log): ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($log['ngay_su_co']); ?></td>
-                        <td><?php echo nl2br(htmlspecialchars($log['noi_dung'])); ?></td>
-                        <td><?php echo nl2br(htmlspecialchars($log['hu_hong'])); ?></td>
-                        <td><?php echo nl2br(htmlspecialchars($log['xu_ly'])); ?></td>
-                        <td><?php echo htmlspecialchars(number_format($log['chi_phi'], 0, ',', '.')); ?></td>
-                        <td><?php echo htmlspecialchars($log['created_at']); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php endif; ?>
+                    <div class="info-item">
+                        <span class="info-label"><i class="fas fa-cube"></i> Model</span>
+                        <span class="info-value"><?php echo htmlspecialchars($device['model']); ?></span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label"><i class="fas fa-fingerprint"></i> Serial Number</span>
+                        <span class="info-value"><?php echo htmlspecialchars($device['serial']); ?></span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label"><i class="fas fa-building"></i> Dự án</span>
+                        <span class="info-value"><a href="#" class="link-primary"><?php echo htmlspecialchars($device['ten_du_an'] ?? 'Chưa phân bổ'); ?></a></span>
+                    </div>
+                    
+                    <div class="info-item full-width">
+                        <span class="info-label"><i class="fas fa-sticky-note"></i> Ghi chú</span>
+                        <div class="info-value note-box">
+                            <?php echo nl2br(htmlspecialchars($device['ghi_chu'] ?? 'Không có ghi chú')); ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Procurement Info Card -->
+        <div class="card procurement-card">
+            <div class="card-header-custom">
+                <h3><i class="fas fa-shopping-cart"></i> Thông tin Mua sắm</h3>
+            </div>
+            <div class="card-body-custom">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label"><i class="fas fa-truck"></i> Nhà cung cấp</span>
+                        <span class="info-value"><?php echo htmlspecialchars($device['ten_npp'] ?? 'N/A'); ?></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label"><i class="fas fa-calendar-alt"></i> Ngày mua</span>
+                        <span class="info-value"><?php echo $device['ngay_mua'] ? date('d/m/Y', strtotime($device['ngay_mua'])) : 'N/A'; ?></span>
+                    </div>
+                    <div class="info-item">
+                         <span class="info-label"><i class="fas fa-tag"></i> Giá mua</span>
+                         <span class="info-value price"><?php echo number_format($device['gia_mua'], 0, ',', '.'); ?> ₫</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label"><i class="fas fa-shield-alt"></i> Bảo hành đến</span>
+                        <span class="info-value <?php echo (strtotime($device['bao_hanh_den']) < time()) ? 'text-danger' : 'text-success'; ?>">
+                            <?php echo $device['bao_hanh_den'] ? date('d/m/Y', strtotime($device['bao_hanh_den'])) : 'N/A'; ?>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- File Attachments Module -->
+        <div class="card mt-20">
+            <div class="card-header-custom">
+                <h3><i class="fas fa-paperclip"></i> Tài liệu đính kèm</h3>
+            </div>
+            <div class="card-body-custom">
+                <?php include_once __DIR__ . '/../device_files/manage.php'; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Maintenance History -->
+    <div class="history-column">
+        <div class="card history-card">
+            <div class="card-header-custom">
+                <h3><i class="fas fa-history"></i> Lịch sử Bảo trì</h3>
+                <a href="index.php?page=maintenance/add&device_id=<?php echo $device['id']; ?>" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i> Tạo mới</a>
+            </div>
+            <div class="card-body-custom">
+                <?php
+                // Fetch maintenance logs
+                $maintenance_stmt = $pdo->prepare("SELECT * FROM maintenance_logs WHERE device_id = ? ORDER BY ngay_su_co DESC");
+                $maintenance_stmt->execute([$device_id]);
+                $maintenance_logs = $maintenance_stmt->fetchAll();
+                ?>
+
+                <?php if (empty($maintenance_logs)): ?>
+                    <div class="empty-state-small">
+                        <div class="icon-circle"><i class="fas fa-clipboard-check"></i></div>
+                        <p>Chưa có lịch sử bảo trì.</p>
+                    </div>
+                <?php else: ?>
+                    <div class="timeline">
+                        <?php foreach ($maintenance_logs as $log): ?>
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-header">
+                                        <span class="date"><i class="far fa-calendar"></i> <?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></span>
+                                        <?php if($log['chi_phi'] > 0): ?>
+                                            <span class="cost badge status-warning">- <?php echo number_format($log['chi_phi'], 0, ',', '.'); ?> đ</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <h4 class="title"><?php echo htmlspecialchars($log['noi_dung']); ?></h4>
+                                    
+                                    <div class="log-details">
+                                        <?php if ($log['hu_hong']): ?>
+                                            <div class="log-row error">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                <span><?php echo htmlspecialchars($log['hu_hong']); ?></span>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if ($log['xu_ly']): ?>
+                                            <div class="log-row success">
+                                                <i class="fas fa-tools"></i>
+                                                <span><?php echo htmlspecialchars($log['xu_ly']); ?></span>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+/* --- VIEW PAGE SPECIFIC STYLES --- */
+.view-grid-layout {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 30px;
+    align-items: start;
+}
+
+/* Card Header Customization */
+.card-header-custom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.card-header-custom h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.card-header-custom h3 i {
+    color: var(--primary-color);
+    background: #ecfdf5;
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+/* Info Grid Styling */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px 30px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.info-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.info-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-light-color);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.info-label i { color: #94a3b8; }
+
+.info-value {
+    font-size: 0.95rem;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.info-value.highlight {
+    font-family: 'Consolas', monospace;
+    color: var(--primary-dark-color);
+    background: #f0fdf4;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    width: fit-content;
+}
+
+.info-value.strong { font-weight: 700; font-size: 1.05rem; }
+.info-value.price { font-weight: 700; color: #d97706; font-size: 1.1rem; }
+.info-value.text-muted { color: #94a3b8; font-weight: 400; font-size: 0.85rem; }
+
+.note-box {
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px dashed #cbd5e1;
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+    line-height: 1.6;
+}
+
+/* Timeline Styling - Modern */
+.timeline {
+    position: relative;
+    padding-left: 25px;
+    border-left: 2px solid #e2e8f0;
+    margin-left: 10px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -32px;
+    top: 0;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border: 3px solid var(--primary-color);
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px #ecfdf5;
+}
+
+.timeline-content {
+    background: #fff;
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+}
+
+.timeline-header .date {
+    color: var(--text-light-color);
+    font-weight: 600;
+}
+
+.timeline-content .title {
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+    color: var(--text-color);
+    font-weight: 700;
+}
+
+.log-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.log-row {
+    display: flex;
+    gap: 10px;
+    font-size: 0.9rem;
+    padding: 8px 12px;
+    border-radius: 6px;
+    align-items: start;
+}
+
+.log-row.error { background: #fef2f2; color: #991b1b; }
+.log-row.success { background: #f0fdf4; color: #166534; }
+.log-row i { margin-top: 3px; }
+
+/* Empty State */
+.empty-state-small {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light-color);
+}
+.icon-circle {
+    width: 60px; height: 60px;
+    background: #f1f5f9;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 15px auto;
+}
+.icon-circle i { font-size: 1.5rem; color: #94a3b8; }
+
+/* Responsive */
+@media (max-width: 992px) {
+    .view-grid-layout {
+        grid-template-columns: 1fr;
+    }
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>

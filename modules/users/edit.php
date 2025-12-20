@@ -77,33 +77,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<h2>Sửa Người dùng: <?php echo htmlspecialchars($user['username']); ?></h2>
+<div class="page-header">
+    <h2><i class="fas fa-user-edit"></i> Sửa Người dùng: <?php echo htmlspecialchars($user['username']); ?></h2>
+    <a href="index.php?page=users/list" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+</div>
 
-
-<div class="form-container">
+<div class="card form-container">
     <form action="index.php?page=users/edit&id=<?php echo $user_id; ?>" method="POST" class="form-grid">
-        <div class="form-group">
-            <label for="username">Tên đăng nhập (*)</label>
+        <div class="form-group full-width">
+            <label for="username">Tên đăng nhập <span class="required">*</span></label>
             <input type="text" id="username" name="username" required value="<?php echo htmlspecialchars($_POST['username'] ?? $user['username']); ?>">
         </div>
         <div class="form-group">
-            <label for="password">Mật khẩu mới (để trống nếu không đổi)</label>
-            <input type="password" id="password" name="password">
-            <small>Để trống nếu không muốn thay đổi mật khẩu.</small>
+            <label for="password">Mật khẩu mới</label>
+            <input type="password" id="password" name="password" placeholder="Để trống nếu không muốn đổi">
+            <small class="text-muted"><i class="fas fa-info-circle"></i> Chỉ nhập nếu bạn muốn thay đổi mật khẩu hiện tại.</small>
         </div>
 
         <div class="form-group">
             <label for="role">Vai trò</label>
             <select id="role" name="role">
-                <option value="admin" <?php echo (($_POST['role'] ?? $user['role']) == 'admin') ? 'selected' : ''; ?>>Admin</option>
-                <option value="it" <?php echo (($_POST['role'] ?? $user['role']) == 'it') ? 'selected' : ''; ?>>IT</option>
-                <option value="xem" <?php echo (($_POST['role'] ?? $user['role']) == 'xem') ? 'selected' : ''; ?>>Xem</option>
+                <option value="xem" <?php echo (($_POST['role'] ?? $user['role']) == 'xem') ? 'selected' : ''; ?>>Xem (Chỉ xem)</option>
+                <option value="it" <?php echo (($_POST['role'] ?? $user['role']) == 'it') ? 'selected' : ''; ?>>IT (Quản lý thiết bị)</option>
+                <option value="admin" <?php echo (($_POST['role'] ?? $user['role']) == 'admin') ? 'selected' : ''; ?>>Admin (Toàn quyền)</option>
             </select>
         </div>
 
         <div class="form-actions full-width">
             <a href="index.php?page=users/list" class="btn btn-secondary">Hủy</a>
-            <button type="submit" class="btn btn-primary">Cập nhật Người dùng</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Cập nhật</button>
         </div>
     </form>
 </div>

@@ -39,17 +39,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<h2>Thêm Nhật ký Bảo trì mới</h2>
+<div class="page-header">
+    <h2><i class="fas fa-plus-circle"></i> Thêm Nhật ký Bảo trì</h2>
+    <a href="index.php?page=maintenance/history" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+</div>
 
-
-<div class="form-container">
+<div class="card form-container">
     <form action="index.php?page=maintenance/add" method="POST" class="form-grid">
-        <div class="form-group">
-            <label for="device_id">Thiết bị (*)</label>
-            <select id="device_id" name="device_id" required>
-                <option value="">-- Chọn thiết bị --</option>
-                <?php foreach ($devices as $device): ?>
-                    <option value="<?php echo $device['id']; ?>" <?php echo (($_POST['device_id'] ?? '') == $device['id']) ? 'selected' : ''; ?>>
+        <div class="form-group full-width">
+            <label for="device_id">Thiết bị <span class="required">*</span></label>
+            <select id="device_id" name="device_id" required class="select-searchable">
+                <option value="">-- Chọn thiết bị cần bảo trì --</option>
+                <?php 
+                $preselected_device = $_GET['device_id'] ?? ($_POST['device_id'] ?? '');
+                foreach ($devices as $device): 
+                ?>
+                    <option value="<?php echo $device['id']; ?>" <?php echo ($preselected_device == $device['id']) ? 'selected' : ''; ?>>
                         <?php echo htmlspecialchars($device['ma_tai_san'] . ' - ' . $device['ten_thiet_bi']); ?>
                     </option>
                 <?php endforeach; ?>
@@ -57,33 +62,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <div class="form-group">
-            <label for="ngay_su_co">Ngày sự cố (*)</label>
-            <input type="date" id="ngay_su_co" name="ngay_su_co" required value="<?php echo htmlspecialchars($_POST['ngay_su_co'] ?? ''); ?>">
-        </div>
-
-        <div class="form-group full-width">
-            <label for="noi_dung">Mô tả sự cố</label>
-            <textarea id="noi_dung" name="noi_dung"><?php echo htmlspecialchars($_POST['noi_dung'] ?? ''); ?></textarea>
-        </div>
-
-        <div class="form-group full-width">
-            <label for="hu_hong">Hư hỏng</label>
-            <textarea id="hu_hong" name="hu_hong"><?php echo htmlspecialchars($_POST['hu_hong'] ?? ''); ?></textarea>
-        </div>
-
-        <div class="form-group full-width">
-            <label for="xu_ly">Xử lý</label>
-            <textarea id="xu_ly" name="xu_ly"><?php echo htmlspecialchars($_POST['xu_ly'] ?? ''); ?></textarea>
+            <label for="ngay_su_co">Ngày sự cố <span class="required">*</span></label>
+            <input type="date" id="ngay_su_co" name="ngay_su_co" required value="<?php echo htmlspecialchars($_POST['ngay_su_co'] ?? date('Y-m-d')); ?>">
         </div>
 
         <div class="form-group">
             <label for="chi_phi">Chi phí (VNĐ)</label>
-            <input type="number" id="chi_phi" name="chi_phi" step="1000" value="<?php echo htmlspecialchars($_POST['chi_phi'] ?? ''); ?>">
+            <input type="number" id="chi_phi" name="chi_phi" step="1000" min="0" placeholder="0" value="<?php echo htmlspecialchars($_POST['chi_phi'] ?? ''); ?>">
+        </div>
+
+        <div class="form-group full-width">
+            <label for="noi_dung">Mô tả sự cố (Hiện tượng)</label>
+            <textarea id="noi_dung" name="noi_dung" rows="3" placeholder="Mô tả chi tiết sự cố..."><?php echo htmlspecialchars($_POST['noi_dung'] ?? ''); ?></textarea>
+        </div>
+
+        <div class="form-group full-width">
+            <label for="hu_hong">Nguyên nhân / Hư hỏng thực tế</label>
+            <textarea id="hu_hong" name="hu_hong" rows="3" placeholder="Xác định nguyên nhân hoặc linh kiện hỏng..."><?php echo htmlspecialchars($_POST['hu_hong'] ?? ''); ?></textarea>
+        </div>
+
+        <div class="form-group full-width">
+            <label for="xu_ly">Biện pháp Xử lý / Sửa chữa</label>
+            <textarea id="xu_ly" name="xu_ly" rows="3" placeholder="Các bước đã thực hiện..."><?php echo htmlspecialchars($_POST['xu_ly'] ?? ''); ?></textarea>
         </div>
 
         <div class="form-actions">
             <a href="index.php?page=maintenance/history" class="btn btn-secondary">Hủy</a>
-            <button type="submit" class="btn btn-primary">Lưu Nhật ký</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Lưu Phiếu</button>
         </div>
     </form>
 </div>

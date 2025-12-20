@@ -148,48 +148,73 @@ $statuses = $pdo->query("
 ?>
 
 
-<h2>Danh sách Thiết bị</h2>
+<div class="page-header">
+    <h2><i class="fas fa-server"></i> Danh sách Thiết bị</h2>
+    <a href="index.php?page=devices/add" class="btn btn-primary"><i class="fas fa-plus"></i> Thêm mới</a>
+</div>
 
 <!-- Filter Section -->
-<div class="filter-section">
-    <form action="index.php" method="GET">
+<div class="card filter-section">
+    <form action="index.php" method="GET" class="filter-form">
         <input type="hidden" name="page" value="devices/list">
-        <select name="filter_project">
-            <option value="">-- Lọc theo dự án --</option>
-            <?php foreach ($projects as $project): ?>
-                <option value="<?php echo $project['id']; ?>" <?php echo ($filter_project == $project['id']) ? 'selected' : ''; ?>>
-                    <?php echo htmlspecialchars($project['ten_du_an']); ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-        <select name="filter_status">
-            <option value="">-- Lọc theo trạng thái --</option>
-             <?php foreach ($statuses as $status): ?>
-                <option value="<?php echo htmlspecialchars($status['trang_thai']); ?>" <?php echo ($filter_status == $status['trang_thai']) ? 'selected' : ''; ?>>
-                    <?php echo htmlspecialchars($status['trang_thai']); ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-        <input type="text" name="filter_keyword" placeholder="Lọc theo tên, mã..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
-        <button type="submit" class="btn btn-secondary">Lọc</button>
-        <button type="button" class="btn btn-secondary" onclick="window.location.href='index.php?page=devices/list'">Xóa bộ lọc</button>
+        
+        <div class="filter-group">
+            <label><i class="fas fa-building"></i> Dự án</label>
+            <select name="filter_project">
+                <option value="">-- Tất cả --</option>
+                <?php foreach ($projects as $project): ?>
+                    <option value="<?php echo $project['id']; ?>" <?php echo ($filter_project == $project['id']) ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($project['ten_du_an']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label><i class="fas fa-info-circle"></i> Trạng thái</label>
+            <select name="filter_status">
+                <option value="">-- Tất cả --</option>
+                 <?php foreach ($statuses as $status): ?>
+                    <option value="<?php echo htmlspecialchars($status['trang_thai']); ?>" <?php echo ($filter_status == $status['trang_thai']) ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($status['trang_thai']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label><i class="fas fa-search"></i> Tìm kiếm</label>
+            <input type="text" name="filter_keyword" placeholder="Mã TS, Tên thiết bị..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Lọc</button>
+            <a href="index.php?page=devices/list" class="btn btn-secondary" title="Xóa bộ lọc"><i class="fas fa-undo"></i></a>
+        </div>
     </form>
 </div>
 
 <!-- Main form for actions like export -->
 <form action="index.php?page=devices/export" method="POST" id="devices-form">
-    <div class="table-actions">
-        <a href="index.php?page=devices/add" class="add-button btn btn-primary">Thêm thiết bị mới</a>
-        <button type="submit" name="export_selected" class="btn btn-secondary" id="export-selected-btn" style="display: none;" formaction="index.php?page=devices/export">Export ra CSV</button>
-        <button type="button" name="delete_selected" class="btn btn-danger" id="delete-selected-btn" style="display: none;">Xóa mục đã chọn</button>
-        <span id="selected-count" style="margin-left: 15px; margin-right: 15px; font-weight: bold; display: none;"></span>
+    
+    <!-- Batch Actions Toolbar -->
+    <div class="batch-actions" id="batch-actions" style="display: none;">
+        <span class="selected-count-label">Đã chọn <strong id="selected-count">0</strong> thiết bị</span>
+        <div class="action-buttons">
+            <button type="submit" name="export_selected" class="btn btn-secondary btn-sm" formaction="index.php?page=devices/export">
+                <i class="fas fa-file-export"></i> Xuất CSV
+            </button>
+            <button type="button" name="delete_selected" class="btn btn-danger btn-sm" id="delete-selected-btn">
+                <i class="fas fa-trash-alt"></i> Xóa
+            </button>
+        </div>
     </div>
 
-    <div class="content-table-wrapper">
+    <div class="table-container card">
         <table class="content-table">
             <thead>
                 <tr>
-                    <th><input type="checkbox" id="select-all"></th>
+                    <th width="40"><input type="checkbox" id="select-all"></th>
                     <?php
                     $columns = [
                         'ma_tai_san' => 'Mã Tài sản',
@@ -201,40 +226,59 @@ $statuses = $pdo->query("
 
                     foreach ($columns as $col_name => $col_label) {
                         $new_sort_order = 'ASC';
-                        $sort_indicator = '';
+                        $sort_icon = '<i class="fas fa-sort" style="color: #ccc;"></i>';
+                        
                         if ($sort_by == $col_name) {
                             $new_sort_order = ($sort_order == 'ASC') ? 'DESC' : 'ASC';
-                            $sort_indicator = ($sort_order == 'ASC') ? ' &#x25B2;' : ' &#x25BC;';
+                            $sort_icon = ($sort_order == 'ASC') ? '<i class="fas fa-sort-up"></i>' : '<i class="fas fa-sort-down"></i>';
                         }
+                        
                         // Preserve existing GET parameters
                         $current_query_params = $_GET;
                         $current_query_params['sort_by'] = $col_name;
                         $current_query_params['sort_order'] = $new_sort_order;
                         $sort_link = 'index.php?' . http_build_query($current_query_params);
-                        echo '<th><a href="' . $sort_link . '">' . htmlspecialchars($col_label) . $sort_indicator . '</a></th>';
+                        
+                        echo '<th><a href="' . $sort_link . '" class="sort-link">' . htmlspecialchars($col_label) . ' ' . $sort_icon . '</a></th>';
                     }
                     ?>
-                    <th>Thao tác</th>
+                    <th width="120" class="text-center">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($devices)): ?>
                     <tr>
-                        <td colspan="7" style="text-align: center;">Không tìm thấy thiết bị nào.</td>
+                        <td colspan="7" class="empty-state">
+                            <i class="fas fa-search" style="font-size: 3rem; color: #e2e8f0; margin-bottom: 10px;"></i>
+                            <p>Không tìm thấy thiết bị nào phù hợp.</p>
+                        </td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($devices as $device): ?>
                         <tr>
                             <td><input type="checkbox" name="selected_devices[]" value="<?php echo $device['id']; ?>" class="row-checkbox"></td>
-                            <td><?php echo htmlspecialchars($device['ma_tai_san']); ?></td>
+                            <td class="font-medium text-primary"><?php echo htmlspecialchars($device['ma_tai_san']); ?></td>
                             <td><?php echo htmlspecialchars($device['ten_thiet_bi']); ?></td>
                             <td><?php echo htmlspecialchars($device['ten_du_an']); ?></td>
                             <td><?php echo htmlspecialchars($device['ten_npp']); ?></td>
-                            <td><?php echo htmlspecialchars($device['trang_thai']); ?></td>
-                            <td class="actions">
-                                <a href="index.php?page=devices/view&id=<?php echo $device['id']; ?>" class="btn view-btn">Xem</a>
-                                <a href="index.php?page=devices/edit&id=<?php echo $device['id']; ?>" class="btn edit-btn">Sửa</a>
-                                <a href="index.php?page=devices/delete&id=<?php echo $device['id']; ?>" class="btn delete-btn">Xóa</a>
+                            <td>
+                                <?php 
+                                    $statusClass = 'status-default';
+                                    if ($device['trang_thai'] === 'Đang sử dụng') $statusClass = 'status-active';
+                                    elseif ($device['trang_thai'] === 'Hỏng') $statusClass = 'status-error';
+                                    elseif ($device['trang_thai'] === 'Thanh lý') $statusClass = 'status-warning';
+                                ?>
+                                <span class="badge <?php echo $statusClass; ?>"><?php echo htmlspecialchars($device['trang_thai']); ?></span>
+                            </td>
+                            <td class="actions text-center">
+                                <a href="index.php?page=devices/view&id=<?php echo $device['id']; ?>" class="btn-icon" title="Xem"><i class="fas fa-eye"></i></a>
+                                <a href="index.php?page=devices/edit&id=<?php echo $device['id']; ?>" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
+                                <button type="button" 
+                                        class="btn-icon text-danger" 
+                                        title="Xóa"
+                                        onclick="openDeleteModal(<?php echo $device['id']; ?>, '<?php echo htmlspecialchars($device['ten_thiet_bi']); ?>', '<?php echo htmlspecialchars($device['ma_tai_san']); ?>')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -245,71 +289,83 @@ $statuses = $pdo->query("
 </form>
 
 <!-- Pagination Section -->
-<div class="pagination">
-    <div class="pagination-links">
-        <?php
-        // Build URL with existing filters and sort parameters
-        $query_params = $_GET;
-        unset($query_params['p']); // Unset page number for base URL
-        $base_url = 'index.php?' . http_build_query($query_params);
-        ?>
-
-        <a href="<?php echo $base_url . '&p=1'; ?>" <?php echo $current_page <= 1 ? 'class="disabled"' : ''; ?>>&laquo; Đầu</a>
-        <a href="<?php echo $base_url . '&p=' . ($current_page - 1); ?>" <?php echo $current_page <= 1 ? 'class="disabled"' : ''; ?>>&laquo; Trước</a>
-
-        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-            <a href="<?php echo $base_url . '&p=' . $i; ?>" class="<?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
-        <?php endfor; ?>
-
-        <a href="<?php echo $base_url . '&p=' . ($current_page + 1); ?>" <?php echo $current_page >= $total_pages ? 'class="disabled"' : ''; ?>>Sau &raquo;</a>
-        <a href="<?php echo $base_url . '&p=' . $total_pages; ?>" <?php echo $current_page >= $total_pages ? 'class="disabled"' : ''; ?>>Cuối &raquo;</a>
-    </div>
-
-    <div class="pagination-controls">
+<div class="pagination-container">
+    <div class="rows-per-page">
         <form action="index.php" method="GET" class="rows-per-page-form">
             <input type="hidden" name="page" value="devices/list">
-            <!-- Persist other filters and sort parameters -->
             <?php foreach ($_GET as $key => $value): ?>
                 <?php if ($key !== 'limit' && $key !== 'page'): ?>
                     <input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>">
                 <?php endif; ?>
             <?php endforeach; ?>
-            <span class="rows-per-page">
-                <span>Hiển thị</span>
-                <select name="limit" onchange="this.form.submit()">
-                    <option value="5" <?php echo $rows_per_page == 5 ? 'selected' : ''; ?>>5</option>
-                    <option value="10" <?php echo $rows_per_page == 10 ? '' : ''; ?>>10</option>
-                    <option value="25" <?php echo $rows_per_page == 25 ? 'selected' : ''; ?>>25</option>
-                    <option value="50" <?php echo $rows_per_page == 50 ? 'selected' : ''; ?>>50</option>
-                    <option value="100" <?php echo $rows_per_page == 100 ? 'selected' : ''; ?>>100</option>
-                </select>
-                <span>dòng mỗi trang.</span>
-            </span>
+            <label>Hiển thị</label>
+            <select name="limit" onchange="this.form.submit()" class="form-select-sm">
+                <option value="5" <?php echo $rows_per_page == 5 ? 'selected' : ''; ?>>5</option>
+                <option value="10" <?php echo $rows_per_page == 10 ? 'selected' : ''; ?>>10</option>
+                <option value="25" <?php echo $rows_per_page == 25 ? 'selected' : ''; ?>>25</option>
+                <option value="50" <?php echo $rows_per_page == 50 ? 'selected' : ''; ?>>50</option>
+            </select>
+        </form>
+    </div>
+
+    <div class="pagination-links">
+        <?php
+        $query_params = $_GET;
+        unset($query_params['p']); 
+        $base_url = 'index.php?' . http_build_query($query_params);
+        ?>
+
+        <a href="<?php echo $base_url . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-left"></i></a>
+        <a href="<?php echo $base_url . '&p=' . ($current_page - 1); ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>"><i class="fas fa-angle-left"></i></a>
+
+        <?php for ($i = max(1, $current_page - 2); $i <= min($total_pages, $current_page + 2); $i++): ?>
+            <a href="<?php echo $base_url . '&p=' . $i; ?>" class="page-link <?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
+        <?php endfor; ?>
+
+        <a href="<?php echo $base_url . '&p=' . ($current_page + 1); ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>"><i class="fas fa-angle-right"></i></a>
+        <a href="<?php echo $base_url . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-right"></i></a>
+    </div>
+</div>
+
+<!-- BEAUTIFUL DELETE MODAL -->
+<div id="deleteDeviceModal" class="modal">
+    <div class="modal-content delete-modal-content">
+        <div class="delete-modal-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h2 class="delete-modal-title">Xác nhận xóa thiết bị?</h2>
+        <p class="delete-modal-text">
+            Bạn đang yêu cầu xóa thiết bị <strong id="modal-device-name"></strong> (<span id="modal-device-code"></span>).
+        </p>
+        <div class="delete-alert-box">
+            <i class="fas fa-info-circle"></i> 
+            <span>Hành động này sẽ xóa vĩnh viễn thiết bị và <strong>tất cả dữ liệu liên quan</strong>. Không thể hoàn tác!</span>
+        </div>
+        
+        <form id="delete-device-form" action="" method="POST" class="delete-modal-actions">
+            <input type="hidden" name="confirm_delete" value="1">
+            <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Hủy bỏ</button>
+            <button type="submit" class="btn btn-danger">Xác nhận Xóa</button>
         </form>
     </div>
 </div>
 
 <script>
+// Main List Functionality
 document.addEventListener('DOMContentLoaded', function() {
     const selectAllCheckbox = document.getElementById('select-all');
     const rowCheckboxes = document.querySelectorAll('.row-checkbox');
-    const deleteSelectedBtn = document.getElementById('delete-selected-btn');
-    const exportSelectedBtn = document.getElementById('export-selected-btn');
-    const selectedCountSpan = document.getElementById('selected-count'); // Thêm dòng này
+    const batchActions = document.getElementById('batch-actions');
+    const selectedCountSpan = document.getElementById('selected-count');
 
     function updateActionButtons() {
         const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
         
         if (checkedCount > 0) {
-            deleteSelectedBtn.style.display = 'inline-flex';
-            exportSelectedBtn.style.display = 'inline-flex';
-            selectedCountSpan.style.display = 'inline'; // Hiển thị span
-            selectedCountSpan.textContent = `Đã chọn ${checkedCount} thiết bị`; // Cập nhật văn bản
+            batchActions.style.display = 'flex';
+            selectedCountSpan.textContent = checkedCount;
         } else {
-            deleteSelectedBtn.style.display = 'none';
-            exportSelectedBtn.style.display = 'none';
-            selectedCountSpan.style.display = 'none'; // Ẩn span
-            selectedCountSpan.textContent = ''; // Xóa văn bản
+            batchActions.style.display = 'none';
         }
     }
 
@@ -324,7 +380,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     rowCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
-            // Uncheck 'select all' if a row is manually unchecked
             if (!this.checked) {
                 selectAllCheckbox.checked = false;
             }
@@ -332,7 +387,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Initial check on page load
     updateActionButtons();
 });
+
+// Modal Logic
+function openDeleteModal(id, name, code) {
+    document.getElementById('modal-device-name').textContent = name;
+    document.getElementById('modal-device-code').textContent = code;
+    document.getElementById('delete-device-form').action = 'index.php?page=devices/delete&id=' + id;
+    
+    document.getElementById('deleteDeviceModal').classList.add('show');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteDeviceModal').classList.remove('show');
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('deleteDeviceModal');
+    if (event.target == modal) {
+        closeDeleteModal();
+    }
+}
 </script>

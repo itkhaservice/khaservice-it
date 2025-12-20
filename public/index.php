@@ -6,233 +6,270 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/messages.php'; // Include messages helper
 
 // --- Dashboard Data Fetching Logic ---
-if (($page ?? 'home') === 'home') { // Only fetch dashboard data if on the home page
+if (($page ?? 'home') === 'home') {
     try {
-        // KPI Cards Data
+        // 1. KPI Cards Data
         $total_devices = $pdo->query("SELECT COUNT(id) FROM devices")->fetchColumn();
         $devices_nearing_warranty = $pdo->query("SELECT COUNT(id) FROM devices WHERE bao_hanh_den IS NOT NULL AND bao_hanh_den BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 90 DAY)")->fetchColumn();
         $broken_or_liquidated_devices = $pdo->query("SELECT COUNT(id) FROM devices WHERE trang_thai IN ('Hỏng', 'Thanh lý')")->fetchColumn();
         $total_maintenance_logs = $pdo->query("SELECT COUNT(id) FROM maintenance_logs")->fetchColumn();
 
-        // Action Zone - Overdue Warranty Devices
+        // 2. Action Zone - Critical Alerts
         $overdue_warranty_devices_stmt = $pdo->prepare("SELECT id, ma_tai_san, ten_thiet_bi, bao_hanh_den FROM devices WHERE bao_hanh_den IS NOT NULL AND bao_hanh_den < CURDATE() LIMIT 5");
         $overdue_warranty_devices_stmt->execute();
         $overdue_warranty_devices = $overdue_warranty_devices_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Action Zone - Broken Devices with liquidation notes
         $broken_with_liquidation_notes_stmt = $pdo->prepare("SELECT id, ma_tai_san, ten_thiet_bi, ghi_chu FROM devices WHERE (trang_thai = 'Hỏng' OR trang_thai = 'Thanh lý') AND ghi_chu LIKE '%thanh lý%' LIMIT 5");
         $broken_with_liquidation_notes_stmt->execute();
         $broken_with_liquidation_notes = $broken_with_liquidation_notes_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Summary Table - Device Group Summary (Office/Parking)
-        $device_group_summary_stmt = $pdo->query("
-            SELECT
-                nhom_thiet_bi,
-                COUNT(id) AS total_devices,
-                COUNT(CASE WHEN trang_thai = 'Đang sử dụng' THEN 1 END) AS in_use,
-                COUNT(CASE WHEN trang_thai IN ('Hỏng', 'Thanh lý') THEN 1 END) AS broken_or_liquidated
-            FROM devices
-            GROUP BY nhom_thiet_bi
-            ORDER BY nhom_thiet_bi
-        ");
-        $device_group_summary = $device_group_summary_stmt->fetchAll(PDO::FETCH_ASSOC);
+        // 3. Chart Data: Device Status Distribution
+        $device_status_stats = $pdo->query("SELECT trang_thai, COUNT(*) as count FROM devices GROUP BY trang_thai")->fetchAll(PDO::FETCH_KEY_PAIR);
+        $statuses = ['Đang sử dụng', 'Hỏng', 'Thanh lý', 'Mới nhập'];
+        foreach ($statuses as $s) {
+            if (!isset($device_status_stats[$s])) $device_status_stats[$s] = 0;
+        }
 
-        // Summary Table - Top 5 Projects with Most Broken Devices
-        $top_5_broken_projects_stmt = $pdo->query("
-            SELECT
-                p.ma_du_an,
-                p.ten_du_an,
-                COUNT(d.id) AS broken_devices_count,
-                MAX(ml.ngay_su_co) AS last_maintenance_date
-            FROM devices d
-            JOIN projects p ON d.project_id = p.id
-            LEFT JOIN maintenance_logs ml ON d.id = ml.device_id
-            WHERE d.trang_thai IN ('Hỏng', 'Thanh lý')
-            GROUP BY p.id, p.ma_du_an, p.ten_du_an
-            ORDER BY broken_devices_count DESC, last_maintenance_date DESC
+        // 4. Chart Data: Device Type Distribution (Top 5)
+        $device_type_stats_stmt = $pdo->query("SELECT loai_thiet_bi, COUNT(*) as count FROM devices GROUP BY loai_thiet_bi ORDER BY count DESC LIMIT 5");
+        $device_type_stats = $device_type_stats_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // 5. Recent Activity Feed (Latest Maintenance Logs)
+        $recent_activities_stmt = $pdo->query("
+            SELECT 
+                ml.id, 
+                ml.ngay_su_co, 
+                ml.noi_dung, 
+                ml.created_at, 
+                d.ma_tai_san, 
+                d.ten_thiet_bi 
+            FROM maintenance_logs ml
+            JOIN devices d ON ml.device_id = d.id
+            ORDER BY ml.created_at DESC 
             LIMIT 5
         ");
-        $top_5_broken_projects = $top_5_broken_projects_stmt->fetchAll(PDO::FETCH_ASSOC);
+        $recent_activities = $recent_activities_stmt->fetchAll(PDO::FETCH_ASSOC);
 
     } catch (PDOException $e) {
-        // Handle database errors (e.g., log, display a generic message)
         error_log("Dashboard data fetch error: " . $e->getMessage());
-        // Set variables to empty arrays/default values to prevent errors in HTML
-        $total_devices = 0;
-        $devices_nearing_warranty = 0;
-        $broken_or_liquidated_devices = 0;
-        $total_maintenance_logs = 0;
-        $overdue_warranty_devices = [];
-        $broken_with_liquidation_notes = [];
-        $device_group_summary = [];
-        $top_5_broken_projects = [];
-        set_message("Đã xảy ra lỗi khi tải dữ liệu trang tổng quan. Vui lòng thử lại sau.", "error");
+        $total_devices = 0; $devices_nearing_warranty = 0; $broken_or_liquidated_devices = 0; $total_maintenance_logs = 0;
+        $overdue_warranty_devices = []; $broken_with_liquidation_notes = [];
+        $device_status_stats = []; $device_type_stats = []; $recent_activities = [];
+        set_message("Lỗi tải dữ liệu Dashboard. Vui lòng thử lại sau.", "error");
     }
 }
 // --- End Dashboard Data Fetching Logic ---
 
-// The header already starts the session and has the necessary HTML boilerplate
 include_once __DIR__ . '/../includes/header.php';
+display_messages();
 
-// Display messages
-display_messages(); // Call to display messages
-
-// Simple router based on 'page' GET parameter
+// Routing Logic
 $page = $_GET['page'] ?? 'home';
-
-// Sanitize the page parameter to prevent directory traversal.
-// We allow a-z, A-Z, 0-9, and the forward slash '/' for subdirectories.
-$page = preg_replace('/[^a-zA-Z0-9\/_.-]/', '', $page); // Allow safe characters
-
-// Construct the full path
+$page = preg_replace('/[^a-zA-Z0-9\/_.-]/', '', $page); // Sanitize
 $requested_file = __DIR__ . '/../modules/' . $page . '.php';
-
-// Normalize paths and check if the requested file is within the modules directory
 $base_path = realpath(__DIR__ . '/../modules');
 $module_path = realpath($requested_file);
 
-// Check if the resolved path is inside the modules directory and the file exists
-if ($module_path === false || strpos($module_path, $base_path) !== 0) {
-    // If not, invalidate the path to trigger the 'else' block.
-    $module_path = false;
-}
-
-if ($module_path && file_exists($module_path)) {
+if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($module_path)) {
     include $module_path;
-} else { // This is the dashboard content
+} else { 
+    // --- DASHBOARD VIEW ---
 ?>
-    <div class="dashboard-grid">
-        <!-- KPI Cards -->
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <div class="dashboard-container">
+        <h2 style="margin-bottom: 30px; font-size: 1.8rem; color: #1e293b;">Tổng quan Hệ thống</h2>
+
+        <!-- 1. KPI Cards -->
         <div class="kpi-cards">
             <div class="kpi-card">
-                <span class="kpi-label">Tổng Thiết bị Đang Quản lý</span>
-                <span class="kpi-value"><?= htmlspecialchars($total_devices) ?></span>
-                <span class="kpi-icon"><i class="fas fa-microchip"></i></span>
+                <span class="kpi-label">Tổng Thiết bị</span>
+                <span class="kpi-value"><?= number_format($total_devices) ?></span>
+                <span class="kpi-icon"><i class="fas fa-server"></i></span>
             </div>
             <div class="kpi-card warning">
-                <span class="kpi-label">Thiết bị Sắp Hết Bảo hành (90 ngày)</span>
-                <span class="kpi-value"><?= htmlspecialchars($devices_nearing_warranty) ?></span>
-                <span class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></span>
+                <span class="kpi-label">Sắp hết Bảo hành</span>
+                <span class="kpi-value"><?= number_format($devices_nearing_warranty) ?></span>
+                <span class="kpi-icon"><i class="fas fa-clock"></i></span>
             </div>
             <div class="kpi-card error">
-                <span class="kpi-label">Thiết bị Đang Hỏng / Thanh lý</span>
-                <span class="kpi-value"><?= htmlspecialchars($broken_or_liquidated_devices) ?></span>
+                <span class="kpi-label">Hỏng / Thanh lý</span>
+                <span class="kpi-value"><?= number_format($broken_or_liquidated_devices) ?></span>
                 <span class="kpi-icon"><i class="fas fa-times-circle"></i></span>
             </div>
             <div class="kpi-card info">
-                <span class="kpi-label">Tổng Lượt Sự cố/Sửa chữa</span>
-                <span class="kpi-value"><?= htmlspecialchars($total_maintenance_logs) ?></span>
-                <span class="kpi-icon"><i class="fas fa-wrench"></i></span>
+                <span class="kpi-label">Lượt Bảo trì</span>
+                <span class="kpi-value"><?= number_format($total_maintenance_logs) ?></span>
+                <span class="kpi-icon"><i class="fas fa-tools"></i></span>
             </div>
         </div>
 
-        <!-- Action Zone -->
-        <div class="action-zone-card card">
-            <h3>Cần Hành động Khẩn cấp</h3>
-            <?php if (empty($overdue_warranty_devices) && empty($broken_with_liquidation_notes)): ?>
-                <p class="no-action-needed">Không có hành động khẩn cấp nào cần thực hiện.</p>
-            <?php else: ?>
-                <ul class="action-list">
-                    <?php foreach ($overdue_warranty_devices as $device): ?>
-                        <li>
-                            <i class="fas fa-clock action-icon"></i>
-                            <a href="index.php?page=devices/view&id=<?= $device['id'] ?>">Thiết bị <?= htmlspecialchars($device['ma_tai_san']) ?>: Quá hạn bảo hành (<?= date('d/m/Y', strtotime($device['bao_hanh_den'])) ?>)</a>
-                        </li>
-                    <?php endforeach; ?>
-                    <?php foreach ($broken_with_liquidation_notes as $device): ?>
-                        <li>
-                            <i class="fas fa-trash-alt action-icon"></i>
-                            <a href="index.php?page=devices/view&id=<?= $device['id'] ?>">Thiết bị <?= htmlspecialchars($device['ma_tai_san']) ?>: Hỏng/Thanh lý (Ghi chú: <?= htmlspecialchars($device['ghi_chu']) ?>)</a>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php endif; ?>
-        </div>
+        <br>
 
-        <!-- Summary Tables -->
-        <div class="summary-tables">
-            <div class="card summary-table-card">
-                <h3>Tổng hợp theo Nhóm Thiết bị</h3>
-                <div class="content-table-wrapper">
-                    <table class="content-table">
-                        <thead>
-                            <tr>
-                                <th>Nhóm Thiết bị</th>
-                                <th>Tổng số</th>
-                                <th>Đang sử dụng</th>
-                                <th>Hỏng / Thanh lý</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (empty($device_group_summary)): ?>
-                                <tr><td colspan="4">Không có dữ liệu nhóm thiết bị.</td></tr>
-                            <?php else: ?>
-                                <?php foreach ($device_group_summary as $group): ?>
-                                    <tr>
-                                        <td><?= htmlspecialchars($group['nhom_thiet_bi']) ?></td>
-                                        <td><?= htmlspecialchars($group['total_devices']) ?></td>
-                                        <td><?= htmlspecialchars($group['in_use']) ?></td>
-                                        <td><?= htmlspecialchars($group['broken_or_liquidated']) ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+        <!-- 2. Charts Section -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3><i class="fas fa-chart-pie"></i> Tình trạng Thiết bị</h3>
+                <div class="canvas-container">
+                    <canvas id="deviceStatusChart"></canvas>
                 </div>
             </div>
-
-            <div class="card summary-table-card">
-                <h3>Top 5 Dự án có nhiều thiết bị hỏng nhất</h3>
-                <div class="content-table-wrapper">
-                    <table class="content-table">
-                        <thead>
-                            <tr>
-                                <th>Mã Dự án</th>
-                                <th>Tên Dự án</th>
-                                <th>Số thiết bị hỏng</th>
-                                <th>Ngày sửa chữa gần nhất</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (empty($top_5_broken_projects)): ?>
-                                <tr><td colspan="4">Không có dữ liệu dự án hỏng.</td></tr>
-                            <?php else: ?>
-                                <?php foreach ($top_5_broken_projects as $project): ?>
-                                    <tr>
-                                        <td><?= htmlspecialchars($project['ma_du_an']) ?></td>
-                                        <td><?= htmlspecialchars($project['ten_du_an']) ?></td>
-                                        <td><?= htmlspecialchars($project['broken_devices_count']) ?></td>
-                                        <td><?= $project['last_maintenance_date'] ? date('d/m/Y', strtotime($project['last_maintenance_date'])) : 'N/A' ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+            <div class="chart-card">
+                <h3><i class="fas fa-chart-bar"></i> Phân loại Thiết bị (Top 5)</h3>
+                <div class="canvas-container">
+                    <canvas id="deviceTypeChart"></canvas>
                 </div>
+            </div>
+        </div>
+
+        <!-- 3. Activity & Actions -->
+        <div class="activity-grid">
+            <!-- Recent Activity -->
+            <div class="card" style="padding: 25px;">
+                <h3 style="margin-bottom: 20px; font-size: 1.2rem; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-history" style="color: #3b82f6; background: #dbeafe; padding: 8px; border-radius: 8px;"></i> 
+                    Hoạt động Gần đây
+                </h3>
+                <?php if (empty($recent_activities)): ?>
+                    <p style="color: var(--text-light-color); font-style: italic; text-align: center; padding: 20px;">Chưa có hoạt động bảo trì nào.</p>
+                <?php else: ?>
+                    <ul class="activity-list">
+                        <?php foreach ($recent_activities as $activity): ?>
+                            <li class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-wrench"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <h4><?= htmlspecialchars($activity['ten_thiet_bi']) ?> (<?= htmlspecialchars($activity['ma_tai_san']) ?>)</h4>
+                                    <p><?= htmlspecialchars($activity['noi_dung']) ?></p>
+                                    <span class="activity-time"><i class="far fa-clock"></i> <?= date('H:i d/m/Y', strtotime($activity['created_at'])) ?></span>
+                                </div>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <div style="margin-top: 20px; text-align: center;">
+                        <a href="index.php?page=maintenance/history" class="btn btn-secondary" style="font-size: 0.9rem;">Xem tất cả lịch sử</a>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Action Zone -->
+            <div class="action-zone-card card">
+                <h3><i class="fas fa-bell"></i> Cần Xử lý Gấp</h3>
+                <?php if (empty($overdue_warranty_devices) && empty($broken_with_liquidation_notes)): ?>
+                    <div style="text-align: center; padding: 40px 20px;">
+                        <i class="fas fa-check-circle" style="font-size: 3rem; color: #10b981; margin-bottom: 15px;"></i>
+                        <p style="font-weight: 500; color: #059669;">Mọi thứ đều ổn định!</p>
+                        <p style="color: #64748b; font-size: 0.9rem;">Không có cảnh báo khẩn cấp nào.</p>
+                    </div>
+                <?php else: ?>
+                    <ul class="action-list" style="padding: 0 20px 20px 20px;">
+                        <?php foreach ($overdue_warranty_devices as $device): ?>
+                            <li>
+                                <i class="fas fa-exclamation-triangle action-icon"></i>
+                                <a href="index.php?page=devices/view&id=<?= $device['id'] ?>">
+                                    <strong><?= htmlspecialchars($device['ma_tai_san']) ?></strong>
+                                    <span style="color: #d97706; font-size: 0.9rem;">Quá hạn BH: <?= date('d/m/Y', strtotime($device['bao_hanh_den'])) ?></span>
+                                </a>
+                            </li>
+                        <?php endforeach; ?>
+                        <?php foreach ($broken_with_liquidation_notes as $device): ?>
+                            <li>
+                                <i class="fas fa-trash-alt action-icon"></i>
+                                <a href="index.php?page=devices/view&id=<?= $device['id'] ?>">
+                                    <strong><?= htmlspecialchars($device['ma_tai_san']) ?></strong>
+                                    <span style="color: #dc2626; font-size: 0.9rem;">Cần Thanh lý</span>
+                                </a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
             </div>
         </div>
     </div>
+
+    <!-- Chart Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Chart.defaults.font.family = "'Inter', 'Segoe UI', sans-serif";
+            Chart.defaults.color = '#64748b';
+
+            // 1. Device Status Chart (Doughnut)
+            const statusCtx = document.getElementById('deviceStatusChart').getContext('2d');
+            new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: <?= json_encode(array_keys($device_status_stats)) ?>,
+                    datasets: [{
+                        data: <?= json_encode(array_values($device_status_stats)) ?>,
+                        backgroundColor: [
+                            '#10b981', // Đang sử dụng (Green)
+                            '#ef4444', // Hỏng (Red)
+                            '#f59e0b', // Thanh lý (Amber)
+                            '#3b82f6'  // Mới nhập (Blue)
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } },
+                        tooltip: { backgroundColor: '#1e293b', padding: 10, cornerRadius: 8 }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // 2. Device Type Chart (Bar)
+            const typeCtx = document.getElementById('deviceTypeChart').getContext('2d');
+            const typeLabels = <?= json_encode(array_column($device_type_stats, 'loai_thiet_bi')) ?>;
+            const typeCounts = <?= json_encode(array_column($device_type_stats, 'count')) ?>;
+            
+            // Create gradient for bars
+            const gradientBar = typeCtx.createLinearGradient(0, 0, 0, 400);
+            gradientBar.addColorStop(0, '#3b82f6');
+            gradientBar.addColorStop(1, '#2563eb');
+
+            new Chart(typeCtx, {
+                type: 'bar',
+                data: {
+                    labels: typeLabels,
+                    datasets: [{
+                        label: 'Số lượng',
+                        data: typeCounts,
+                        backgroundColor: gradientBar,
+                        borderRadius: 6,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#1e293b', padding: 10, cornerRadius: 8 }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { precision: 0 },
+                            grid: { borderDash: [2, 4], color: '#e2e8f0' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 <?php
 }
 ?>
-
-// Custom Confirmation Modal HTML
-?>
-<div id="customConfirmModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="modalTitle">Xác nhận hành động</h3>
-            <span class="close-button">&times;</span>
-        </div>
-        <div class="modal-body">
-            <p id="modalMessage">Bạn có chắc chắn muốn thực hiện hành động này?</p>
-        </div>
-        <div class="modal-footer">
-            <button id="confirmBtn" class="btn btn-danger">Xác nhận</button>
-            <button id="cancelBtn" class="btn btn-secondary">Hủy</button>
-        </div>
-    </div>
-</div>
 
 <?php
 include_once __DIR__ . '/../includes/footer.php';
