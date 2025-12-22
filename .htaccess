@@ -2,7 +2,7 @@
 Options -Indexes
 
 RewriteEngine On
-RewriteBase /khaservice-it/
+RewriteBase /
 
 # Redirect root access to public/
 RewriteRule ^$ public/ [L]
