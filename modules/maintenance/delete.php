@@ -11,7 +11,7 @@ $id = $_GET['id'];
 $stmt = $pdo->prepare("
     SELECT ml.*, d.ma_tai_san 
     FROM maintenance_logs ml 
-    JOIN devices d ON ml.device_id = d.id 
+    LEFT JOIN devices d ON ml.device_id = d.id 
     WHERE ml.id = ?
 ");
 $stmt->execute([$id]);
@@ -22,6 +22,8 @@ if (!$log) {
     header("Location: index.php?page=maintenance/history");
     exit;
 }
+
+$display_name = $log['ma_tai_san'] ?? $log['custom_device_name'] ?? 'Không xác định';
 
 if (isset($_POST['confirm_delete'])) {
     try {
@@ -45,7 +47,7 @@ if (isset($_POST['confirm_delete'])) {
         </div>
         <h2 class="delete-modal-title">Xác nhận xóa phiếu bảo trì?</h2>
         <p class="delete-modal-text">
-            Bạn đang yêu cầu xóa phiếu bảo trì ngày <strong><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></strong> của thiết bị <strong><?php echo htmlspecialchars($log['ma_tai_san']); ?></strong>.
+            Bạn đang yêu cầu xóa phiếu bảo trì ngày <strong><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></strong> của đối tượng <strong><?php echo htmlspecialchars($display_name); ?></strong>.
         </p>
         
         <div class="delete-alert-box">

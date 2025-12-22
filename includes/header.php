@@ -32,7 +32,7 @@
         <nav class="main-nav">
             <ul>
                 <li><a href="/khaservice-it/public/index.php?page=devices/list">Thiết bị</a></li>
-                <li><a href="/khaservice-it/public/index.php?page=maintenance/history">Bảo trì</a></li>
+                <li><a href="/khaservice-it/public/index.php?page=maintenance/history">Công tác</a></li>
                 <li><a href="/khaservice-it/public/index.php?page=services/list">Dịch vụ</a></li>
                 <li><a href="/khaservice-it/public/index.php?page=projects/list">Dự án</a></li>
                 <li><a href="/khaservice-it/public/index.php?page=suppliers/list">Nhà cung cấp</a></li>
@@ -43,7 +43,7 @@
         </nav>
 
         <div class="user-info">
-            <span class="username"><i class="far fa-user-circle"></i> <?php echo htmlspecialchars($_SESSION['username']); ?></span>
+            <span class="username"><i class="far fa-user-circle"></i> <?php echo htmlspecialchars($_SESSION['fullname'] ?? $_SESSION['username']); ?></span>
             <a href="/khaservice-it/public/index.php?page=users/settings" class="settings-link" title="Cài đặt tài khoản"><i class="fas fa-cog"></i></a>
             <a href="/khaservice-it/public/logout.php" class="logout-link" title="Thoát"><i class="fas fa-sign-out-alt"></i></a>
         </div>

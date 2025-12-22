@@ -39,7 +39,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([
             $_POST['project_id'], !empty($_POST['device_id']) ? $_POST['device_id'] : null,
             !empty($_POST['custom_device_name']) ? $_POST['custom_device_name'] : null,
-            $_POST['ngay_su_co'], $_POST['noi_dung'], $_POST['hu_hong'], $_POST['xu_ly'], $_POST['chi_phi'] ?: 0,
+            $_POST['ngay_su_co'] ?: date('Y-m-d'), 
+            $_POST['noi_dung'] ?: null, 
+            $_POST['hu_hong'], $_POST['xu_ly'], $_POST['chi_phi'] ?: 0,
             $_POST['client_name'], $_POST['client_phone'], $arrival_time, $completion_time, 
             $_POST['work_type'] ?: 'Bảo trì / Sửa chữa', $id
         ]);
@@ -61,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </style>
 
 <div class="page-header">
-    <h2><i class="fas fa-edit"></i> Sửa Phiếu Bảo trì #<?php echo $id; ?></h2>
+    <h2><i class="fas fa-edit"></i> Sửa Phiếu Công tác #<?php echo $id; ?></h2>
     <div class="header-actions">
         <a href="index.php?page=maintenance/view&id=<?php echo $id; ?>" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
         <button type="submit" form="edit-maintenance-form" class="btn btn-primary">Cập nhật</button>
@@ -74,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card-header-custom"><h3>Nội dung</h3></div>
             <div class="card-body-custom">
                 <div class="form-group"><label>Loại công việc</label><input type="text" name="work_type" value="<?php echo htmlspecialchars($log['work_type']); ?>"></div>
-                <div class="form-group"><label>Yêu cầu</label><textarea name="noi_dung" rows="4" required><?php echo htmlspecialchars($log['noi_dung']); ?></textarea></div>
+                <div class="form-group"><label>Yêu cầu</label><textarea name="noi_dung" rows="4"><?php echo htmlspecialchars($log['noi_dung']); ?></textarea></div>
                 <div class="form-group"><label>Hư hỏng</label><textarea name="hu_hong" rows="3"><?php echo htmlspecialchars($log['hu_hong']); ?></textarea></div>
                 <div class="form-group"><label>Xử lý</label><textarea name="xu_ly" rows="3"><?php echo htmlspecialchars($log['xu_ly']); ?></textarea></div>
             </div>
@@ -142,8 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div id="custom-name-area" style="<?php echo empty($log['device_id']) ? 'display:block' : 'display:none'; ?>">
                     <div class="form-group"><label>Tên</label><input type="text" name="custom_device_name" value="<?php echo htmlspecialchars($log['custom_device_name']); ?>"></div>
                 </div>
-                <div class="form-group"><label>Ngày yêu cầu</label><input type="date" name="ngay_su_co" required value="<?php echo $log['ngay_su_co']; ?>"></div>
-                <div class="form-group"><label>Chi phí</label><input type="number" name="chi_phi" value="<?php echo $log['chi_phi']; ?>"></div>
+                <div class="form-group"><label>Ngày yêu cầu</label><input type="date" name="ngay_su_co" value="<?php echo $log['ngay_su_co']; ?>"></div>
             </div>
         </div>
     </div>

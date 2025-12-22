@@ -3,7 +3,7 @@
 // Mục đích: Thiết lập kết nối đến Cơ sở dữ liệu (CSDL)
 
 $host = '127.0.0.1';     // Dùng IP để tốc độ nhanh hơn trên local
-$port = '3307';            // Cổng mặc định của bộ đóng gói
+$port = '3306';            // Cổng mặc định của bộ đóng gói
 $dbname = 'khaservice_it';
 $username = 'root';
 $password = '';

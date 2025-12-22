@@ -4,19 +4,23 @@
         <p>&copy; <?php echo date('Y'); ?> KHASERVICE IT. All rights reserved.</p>
     </footer>
 
-    <!-- Shared Confirmation Modal (Moved here for better positioning) -->
+    <!-- Shared Confirmation Modal -->
     <div id="customConfirmModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header" style="display:none;"> <!-- Hide header for cleaner look if icon is present -->
                 <h3 id="modalTitle">Xác nhận hành động</h3>
                 <span class="close-button">&times;</span>
             </div>
-            <div class="modal-body">
-                <p id="modalMessage">Bạn có chắc chắn muốn thực hiện hành động này?</p>
+            <div class="modal-body text-center" style="padding: 30px;">
+                <div class="modal-icon-wrapper danger" id="modalIcon" style="width: 60px; height: 60px; background: #fee2e2; color: #ef4444; border-radius: 50%; font-size: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 id="modalTitleDisplay" style="margin-bottom: 10px; font-weight: 700;">Xác nhận?</h3>
+                <p id="modalMessage" style="color: #64748b; line-height: 1.5;">Bạn có chắc chắn muốn thực hiện hành động này?</p>
             </div>
-            <div class="modal-footer">
-                <button id="cancelBtn" class="btn btn-secondary">Hủy</button>
-                <button id="confirmBtn" class="btn btn-danger">Xác nhận</button>
+            <div class="modal-footer" style="background: #f8fafc; padding: 15px 25px; display: flex; justify-content: center; gap: 15px; border-radius: 0 0 12px 12px;">
+                <button id="cancelBtn" class="btn btn-secondary" style="min-width: 100px;">Hủy</button>
+                <button id="confirmBtn" class="btn btn-danger" style="min-width: 100px;">Xác nhận</button>
             </div>
         </div>
     </div>

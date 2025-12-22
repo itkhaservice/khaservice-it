@@ -8,11 +8,13 @@ if (isset($_GET['id'])) {
                COALESCE(p_log.dia_chi_duong, p_dev.dia_chi_duong) as dia_chi_duong,
                COALESCE(p_log.dia_chi_phuong_xa, p_dev.dia_chi_phuong_xa) as dia_chi_phuong_xa,
                COALESCE(p_log.dia_chi_tinh_tp, p_dev.dia_chi_tinh_tp) as dia_chi_tinh_tp,
-               d.trang_thai as trang_thai_tb
+               d.trang_thai as trang_thai_tb,
+               u.fullname as nguoi_thuc_hien
         FROM maintenance_logs ml
         LEFT JOIN devices d ON ml.device_id = d.id
         LEFT JOIN projects p_log ON ml.project_id = p_log.id
         LEFT JOIN projects p_dev ON d.project_id = p_dev.id
+        LEFT JOIN users u ON ml.user_id = u.id
         WHERE ml.id = ?
     ");
     $stmt->execute([$log_id]);
@@ -53,28 +55,92 @@ if (!$is_custom_device && !empty($log['ngay_mua'])) {
 }
 
 // Lấy lần hỗ trợ cuối
-$last_support_str = 'Lần đầu';
+$last_support_date = '';
+$last_support_work = '';
+$last_support_performer = '';
+
 $stmt_last = null;
+$sql_last = "SELECT ml.ngay_su_co, ml.work_type, u.fullname 
+             FROM maintenance_logs ml 
+             LEFT JOIN users u ON ml.user_id = u.id 
+             WHERE ";
+
 if (!$is_custom_device) {
-    $stmt_last = $pdo->prepare("SELECT ngay_su_co FROM maintenance_logs WHERE device_id = ? AND id < ? ORDER BY ngay_su_co DESC LIMIT 1");
+    $sql_last .= "ml.device_id = ? AND ml.id < ? ORDER BY ml.ngay_su_co DESC LIMIT 1";
+    $stmt_last = $pdo->prepare($sql_last);
     $stmt_last->execute([$log['device_id'], $log['id']]);
 } elseif (!empty($log['project_id'])) {
-    $stmt_last = $pdo->prepare("SELECT ngay_su_co FROM maintenance_logs WHERE project_id = ? AND id < ? ORDER BY ngay_su_co DESC LIMIT 1");
+    $sql_last .= "ml.project_id = ? AND ml.id < ? ORDER BY ml.ngay_su_co DESC LIMIT 1";
+    $stmt_last = $pdo->prepare($sql_last);
     $stmt_last->execute([$log['project_id'], $log['id']]);
 }
 
 if ($stmt_last) {
-    $last_support_date = $stmt_last->fetchColumn();
-    if ($last_support_date) $last_support_str = date('d/m/Y', strtotime($last_support_date));
+    $last_log = $stmt_last->fetch();
+    if ($last_log) {
+        $last_support_date = date('d/m/Y', strtotime($last_log['ngay_su_co']));
+        $last_support_work = $last_log['work_type'];
+        $last_support_performer = $last_log['fullname'];
+    }
 }
 
 $current_user_name = $_SESSION['username'] ?? 'IT Support';
+
+// --- LOGIC TỆP ĐÍNH KÈM ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_file'])) {
+    $loai_file = $_POST['loai_file'] ?? 'Khác';
+    $target_dir = __DIR__ . "/../../uploads/maintenance/";
+    if (!is_dir($target_dir)) mkdir($target_dir, 0777, true);
+
+    if (isset($_FILES['file_upload']) && $_FILES['file_upload']['error'] === UPLOAD_ERR_OK) {
+        $file_name = basename($_FILES['file_upload']['name']);
+        $file_path = $target_dir . uniqid() . '_' . $file_name;
+        if (move_uploaded_file($_FILES['file_upload']['tmp_name'], $file_path)) {
+            $relative_path = "uploads/maintenance/" . basename($file_path);
+            $stmt = $pdo->prepare("INSERT INTO maintenance_files (maintenance_id, loai_file, file_path) VALUES (?, ?, ?)");
+            $stmt->execute([$log_id, $loai_file, $relative_path]);
+            set_message('success', 'Tải tệp lên thành công.');
+            header("Location: index.php?page=maintenance/view&id=$log_id");
+            exit;
+        }
+    }
+}
+if (isset($_GET['action']) && $_GET['action'] === 'delete_file' && isset($_GET['file_id'])) {
+    $file_id = $_GET['file_id'];
+    $stmt = $pdo->prepare("SELECT file_path FROM maintenance_files WHERE id = ? AND maintenance_id = ?");
+    $stmt->execute([$file_id, $log_id]);
+    $file = $stmt->fetch();
+    if ($file) {
+        $full_path = __DIR__ . "/../../" . $file['file_path'];
+        if (file_exists($full_path)) unlink($full_path);
+        $pdo->prepare("DELETE FROM maintenance_files WHERE id = ?")->execute([$file_id]);
+        set_message('success', 'Đã xóa tệp.');
+    }
+    header("Location: index.php?page=maintenance/view&id=$log_id");
+    exit;
+}
+$files = $pdo->prepare("SELECT * FROM maintenance_files WHERE maintenance_id = ? ORDER BY uploaded_at DESC");
+$files->execute([$log_id]);
+$attachments = $files->fetchAll();
+
+function getFileIconInfo($filePath) {
+    $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+    switch ($ext) {
+        case 'jpg': case 'jpeg': case 'png': case 'gif': case 'webp': return ['type' => 'image', 'icon' => 'fa-file-image', 'color' => '#3b82f6'];
+        case 'pdf': return ['type' => 'icon', 'icon' => 'fa-file-pdf', 'color' => '#ef4444'];
+        case 'doc': case 'docx': return ['type' => 'icon', 'icon' => 'fa-file-word', 'color' => '#2563eb'];
+        case 'xls': case 'xlsx': return ['type' => 'icon', 'icon' => 'fa-file-excel', 'color' => '#10b981'];
+        case 'zip': case 'rar': return ['type' => 'icon', 'icon' => 'fa-file-archive', 'color' => '#f59e0b'];
+        default: return ['type' => 'icon', 'icon' => 'fa-file', 'color' => '#94a3b8'];
+    }
+}
+// --- KẾT THÚC LOGIC TỆP ---
 ?>
 
 <!-- GIAO DIỆN WEB -->
 <div class="web-view">
     <div class="page-header">
-        <h2><i class="fas fa-file-invoice"></i> Chi tiết Phiếu Bảo trì #<?php echo $log['id']; ?></h2>
+        <h2><i class="fas fa-file-invoice"></i> Chi tiết Phiếu Công tác #<?php echo $log['id']; ?></h2>
         <div class="header-actions">
             <a href="index.php?page=maintenance/history" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
             <button class="btn btn-warning" onclick="togglePrintDebug()"><i class="fas fa-eye"></i> Soi mẫu in</button>
@@ -88,12 +154,81 @@ $current_user_name = $_SESSION['username'] ?? 'IT Support';
             <div class="card ticket-card">
                 <div class="ticket-header">
                     <div class="ticket-status"><span class="label">Ngày sự cố</span><span class="value date"><i class="far fa-calendar-alt"></i> <?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></span></div>
-                    <div class="ticket-cost"><span class="label">Chi phí</span><span class="value cost"><?php echo number_format($log['chi_phi']); ?> ₫</span></div>
                 </div>
                 <div class="ticket-body">
                     <div class="content-block problem"><h4 class="block-title"><i class="fas fa-exclamation-circle"></i> Hiện tượng / Yêu cầu</h4><div class="block-content"><?php echo nl2br(htmlspecialchars($log['noi_dung'])); ?></div></div>
                     <div class="content-block diagnosis"><h4 class="block-title"><i class="fas fa-microscope"></i> Nguyên nhân / Hư hỏng</h4><div class="block-content"><?php echo !empty($log['hu_hong']) ? nl2br(htmlspecialchars($log['hu_hong'])) : '<em>Chưa ghi nhận</em>'; ?></div></div>
                     <div class="content-block solution"><h4 class="block-title"><i class="fas fa-check-circle"></i> Biện pháp Xử lý</h4><div class="block-content"><?php echo !empty($log['xu_ly']) ? nl2br(htmlspecialchars($log['xu_ly'])) : '<em>Chưa ghi nhận</em>'; ?></div></div>
+                </div>
+            </div>
+
+            <!-- FILE ATTACHMENTS SECTION -->
+            <div class="card mt-20 attachment-section">
+                <div class="card-header-custom"><h3><i class="fas fa-paperclip"></i> Tài liệu đính kèm</h3></div>
+                <div class="card-body-custom">
+                    <!-- Upload Form -->
+                    <div class="upload-zone">
+                        <form action="index.php?page=maintenance/view&id=<?php echo $log['id']; ?>" method="POST" enctype="multipart/form-data" class="upload-form">
+                            <div class="upload-group">
+                                <label>Loại tài liệu</label>
+                                <select name="loai_file">
+                                    <option value="HinhAnh">Hình ảnh</option>
+                                    <option value="BienBan">Biên bản</option>
+                                    <option value="BaoGia">Báo giá</option>
+                                    <option value="Khác">Khác</option>
+                                </select>
+                            </div>
+                            <div class="upload-group" style="flex: 2;">
+                                <label>Chọn tệp đính kèm</label>
+                                <div class="custom-file-input">
+                                    <label for="file-upload-input" class="btn-file-select">
+                                        <i class="far fa-folder-open"></i> Chọn tệp...
+                                    </label>
+                                    <input type="file" id="file-upload-input" name="file_upload" required onchange="document.getElementById('file-name-display').textContent = this.files[0] ? this.files[0].name : 'Chưa chọn tệp'">
+                                    <span id="file-name-display" class="file-name-text">Chưa chọn tệp</span>
+                                </div>
+                            </div>
+                            <button type="submit" name="upload_file" class="btn btn-primary upload-btn"><i class="fas fa-upload"></i> Tải lên</button>
+                        </form>
+                    </div>
+
+                    <!-- Files Grid -->
+                    <?php if (empty($attachments)): ?>
+                        <div class="empty-files">
+                            <i class="far fa-folder-open"></i>
+                            <p>Chưa có tài liệu nào.</p>
+                        </div>
+                    <?php else: ?>
+                        <div class="files-grid">
+                            <?php foreach ($attachments as $file): 
+                                $info = getFileIconInfo($file['file_path']);
+                                $url = "../" . htmlspecialchars($file['file_path']);
+                                $name = htmlspecialchars(basename($file['file_path']));
+                            ?>
+                                <div class="file-card">
+                                    <div class="file-preview">
+                                        <?php if ($info['type'] === 'image'): ?>
+                                            <div class="file-preview-img" style="background-image: url('<?php echo $url; ?>');"></div>
+                                            <a href="<?php echo $url; ?>" target="_blank" class="file-overlay-link"><i class="fas fa-search-plus"></i></a>
+                                        <?php else: ?>
+                                            <i class="fas <?php echo $info['icon']; ?> file-icon-large" style="color: <?php echo $info['color']; ?>;"></i>
+                                        <?php endif; ?>
+                                        <span class="file-badge"><?php echo htmlspecialchars($file['loai_file']); ?></span>
+                                    </div>
+                                    <div class="file-info">
+                                        <a href="<?php echo $url; ?>" target="_blank" class="file-name" title="<?php echo $name; ?>"><?php echo $name; ?></a>
+                                        <div class="file-meta-row">
+                                            <span class="file-date"><?php echo date('d/m', strtotime($file['uploaded_at'])); ?></span>
+                                            <div class="file-actions">
+                                                <a href="<?php echo $url; ?>" download title="Tải xuống" class="file-action-btn"><i class="fas fa-download"></i></a>
+                                                <button type="button" data-url="index.php?page=maintenance/view&id=<?php echo $log['id']; ?>&action=delete_file&file_id=<?php echo $file['id']; ?>" class="file-action-btn delete delete-btn" title="Xóa"><i class="fas fa-trash-alt"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -112,6 +247,7 @@ $current_user_name = $_SESSION['username'] ?? 'IT Support';
                     <div class="detail-row"><span class="d-label">Liên hệ</span><span class="d-value"><?php echo htmlspecialchars($log['client_phone'] ?? '---'); ?></span></div>
                     <div class="detail-row"><span class="d-label">TG Có mặt</span><span class="d-value"><?php echo $log['arrival_time'] ? date('H:i d/m/Y', strtotime($log['arrival_time'])) : '-'; ?></span></div>
                     <div class="detail-row"><span class="d-label">Hoàn thành</span><span class="d-value"><?php echo $log['completion_time'] ? date('H:i d/m/Y', strtotime($log['completion_time'])) : '-'; ?></span></div>
+                    <div class="detail-row"><span class="d-label">Người thực hiện</span><span class="d-value"><?php echo htmlspecialchars($log['nguoi_thuc_hien'] ?? 'N/A'); ?></span></div>
                 </div>
                 <?php if (!$is_custom_device): ?>
                 <div class="profile-actions"><a href="index.php?page=devices/view&id=<?php echo $log['device_id']; ?>" class="btn btn-primary" style="display: flex; width: auto; justify-content: center;"><i class="fas fa-external-link-alt"></i> Xem hồ sơ thiết bị</a></div>
@@ -184,19 +320,19 @@ $current_user_name = $_SESSION['username'] ?? 'IT Support';
                     <td class="pt-label">TG yêu cầu:</td>
                     <td class="p-line-single"><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></td>
                     <td class="pt-label">Hỗ trợ lần cuối:</td>
-                    <td class="p-line-single"><?php echo $last_support_str; ?></td>
+                    <td class="p-line-single"><?php echo $last_support_date; ?></td>
                 </tr>
                 <tr>
                     <td class="pt-label">TG có mặt:</td>
                     <td class="p-line-single"><?php echo $log['arrival_time'] ? date('H:i d/m/Y', strtotime($log['arrival_time'])) : ''; ?></td>
                     <td class="pt-label">Công việc:</td>
-                    <td class="p-line-single">Xử lý sự cố</td>
+                    <td class="p-line-single"><?php echo htmlspecialchars($last_support_work); ?></td>
                 </tr>
                 <tr>
                     <td class="pt-label">TG hoàn thành:</td>
                     <td class="p-line-single"><?php echo $log['completion_time'] ? date('H:i d/m/Y', strtotime($log['completion_time'])) : ''; ?></td>
                     <td class="pt-label">Người thực hiện:</td>
-                    <td class="p-line-single" style="text-transform: uppercase;"><?php echo htmlspecialchars($current_user_name); ?></td>
+                    <td class="p-line-single" style="text-transform: uppercase;"><?php echo htmlspecialchars($last_support_performer); ?></td>
                 </tr>
             </table>
 

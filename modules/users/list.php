@@ -16,7 +16,7 @@ $where_clauses = [];
 $bind_params   = [];
 
 if ($filter_keyword !== '') {
-    $where_clauses[] = "username LIKE :kw";
+    $where_clauses[] = "(username LIKE :kw OR fullname LIKE :kw)";
     $bind_params[':kw'] = '%' . $filter_keyword . '%';
 }
 if ($filter_role !== '') {
@@ -36,7 +36,7 @@ if ($current_page > $total_pages) $current_page = $total_pages;
 $offset = ($current_page - 1) * $rows_per_page;
 
 // Fetch Data
-$stmt = $pdo->prepare("SELECT id, username, role, created_at FROM users $where_sql ORDER BY username LIMIT :limit OFFSET :offset");
+$stmt = $pdo->prepare("SELECT id, username, fullname, role, created_at FROM users $where_sql ORDER BY username LIMIT :limit OFFSET :offset");
 foreach ($bind_params as $k => $v) $stmt->bindValue($k, $v);
 $stmt->bindValue(':limit',  $rows_per_page, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
@@ -75,7 +75,7 @@ $users_list = $stmt->fetchAll();
 <form action="index.php?page=users/delete_multiple" method="POST" id="users-form">
     <div class="batch-actions" id="batch-actions" style="display: none;">
         <span class="selected-count-label">Đã chọn <strong id="selected-count">0</strong> mục</span>
-        <button type="button" class="btn btn-danger btn-sm" id="delete-selected-btn">Xóa đã chọn</button>
+        <button type="button" class="btn btn-danger btn-sm" id="delete-selected-btn" data-action="index.php?page=users/delete_multiple">Xóa đã chọn</button>
     </div>
 
     <div class="table-container card">
@@ -84,6 +84,7 @@ $users_list = $stmt->fetchAll();
                 <tr>
                     <th width="40"><input type="checkbox" id="select-all"></th>
                     <th>Username</th>
+                    <th>Họ và tên</th>
                     <th>Vai trò</th>
                     <th>Ngày khởi tạo</th>
                     <th width="100" class="text-center">Thao tác</th>
@@ -98,6 +99,7 @@ $users_list = $stmt->fetchAll();
                             <?php endif; ?>
                         </td>
                         <td class="font-bold text-primary"><?php echo htmlspecialchars($u['username']); ?></td>
+                        <td><?php echo htmlspecialchars($u['fullname']); ?></td>
                         <td><?php echo ucfirst(htmlspecialchars($u['role'])); ?></td>
                         <td class="text-muted"><?php echo date('d/m/Y H:i', strtotime($u['created_at'])); ?></td>
                         <td class="actions text-center">
@@ -148,7 +150,4 @@ function updateBatch() {
 }
 if(selectAll) selectAll.addEventListener('change', function() { rowCbs.forEach(cb => cb.checked = this.checked); updateBatch(); });
 rowCbs.forEach(cb => cb.addEventListener('change', updateBatch));
-document.getElementById('delete-selected-btn').addEventListener('click', function() {
-    if(confirm(`Xóa người dùng đã chọn?`)) document.getElementById('users-form').submit();
-});
 </script>

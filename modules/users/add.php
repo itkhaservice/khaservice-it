@@ -7,8 +7,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             $hashed_password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
-            $stmt->execute([$_POST['username'], $hashed_password, $_POST['role']]);
+            $stmt = $pdo->prepare("INSERT INTO users (username, fullname, password, role) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$_POST['username'], $_POST['fullname'], $hashed_password, $_POST['role']]);
             set_message('success', 'Tạo tài khoản thành công!');
             header("Location: index.php?page=users/list");
             exit;
@@ -37,6 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label>Tên đăng nhập <span class="required">*</span></label>
                     <input type="text" name="username" required class="input-highlight">
+                </div>
+                <div class="form-group">
+                    <label>Họ và tên</label>
+                    <input type="text" name="fullname" placeholder="VD: Nguyễn Văn A">
                 </div>
                 <div class="form-group">
                     <label>Mật khẩu <span class="required">*</span></label>

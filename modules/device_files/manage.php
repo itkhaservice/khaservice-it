@@ -131,8 +131,8 @@ function getFileIconInfo($filePath) {
                         </div>
                         <div class="file-actions">
                             <a href="<?php echo $fileUrl; ?>" download class="act-btn" title="Tải xuống"><i class="fas fa-download"></i></a>
-                            <a href="index.php?page=devices/view&id=<?php echo $device_id; ?>&action=delete_file&file_id=<?php echo $file['id']; ?>" 
-                               class="act-btn text-danger" onclick="return confirm('Xóa file này?');" title="Xóa"><i class="fas fa-trash-alt"></i></a>
+                            <a href="#" data-url="index.php?page=devices/view&id=<?php echo $device_id; ?>&action=delete_file&file_id=<?php echo $file['id']; ?>" 
+                               class="act-btn text-danger delete-btn" title="Xóa"><i class="fas fa-trash-alt"></i></a>
                         </div>
                     </div>
                 </div>

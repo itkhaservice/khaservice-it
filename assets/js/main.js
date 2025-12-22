@@ -92,94 +92,77 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Custom Confirmation Modal Logic
     const customConfirmModal = document.getElementById('customConfirmModal');
-    const modalTitle = document.getElementById('modalTitle');
+    const modalTitleDisplay = document.getElementById('modalTitleDisplay');
     const modalMessage = document.getElementById('modalMessage');
     const confirmBtn = document.getElementById('confirmBtn');
     const cancelBtn = document.getElementById('cancelBtn');
-    const closeButton = customConfirmModal ? customConfirmModal.querySelector('.close-button') : null;
+    
+    let confirmCallback = null;
 
-    if (!customConfirmModal) {
-        // Log an error if the modal element is not found.
-        // This is useful for debugging in the browser console.
-        console.error("Custom confirmation modal element (#customConfirmModal) not found in DOM.");
-        // We can stop further execution of modal-related logic if the element is missing.
-        return; 
-    }
-
-    let confirmCallback = null; // To store the function to call on confirmation
-
-    window.showCustomConfirm = (message, title = 'Xác nhận hành động', callback) => {
+    window.showCustomConfirm = (message, title = 'Xác nhận?', callback) => {
         if (!customConfirmModal) return;
 
-        modalTitle.textContent = title;
-        modalMessage.textContent = message;
-        confirmCallback = callback; // Store the callback
+        if (modalTitleDisplay) modalTitleDisplay.textContent = title;
+        if (modalMessage) modalMessage.textContent = message;
+        confirmCallback = callback;
 
         customConfirmModal.classList.add('show');
-        document.body.style.overflow = 'hidden'; // Prevent scrolling background
+        document.body.style.overflow = 'hidden';
     };
 
     const hideCustomConfirm = () => {
         if (!customConfirmModal) return;
-
         customConfirmModal.classList.remove('show');
-        document.body.style.overflow = ''; // Restore scrolling
-        confirmCallback = null; // Clear the callback
-        // Clear previous event listeners to prevent multiple calls
-        confirmBtn.onclick = null; 
-        cancelBtn.onclick = null;
-        hideSpinner(); // Hide spinner when modal is closed/cancelled
+        document.body.style.overflow = '';
+        confirmCallback = null;
     };
 
-    if (closeButton) {
-        closeButton.addEventListener('click', hideCustomConfirm);
-    }
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', hideCustomConfirm);
-    }
-
+    if (cancelBtn) cancelBtn.addEventListener('click', hideCustomConfirm);
     if (confirmBtn) {
         confirmBtn.addEventListener('click', () => {
-            if (confirmCallback) {
-                confirmCallback();
-            }
+            if (confirmCallback) confirmCallback();
             hideCustomConfirm();
         });
     }
 
-    // Close modal if clicked outside of modal-content
     if (customConfirmModal) {
-        customConfirmModal.addEventListener('click', (event) => {
-            if (event.target === customConfirmModal) {
-                hideCustomConfirm();
-            }
+        customConfirmModal.addEventListener('click', (e) => {
+            if (e.target === customConfirmModal) hideCustomConfirm();
         });
     }
 
-    // Handle "Xóa mục đã chọn" button click using custom confirm
-    const deleteSelectedBtn = document.getElementById('delete-selected-btn');
-    if (deleteSelectedBtn) {
-        deleteSelectedBtn.addEventListener('click', (e) => {
-            e.preventDefault(); // Prevent default action
-            const deviceForm = document.getElementById('devices-form'); // Assuming this is the form containing checkboxes
+    // Handle batch delete buttons
+    document.querySelectorAll('#delete-selected-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const form = btn.closest('form');
+            if (!form) return;
 
-            showCustomConfirm('Bạn có chắc chắn muốn xóa các mục đã chọn không?', 'Xóa nhiều thiết bị', () => {
-                // On confirmation, set form action and submit
-                deviceForm.action = 'index.php?page=devices/delete_multiple';
-                deviceForm.method = 'POST';
-                deviceForm.submit();
+            const checkboxes = form.querySelectorAll('.row-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('Vui lòng chọn ít nhất một mục.');
+                return;
+            }
+
+            showCustomConfirm(`Bạn có chắc chắn muốn xóa ${checkboxes.length} mục đã chọn?`, 'Xác nhận xóa nhiều', () => {
+                const actionUrl = btn.dataset.action;
+                if (actionUrl) {
+                    form.action = actionUrl;
+                }
+                form.submit();
             });
         });
-    }
+    });
 
-    // Handle individual "Xóa" links with custom confirm
-    document.querySelectorAll('.delete-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.preventDefault(); // Prevent default navigation
-            const deleteUrl = button.getAttribute('href');
-            
-            showCustomConfirm('Bạn có chắc muốn xóa thiết bị này?', 'Xóa thiết bị', () => {
-                window.location.href = deleteUrl; // Redirect on confirmation
+    // Handle individual delete buttons/links
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const url = btn.getAttribute('href') || btn.dataset.url;
+            if (!url) return;
+
+            showCustomConfirm('Bạn có chắc chắn muốn xóa mục này không? Hành động này không thể hoàn tác.', 'Xác nhận xóa', () => {
+                window.location.href = url;
             });
         });
     });

@@ -18,26 +18,28 @@ function getFastDateTime($h, $m, $d, $mon, $y) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $has_device = !empty($_POST['device_id']);
-    $has_custom_name = !empty($_POST['custom_device_name']);
-
-    if ((!$has_device && !$has_custom_name) || empty($_POST['project_id']) || empty($_POST['ngay_su_co']) || empty($_POST['noi_dung'])) {
-        set_message('error', 'Vui lòng chọn Dự án, Thiết bị (hoặc nhập tên), và điền đầy đủ thông tin bắt buộc (*).');
+    // Validation được nới lỏng: Chỉ bắt buộc chọn Dự án
+    if (empty($_POST['project_id'])) {
+        set_message('error', 'Vui lòng chọn Dự án.');
     } else {
         try {
             // Gộp thời gian từ các ô nhập nhanh
             $arrival_time = getFastDateTime($_POST['arr_h'], $_POST['arr_m'], $_POST['arr_d'], $_POST['arr_mon'], $_POST['arr_y']);
             $completion_time = getFastDateTime($_POST['comp_h'], $_POST['comp_m'], $_POST['comp_d'], $_POST['comp_mon'], $_POST['comp_y']);
 
+            // Xử lý ngày sự cố: Nếu không nhập thì lấy ngày hiện tại
+            $ngay_su_co = !empty($_POST['ngay_su_co']) ? $_POST['ngay_su_co'] : date('Y-m-d');
+
             $stmt = $pdo->prepare("INSERT INTO maintenance_logs 
-                (project_id, device_id, custom_device_name, ngay_su_co, noi_dung, hu_hong, xu_ly, chi_phi, client_name, client_phone, arrival_time, completion_time, work_type) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                (user_id, project_id, device_id, custom_device_name, ngay_su_co, noi_dung, hu_hong, xu_ly, chi_phi, client_name, client_phone, arrival_time, completion_time, work_type) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
+                $_SESSION['user_id'], // Lưu ID người tạo phiếu
                 $_POST['project_id'],
                 !empty($_POST['device_id']) ? $_POST['device_id'] : null,
                 !empty($_POST['custom_device_name']) ? $_POST['custom_device_name'] : null,
-                $_POST['ngay_su_co'],
-                $_POST['noi_dung'],
+                $ngay_su_co,
+                $_POST['noi_dung'] ?: null, 
                 $_POST['hu_hong'],
                 $_POST['xu_ly'],
                 $_POST['chi_phi'] ?: 0,
@@ -70,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </style>
 
 <div class="page-header">
-    <h2><i class="fas fa-plus-circle"></i> Tạo Phiếu Bảo trì mới</h2>
+    <h2><i class="fas fa-plus-circle"></i> Tạo Phiếu Công tác mới</h2>
     <div class="header-actions">
         <a href="index.php?page=maintenance/history" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
         <button type="submit" form="add-maintenance-form" class="btn btn-primary"><i class="fas fa-save"></i> Lưu Phiếu</button>
@@ -87,8 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="text" name="work_type" value="Bảo trì / Sửa chữa">
                 </div>
                 <div class="form-group">
-                    <label>Mô tả sự cố / Yêu cầu <span class="required">*</span></label>
-                    <textarea name="noi_dung" rows="4" required></textarea>
+                    <label>Mô tả sự cố / Yêu cầu</label>
+                    <textarea name="noi_dung" rows="4"></textarea>
                 </div>
                 <div class="form-group">
                     <label>Xác định Hư hỏng</label>
@@ -179,17 +181,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div id="custom-name-area" style="display: none;">
                     <div class="form-group">
-                        <label>Tên Đối tượng <span class="required">*</span></label>
+                        <label>Tên Đối tượng</label>
                         <input type="text" name="custom_device_name" placeholder="VD: Phần mềm...">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Ngày yêu cầu <span class="required">*</span></label>
-                    <input type="date" name="ngay_su_co" required value="<?php echo date('Y-m-d'); ?>">
-                </div>
-                <div class="form-group">
-                    <label>Chi phí</label>
-                    <input type="number" name="chi_phi" value="0" step="1000">
+                    <label>Ngày yêu cầu</label>
+                    <input type="date" name="ngay_su_co" value="<?php echo date('Y-m-d'); ?>">
                 </div>
             </div>
         </div>

@@ -119,7 +119,7 @@ $all_columns = [
             <button type="button" class="btn btn-secondary btn-sm" id="clear-selection-btn"><i class="fas fa-times"></i> Bỏ chọn</button>
             <button type="submit" name="export_selected" class="btn btn-secondary btn-sm"><i class="fas fa-file-export"></i> Xuất CSV</button>
             <?php if(isAdmin()): ?>
-                <button type="button" class="btn btn-danger btn-sm" id="delete-selected-btn"><i class="fas fa-trash-alt"></i> Xóa đã chọn</button>
+                <button type="button" class="btn btn-danger btn-sm" id="delete-selected-btn" data-action="index.php?page=devices/delete_multiple"><i class="fas fa-trash-alt"></i> Xóa đã chọn</button>
             <?php endif; ?>
         </div>
     </div>
@@ -216,9 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if(selectAll) selectAll.addEventListener('change', () => { rowCbs.forEach(cb => cb.checked = selectAll.checked); updateBatch(); });
     rowCbs.forEach(cb => cb.addEventListener('change', updateBatch));
     if(clearBtn) clearBtn.addEventListener('click', () => { if(selectAll) selectAll.checked = false; rowCbs.forEach(cb => cb.checked = false); updateBatch(); });
-    const delBtn = document.getElementById('delete-selected-btn');
-    if(delBtn) delBtn.addEventListener('click', () => { if(confirm(`Xóa các mục đã chọn?`)) { 
-        const f = document.getElementById('devices-form'); f.action = 'index.php?page=devices/delete_multiple'; f.submit();
-    }});
+    // Note: The delete-selected-btn is now handled by global main.js
 });
 </script>

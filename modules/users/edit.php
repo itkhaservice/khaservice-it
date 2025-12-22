@@ -12,11 +12,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         if (!empty($_POST['password'])) {
             $hashed_password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("UPDATE users SET role = ?, password = ? WHERE id = ?");
-            $stmt->execute([$_POST['role'], $hashed_password, $id]);
+            $stmt = $pdo->prepare("UPDATE users SET fullname = ?, role = ?, password = ? WHERE id = ?");
+            $stmt->execute([$_POST['fullname'], $_POST['role'], $hashed_password, $id]);
         } else {
-            $stmt = $pdo->prepare("UPDATE users SET role = ? WHERE id = ?");
-            $stmt->execute([$_POST['role'], $id]);
+            $stmt = $pdo->prepare("UPDATE users SET fullname = ?, role = ? WHERE id = ?");
+            $stmt->execute([$_POST['fullname'], $_POST['role'], $id]);
         }
         set_message('success', 'Cập nhật thành công!');
         header("Location: index.php?page=users/list");
@@ -45,6 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label>Tên đăng nhập</label>
                     <input type="text" value="<?php echo htmlspecialchars($u['username']); ?>" disabled style="background: #f1f5f9; color: #64748b;">
+                </div>
+                <div class="form-group">
+                    <label>Họ và tên</label>
+                    <input type="text" name="fullname" value="<?php echo htmlspecialchars($u['fullname']); ?>">
                 </div>
                 <div class="form-group">
                     <label>Mật khẩu mới (Để trống nếu không đổi)</label>

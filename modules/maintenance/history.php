@@ -16,7 +16,7 @@ if ($filter_keyword !== '') {
     $bind_params[':kw1'] = $bind_params[':kw2'] = $bind_params[':kw3'] = $bind_params[':kw4'] = $bind_params[':kw5'] = $bind_params[':kw6'] = '%' . $filter_keyword . '%';
 }
 if ($filter_project !== '' && is_numeric($filter_project)) {
-    $where_clauses[] = "ml.project_id = :project_id";
+    $where_clauses[] = "d.project_id = :project_id";
     $bind_params[':project_id'] = (int)$filter_project;
 }
 if ($filter_date_from !== '') { $where_clauses[] = "ml.ngay_su_co >= :date_from"; $bind_params[':date_from'] = $filter_date_from; }
@@ -33,7 +33,12 @@ $total_pages = max(1, ceil($total_rows / $rows_per_page));
 if ($current_page > $total_pages) $current_page = $total_pages;
 $offset = ($current_page - 1) * $rows_per_page;
 
-$data_sql = "SELECT ml.*, d.ma_tai_san, d.ten_thiet_bi, d.nhom_thiet_bi, p.ten_du_an FROM maintenance_logs ml LEFT JOIN devices d ON ml.device_id = d.id LEFT JOIN projects p ON ml.project_id = p.id $where_sql ORDER BY ml.ngay_su_co DESC LIMIT :limit OFFSET :offset";
+$data_sql = "SELECT ml.*, d.ma_tai_san, d.ten_thiet_bi, d.nhom_thiet_bi, p.ten_du_an, u.fullname as nguoi_thuc_hien 
+              FROM maintenance_logs ml 
+              LEFT JOIN devices d ON ml.device_id = d.id 
+              LEFT JOIN projects p ON ml.project_id = p.id 
+              LEFT JOIN users u ON ml.user_id = u.id
+              $where_sql ORDER BY ml.id DESC LIMIT :limit OFFSET :offset";
 $stmt = $pdo->prepare($data_sql);
 foreach ($bind_params as $k => $v) $stmt->bindValue($k, $v);
 $stmt->bindValue(':limit',  $rows_per_page, PDO::PARAM_INT);
@@ -47,13 +52,13 @@ $all_columns = [
     'ten_thiet_bi' => ['label' => 'Thiết bị / Đối tượng', 'default' => true],
     'ma_tai_san'   => ['label' => 'Mã Tài sản', 'default' => true],
     'ten_du_an'    => ['label' => 'Dự án', 'default' => true],
-    'ngay_su_co'   => ['label' => 'Ngày yêu cầu', 'default' => true],
-    'chi_phi'      => ['label' => 'Chi phí', 'default' => true]
+    'nguoi_thuc_hien' => ['label' => 'Người thực hiện', 'default' => true],
+    'ngay_su_co'   => ['label' => 'Ngày yêu cầu', 'default' => true]
 ];
 ?>
 
 <div class="page-header">
-    <h2><i class="fas fa-history"></i> Lịch sử Bảo trì</h2>
+    <h2><i class="fas fa-history"></i> Lịch sử Công tác</h2>
     <?php if(isIT()): ?><a href="index.php?page=maintenance/add" class="btn btn-primary"><i class="fas fa-plus"></i> Tạo Phiếu</a><?php endif; ?>
 </div>
 
@@ -98,7 +103,7 @@ $all_columns = [
             <button type="button" class="btn btn-secondary btn-sm" id="clear-selection-btn"><i class="fas fa-times"></i> Bỏ chọn</button>
             <button type="submit" name="export_selected" class="btn btn-secondary btn-sm"><i class="fas fa-file-export"></i> Xuất file</button>
             <?php if(isAdmin()): ?>
-                <button type="button" class="btn btn-danger btn-sm" id="delete-selected-btn">Xóa đã chọn</button>
+                <button type="button" class="btn btn-danger btn-sm" id="delete-selected-btn" data-action="index.php?page=maintenance/delete_multiple">Xóa đã chọn</button>
             <?php endif; ?>
         </div>
     </div>
@@ -124,11 +129,14 @@ $all_columns = [
                         <td data-col="ten_thiet_bi" class="font-bold"><?php echo htmlspecialchars($d_name); ?></td>
                         <td data-col="ma_tai_san" class="text-primary"><?php echo htmlspecialchars($d_code); ?></td>
                         <td data-col="ten_du_an"><?php echo htmlspecialchars($log['ten_du_an']); ?></td>
+                        <td data-col="nguoi_thuc_hien"><?php echo htmlspecialchars($log['nguoi_thuc_hien'] ?? 'N/A'); ?></td>
                         <td data-col="ngay_su_co"><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></td>
-                        <td data-col="chi_phi" class="font-bold text-warning"><?php echo number_format($log['chi_phi']); ?> ₫</td>
                         <td class="actions text-center">
-                            <a href="index.php?page=maintenance/view&id=<?php echo $log['id']; ?>" class="btn-icon"><i class="fas fa-eye"></i></a>
-                            <?php if(isIT()): ?><a href="index.php?page=maintenance/edit&id=<?php echo $log['id']; ?>" class="btn-icon"><i class="fas fa-edit"></i></a><?php endif; ?>
+                            <a href="index.php?page=maintenance/view&id=<?php echo $log['id']; ?>" class="btn-icon" title="Xem"><i class="fas fa-eye"></i></a>
+                            <?php if(isIT()): ?>
+                                <a href="index.php?page=maintenance/edit&id=<?php echo $log['id']; ?>" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
+                                <button type="button" class="btn-icon delete-btn" title="Xóa" data-url="index.php?page=maintenance/delete&id=<?php echo $log['id']; ?>&confirm_delete=1" style="border:none; background:none; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -161,7 +169,7 @@ $all_columns = [
             <a href="<?php echo $base . '&p=' . $i; ?>" class="page-link <?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
         <?php endfor; ?>
         <a href="<?php echo $base . '&p=' . min($total_pages, $current_page + 1); ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang sau"><i class="fas fa-angle-right"></i></a>
-        <a href="<?php echo $base . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang cuối"><i class="fas fa-angle-double-right"></i></a>
+        <a href="<?php echo $base . '&p=' . total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang cuối"><i class="fas fa-angle-double-right"></i></a>
     </div>
 </div>
 
@@ -195,9 +203,5 @@ document.addEventListener('DOMContentLoaded', () => {
     if(selectAll) selectAll.addEventListener('change', () => { rowCbs.forEach(cb => cb.checked = selectAll.checked); updateBatch(); });
     rowCbs.forEach(cb => cb.addEventListener('change', updateBatch));
     if(clearBtn) clearBtn.addEventListener('click', () => { if(selectAll) selectAll.checked = false; rowCbs.forEach(cb => cb.checked = false); updateBatch(); });
-    const delBtn = document.getElementById('delete-selected-btn');
-    if(delBtn) delBtn.addEventListener('click', () => { if(confirm(`Xóa các mục đã chọn?`)) { 
-        const f = document.getElementById('maintenance-form'); f.action = 'index.php?page=maintenance/delete_multiple'; f.submit();
-    }});
 });
 </script>
