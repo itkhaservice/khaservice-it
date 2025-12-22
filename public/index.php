@@ -101,6 +101,36 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <style>
+        /* Chỉ tập trung fix UI cho 2 thẻ biểu đồ trên Mobile */
+        @media (max-width: 768px) {
+            .chart-canvas-wrapper {
+                height: 260px !important; /* Chiều cao vừa vặn cho điện thoại */
+                position: relative;
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            .chart-canvas-wrapper.doughnut {
+                height: 300px !important; /* Biểu đồ tròn cần cao hơn chút để hiện Legend */
+            }
+            .charts-grid .card {
+                padding: 15px !important;
+                margin-bottom: 15px !important;
+            }
+            .dashboard-card-header h3 {
+                font-size: 0.95rem !important;
+            }
+        }
+        
+        /* Đảm bảo canvas luôn chiếm hết wrapper */
+        .chart-canvas-wrapper canvas {
+            max-width: 100% !important;
+            max-height: 100% !important;
+        }
+    </style>
+
     <div class="dashboard-container">
         <div class="page-header">
             <h2 style="margin-bottom: 0;"><i class="fas fa-home"></i> Tổng quan Hệ thống</h2>
@@ -147,9 +177,9 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
             <!-- Main Chart: Device Types (Bar) -->
             <div class="card">
                 <div class="dashboard-card-header">
-                    <h3><i class="fas fa-chart-bar" style="color: #3b82f6;"></i> Phân loại Thiết bị (Top 5)</h3>
+                    <h3><i class="fas fa-chart-bar" style="color: #3b82f6;"></i> Phân loại (Top 5)</h3>
                 </div>
-                <div style="height: 300px; position: relative;">
+                <div class="chart-canvas-wrapper">
                     <canvas id="deviceTypeChart"></canvas>
                 </div>
             </div>
@@ -159,7 +189,7 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
                 <div class="dashboard-card-header">
                     <h3><i class="fas fa-chart-pie" style="color: #10b981;"></i> Tình trạng</h3>
                 </div>
-                <div style="height: 300px; position: relative; display: flex; justify-content: center;">
+                <div class="chart-canvas-wrapper doughnut">
                     <canvas id="deviceStatusChart"></canvas>
                 </div>
             </div>
