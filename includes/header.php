@@ -50,16 +50,16 @@ $final_base = $protocol . "://" . $host . $base_dir . "/";
                 <button class="close-menu" onclick="document.getElementById('hamburger-menu').click()">&times;</button>
             </div>
             <ul>
-                <li><a href="<?php echo $final_base; ?>index.php?page=devices/list"><i class="fas fa-server"></i> Thiết bị</a></li>
-                <li><a href="<?php echo $final_base; ?>index.php?page=maintenance/history"><i class="fas fa-tools"></i> Công tác</a></li>
-                <li><a href="<?php echo $final_base; ?>index.php?page=services/list"><i class="fas fa-cloud"></i> Dịch vụ</a></li>
-                <li><a href="<?php echo $final_base; ?>index.php?page=projects/list"><i class="fas fa-building"></i> Dự án</a></li>
-                <li><a href="<?php echo $final_base; ?>index.php?page=suppliers/list"><i class="fas fa-truck"></i> Nhà cung cấp</a></li>
+                <li><a href="index.php?page=devices/list"><i class="fas fa-server"></i> Thiết bị</a></li>
+                <li><a href="index.php?page=maintenance/history"><i class="fas fa-tools"></i> Công tác</a></li>
+                <li><a href="index.php?page=services/list"><i class="fas fa-cloud"></i> Dịch vụ</a></li>
+                <li><a href="index.php?page=projects/list"><i class="fas fa-building"></i> Dự án</a></li>
+                <li><a href="index.php?page=suppliers/list"><i class="fas fa-truck"></i> Nhà cung cấp</a></li>
                 <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
-                    <li><a href="<?php echo $final_base; ?>index.php?page=users/list"><i class="fas fa-users"></i> Người dùng</a></li>
-                    <li><a href="<?php echo $final_base; ?>index.php?page=settings/system"><i class="fas fa-cogs"></i> Cài đặt</a></li>
+                    <li><a href="index.php?page=users/list"><i class="fas fa-users"></i> Người dùng</a></li>
+                    <li><a href="index.php?page=settings/system"><i class="fas fa-cogs"></i> Cài đặt</a></li>
                 <?php endif; ?>
-                <li><a href="<?php echo $final_base; ?>index.php?page=trash/list" class="trash-link"><i class="fas fa-trash-alt"></i> Thùng rác</a></li>
+                <li><a href="index.php?page=trash/list" class="trash-link"><i class="fas fa-trash-alt"></i> Thùng rác</a></li>
             </ul>
         </nav>
 
@@ -68,8 +68,8 @@ $final_base = $protocol . "://" . $host . $base_dir . "/";
                 <span class="user-name-text"><?php echo htmlspecialchars($_SESSION['fullname'] ?? $_SESSION['username']); ?></span>
                 <span class="user-role"><?php echo strtoupper($_SESSION['role']); ?></span>
             </div>
-            <a href="<?php echo $final_base; ?>index.php?page=users/settings" class="settings-link" title="Cài đặt"><i class="fas fa-cog"></i></a>
-            <a href="<?php echo $final_base; ?>logout.php" class="logout-link" title="Thoát"><i class="fas fa-sign-out-alt"></i></a>
+            <a href="index.php?page=users/settings" class="settings-link" title="Cài đặt"><i class="fas fa-cog"></i></a>
+            <a href="logout.php" class="logout-link" title="Thoát"><i class="fas fa-sign-out-alt"></i></a>
         </div>
     </header>
     <main class="main-content">
