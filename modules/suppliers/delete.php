@@ -43,9 +43,9 @@ if (isset($_REQUEST['confirm_delete'])) {
     }
 
     try {
-        $stmt_del = $pdo->prepare("DELETE FROM suppliers WHERE id = ?");
+        $stmt_del = $pdo->prepare("UPDATE suppliers SET deleted_at = NOW() WHERE id = ?");
         $stmt_del->execute([$id]);
-        set_message('success', 'Đã xóa nhà cung cấp ' . $supplier['ten_npp'] . ' thành công!');
+        set_message('success', 'Đã chuyển nhà cung cấp vào thùng rác thành công!');
         header("Location: index.php?page=suppliers/list");
         exit;
     } catch (PDOException $e) {
@@ -58,12 +58,12 @@ if (isset($_REQUEST['confirm_delete'])) {
 
 <div class="delete-confirmation-container">
     <div class="card delete-card">
-        <div class="delete-modal-icon">
-            <i class="fas fa-exclamation-triangle"></i>
+        <div class="delete-modal-icon" style="background: #fef3c7; color: #d97706;">
+            <i class="fas fa-trash-alt"></i>
         </div>
-        <h2 class="delete-modal-title">Xác nhận xóa nhà cung cấp?</h2>
+        <h2 class="delete-modal-title">Bỏ vào Thùng rác?</h2>
         <p class="delete-modal-text">
-            Bạn đang yêu cầu xóa nhà cung cấp <strong><?php echo htmlspecialchars($supplier['ten_npp']); ?></strong>.
+            Bạn đang yêu cầu bỏ nhà cung cấp <strong><?php echo htmlspecialchars($supplier['ten_npp']); ?></strong> vào thùng rác.
         </p>
         
         <?php if ($device_count > 0 || $service_count > 0): ?>
@@ -82,14 +82,14 @@ if (isset($_REQUEST['confirm_delete'])) {
                 <a href="index.php?page=suppliers/view&id=<?php echo $id; ?>" class="btn btn-secondary">Quay lại</a>
             </div>
         <?php else: ?>
-            <div class="delete-alert-box">
+            <div class="delete-alert-box" style="border-left-color: #f59e0b; background: #fffbeb; color: #92400e;">
                 <i class="fas fa-info-circle"></i> 
-                <span>Hành động này sẽ xóa vĩnh viễn nhà cung cấp khỏi hệ thống. Không thể hoàn tác!</span>
+                <span>Bạn có thể khôi phục nhà cung cấp này từ mục Thùng rác.</span>
             </div>
             <form action="index.php?page=suppliers/delete&id=<?php echo $id; ?>" method="POST" class="delete-modal-actions">
                 <input type="hidden" name="confirm_delete" value="1">
                 <a href="index.php?page=suppliers/list" class="btn btn-secondary">Hủy bỏ</a>
-                <button type="submit" class="btn btn-danger">Xác nhận Xóa</button>
+                <button type="submit" class="btn btn-warning" style="background: var(--gradient-warning); color:white; border:none; padding: 0 25px; height:42px;">Xác nhận</button>
             </form>
         <?php endif; ?>
     </div>

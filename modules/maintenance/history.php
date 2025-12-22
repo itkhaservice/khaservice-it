@@ -8,7 +8,7 @@ $filter_project = trim($_GET['filter_project'] ?? '');
 $filter_date_from = trim($_GET['filter_date_from'] ?? '');
 $filter_date_to   = trim($_GET['filter_date_to'] ?? '');
 
-$where_clauses = [];
+$where_clauses = ["ml.deleted_at IS NULL"];
 $bind_params   = [];
 
 if ($filter_keyword !== '') {

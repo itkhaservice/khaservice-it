@@ -12,7 +12,7 @@ if ($current_page < 1) $current_page = 1;
 $filter_keyword = trim($_GET['filter_keyword'] ?? '');
 $filter_role    = trim($_GET['filter_role'] ?? '');
 
-$where_clauses = [];
+$where_clauses = ["deleted_at IS NULL"];
 $bind_params   = [];
 
 if ($filter_keyword !== '') {

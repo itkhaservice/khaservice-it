@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ids']) && is_array($_
     try {
         $pdo->beginTransaction();
         
-        $stmt_del = $pdo->prepare("DELETE FROM users WHERE id = ? AND id != ?");
+        $stmt_del = $pdo->prepare("UPDATE users SET deleted_at = NOW() WHERE id = ? AND id != ?");
 
         foreach ($ids as $id) {
             if ($id == $_SESSION['user_id']) {
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ids']) && is_array($_
         $pdo->commit();
 
         if ($deleted_count > 0) {
-            $msg = "Đã xóa thành công $deleted_count người dùng.";
+            $msg = "Đã chuyển thành công $deleted_count người dùng vào thùng rác.";
             if ($skipped_count > 0) {
                 $msg .= " Bỏ qua $skipped_count tài khoản (tài khoản đang đăng nhập).";
             }
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ids']) && is_array($_
             if ($skipped_count > 0) {
                 set_message('warning', 'Không thể xóa tài khoản của chính bạn.');
             } else {
-                set_message('warning', 'Không có người dùng nào được xóa.');
+                set_message('warning', 'Không có người dùng nào được xử lý.');
             }
         }
 

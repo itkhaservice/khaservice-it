@@ -39,6 +39,7 @@
                 <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
                     <li><a href="/khaservice-it/public/index.php?page=users/list">Người dùng</a></li>
                 <?php endif; ?>
+                <li><a href="/khaservice-it/public/index.php?page=trash/list" style="color: #64748b;"><i class="fas fa-trash-alt"></i> Thùng rác</a></li>
             </ul>
         </nav>
 

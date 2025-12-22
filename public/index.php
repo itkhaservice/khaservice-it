@@ -86,8 +86,8 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
     if (strpos($page, 'users/') !== false && $page !== 'users/settings') {
         requireAdmin();
     }
-    // 2. Chỉ Admin mới được vào các trang XÓA (Trừ module Maintenance do IT cũng có quyền)
-    elseif (strpos($page, 'delete') !== false && strpos($page, 'maintenance/') === false) {
+    // 2. Chỉ Admin mới được vào các trang XÓA (Trừ module Maintenance hoặc Trash do IT cũng có quyền)
+    elseif (strpos($page, 'delete') !== false && strpos($page, 'maintenance/') === false && strpos($page, 'trash/') === false) {
         requireAdmin();
     }
     // 3. Chỉ IT trở lên mới được vào các trang THÊM, SỬA hoặc QUẢN LÝ FILE

@@ -32,9 +32,9 @@ if (isset($_POST['confirm_delete'])) {
     }
 
     try {
-        $stmt_del = $pdo->prepare("DELETE FROM projects WHERE id = ?");
+        $stmt_del = $pdo->prepare("UPDATE projects SET deleted_at = NOW() WHERE id = ?");
         $stmt_del->execute([$project_id]);
-        set_message('success', 'Đã xóa dự án ' . $project['ma_du_an'] . ' thành công!');
+        set_message('success', 'Đã chuyển dự án vào thùng rác thành công!');
         header("Location: index.php?page=projects/list");
         exit;
     } catch (PDOException $e) {
@@ -47,12 +47,12 @@ if (isset($_POST['confirm_delete'])) {
 
 <div class="delete-confirmation-container">
     <div class="card delete-card">
-        <div class="delete-modal-icon">
-            <i class="fas fa-exclamation-triangle"></i>
+        <div class="delete-modal-icon" style="background: #fef3c7; color: #d97706;">
+            <i class="fas fa-trash-alt"></i>
         </div>
-        <h2 class="delete-modal-title">Xác nhận xóa dự án?</h2>
+        <h2 class="delete-modal-title">Bỏ vào Thùng rác?</h2>
         <p class="delete-modal-text">
-            Bạn đang yêu cầu xóa dự án <strong><?php echo htmlspecialchars($project['ten_du_an']); ?></strong> (<?php echo htmlspecialchars($project['ma_du_an']); ?>).
+            Bạn đang yêu cầu bỏ dự án <strong><?php echo htmlspecialchars($project['ten_du_an']); ?></strong> (<?php echo htmlspecialchars($project['ma_du_an']); ?>) vào thùng rác.
         </p>
         
         <?php if ($device_count > 0): ?>
@@ -65,14 +65,14 @@ if (isset($_POST['confirm_delete'])) {
                 <a href="index.php?page=devices/list&filter_project=<?php echo $project_id; ?>" class="btn btn-primary">Xem thiết bị</a>
             </div>
         <?php else: ?>
-            <div class="delete-alert-box">
+            <div class="delete-alert-box" style="border-left-color: #f59e0b; background: #fffbeb; color: #92400e;">
                 <i class="fas fa-info-circle"></i> 
-                <span>Hành động này sẽ xóa vĩnh viễn dự án khỏi hệ thống. Không thể hoàn tác!</span>
+                <span>Bạn có thể khôi phục lại dự án này từ mục Thùng rác.</span>
             </div>
             <form action="index.php?page=projects/delete&id=<?php echo $project_id; ?>" method="POST" class="delete-modal-actions">
                 <input type="hidden" name="confirm_delete" value="1">
                 <a href="index.php?page=projects/list" class="btn btn-secondary">Hủy bỏ</a>
-                <button type="submit" class="btn btn-danger">Xác nhận Xóa vĩnh viễn</button>
+                <button type="submit" class="btn btn-warning" style="background: var(--gradient-warning); color:white; border:none; padding: 0 25px; height:42px;">Xác nhận</button>
             </form>
         <?php endif; ?>
     </div>

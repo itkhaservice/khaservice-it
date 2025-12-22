@@ -6,7 +6,7 @@ if ($current_page < 1) $current_page = 1;
 $filter_keyword = trim($_GET['filter_keyword'] ?? '');
 $filter_type    = trim($_GET['filter_type'] ?? '');
 
-$where_clauses = [];
+$where_clauses = ["deleted_at IS NULL"];
 $bind_params   = [];
 
 if ($filter_keyword !== '') {

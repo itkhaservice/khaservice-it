@@ -35,9 +35,9 @@ if ($user['id'] == $_SESSION['user_id']) {
 // Handle Confirmation
 if (isset($_REQUEST['confirm_delete'])) {
     try {
-        $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE users SET deleted_at = NOW() WHERE id = ?");
         $stmt->execute([$user_id_to_delete]);
-        set_message('success', 'Đã xóa người dùng ' . htmlspecialchars($user['username']) . ' thành công!');
+        set_message('success', 'Đã chuyển người dùng ' . htmlspecialchars($user['username']) . ' vào thùng rác!');
         header("Location: index.php?page=users/list");
         exit;
     } catch (PDOException $e) {
@@ -50,23 +50,23 @@ if (isset($_REQUEST['confirm_delete'])) {
 
 <div class="delete-confirmation-container">
     <div class="card delete-card">
-        <div class="delete-modal-icon">
-            <i class="fas fa-exclamation-triangle"></i>
+        <div class="delete-modal-icon" style="background: #fef3c7; color: #d97706;">
+            <i class="fas fa-user-slash"></i>
         </div>
-        <h2 class="delete-modal-title">Xác nhận xóa người dùng?</h2>
+        <h2 class="delete-modal-title">Bỏ người dùng vào Thùng rác?</h2>
         <p class="delete-modal-text">
-            Bạn đang yêu cầu xóa người dùng <strong><?php echo htmlspecialchars($user['fullname']); ?></strong> (<?php echo htmlspecialchars($user['username']); ?>).
+            Bạn đang yêu cầu bỏ người dùng <strong><?php echo htmlspecialchars($user['fullname']); ?></strong> (<?php echo htmlspecialchars($user['username']); ?>) vào thùng rác.
         </p>
         
-        <div class="delete-alert-box">
+        <div class="delete-alert-box" style="border-left-color: #f59e0b; background: #fffbeb; color: #92400e;">
             <i class="fas fa-info-circle"></i> 
-            <span>Hành động này sẽ xóa vĩnh viễn tài khoản người dùng này khỏi hệ thống. Không thể hoàn tác!</span>
+            <span>Tài khoản này sẽ bị vô hiệu hóa. Bạn có thể khôi phục lại từ mục Thùng rác.</span>
         </div>
         
         <form action="index.php?page=users/delete&id=<?php echo $user_id_to_delete; ?>" method="POST" class="delete-modal-actions">
             <input type="hidden" name="confirm_delete" value="1">
             <a href="index.php?page=users/list" class="btn btn-secondary">Hủy bỏ</a>
-            <button type="submit" class="btn btn-danger">Xác nhận Xóa</button>
+            <button type="submit" class="btn btn-warning" style="background: var(--gradient-warning); color:white; border:none; padding: 0 25px; height:42px;">Xác nhận</button>
         </form>
     </div>
 </div>

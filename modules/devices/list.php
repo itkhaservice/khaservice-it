@@ -16,7 +16,7 @@ $filter_status  = trim($_GET['filter_status'] ?? '');
 // ==================================================
 // BUILD QUERY
 // ==================================================
-$where_clauses = [];
+$where_clauses = ["d.deleted_at IS NULL"];
 $bind_params   = [];
 
 if ($filter_keyword !== '') {

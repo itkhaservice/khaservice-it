@@ -4,8 +4,16 @@ $current_page  = (isset($_GET['p']) && is_numeric($_GET['p'])) ? (int)$_GET['p']
 if ($current_page < 1) $current_page = 1;
 
 $filter_keyword = trim($_GET['filter_keyword'] ?? '');
-$where_sql = $filter_keyword !== '' ? " WHERE (s.ten_dich_vu LIKE :kw OR s.loai_dich_vu LIKE :kw OR p.ten_du_an LIKE :kw)" : "";
-$bind_params = $filter_keyword !== '' ? [':kw' => '%' . $filter_keyword . '%'] : [];
+
+$where_clauses = ["s.deleted_at IS NULL"];
+$bind_params   = [];
+
+if ($filter_keyword !== '') {
+    $where_clauses[] = "(s.ten_dich_vu LIKE :kw OR s.loai_dich_vu LIKE :kw OR p.ten_du_an LIKE :kw)";
+    $bind_params[':kw'] = '%' . $filter_keyword . '%';
+}
+
+$where_sql = !empty($where_clauses) ? ' WHERE ' . implode(' AND ', $where_clauses) : '';
 
 $count_stmt = $pdo->prepare("SELECT COUNT(*) FROM services s LEFT JOIN projects p ON s.project_id = p.id $where_sql");
 foreach ($bind_params as $k => $v) $count_stmt->bindValue($k, $v);

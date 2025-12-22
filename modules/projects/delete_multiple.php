@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ids']) && is_array($_
         $pdo->beginTransaction();
         
         $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM devices WHERE project_id = ?");
-        $stmt_del = $pdo->prepare("DELETE FROM projects WHERE id = ?");
+        $stmt_del = $pdo->prepare("UPDATE projects SET deleted_at = NOW() WHERE id = ?");
         $stmt_name = $pdo->prepare("SELECT ten_du_an FROM projects WHERE id = ?");
 
         foreach ($ids as $id) {
@@ -39,18 +39,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ids']) && is_array($_
         $pdo->commit();
 
         if ($deleted_count > 0) {
-            $msg = "Đã xóa thành công $deleted_count dự án.";
+            $msg = "Đã chuyển thành công $deleted_count dự án vào thùng rác.";
             if ($skipped_count > 0) {
-                $msg .= " Có $skipped_count dự án không thể xóa do còn dữ liệu liên quan."; // Simple message
+                $msg .= " Có $skipped_count dự án bị bỏ qua do còn dữ liệu liên quan."; 
                 set_message('warning', $msg . " Chi tiết: " . implode(', ', $skipped_details));
             } else {
                 set_message('success', $msg);
             }
         } else {
             if ($skipped_count > 0) {
-                 set_message('error', "Không thể xóa $skipped_count dự án đã chọn vì chúng vẫn còn chứa thiết bị. Vui lòng kiểm tra lại.");
+                 set_message('error', "Không thể xử lý $skipped_count dự án đã chọn vì chúng vẫn còn chứa thiết bị. Vui lòng kiểm tra lại.");
             } else {
-                set_message('warning', 'Không có dự án nào được xóa.');
+                set_message('warning', 'Không có dự án nào được xử lý.');
             }
         }
 

@@ -21,33 +21,14 @@ if (!$device) {
 // Check for confirmation
 if (isset($_POST['confirm_delete'])) {
     try {
-        $pdo->beginTransaction();
+        $stmt_del = $pdo->prepare("UPDATE devices SET deleted_at = NOW() WHERE id = ?");
+        $stmt_del->execute([$device_id]);
 
-        // 1. Find and delete files
-        $stmt_files = $pdo->prepare("SELECT file_path FROM device_files WHERE device_id = ?");
-        $stmt_files->execute([$device_id]);
-        $files_to_delete = $stmt_files->fetchAll(PDO::FETCH_COLUMN);
-
-        foreach ($files_to_delete as $file_path) {
-            $real_file_path = realpath(__DIR__ . '/../../' . $file_path);
-            $base_path = realpath(__DIR__ . '/../../uploads');
-            if ($real_file_path && strpos($real_file_path, $base_path) === 0 && file_exists($real_file_path)) {
-                unlink($real_file_path);
-            }
-        }
-
-        // 2. Delete related records
-        $pdo->prepare("DELETE FROM device_files WHERE device_id = ?")->execute([$device_id]);
-        $pdo->prepare("DELETE FROM maintenance_logs WHERE device_id = ?")->execute([$device_id]);
-        $pdo->prepare("DELETE FROM devices WHERE id = ?")->execute([$device_id]);
-
-        $pdo->commit();
-        set_message('success', 'Đã xóa thiết bị ' . $device['ma_tai_san'] . ' thành công!');
+        set_message('success', 'Đã chuyển thiết bị ' . $device['ma_tai_san'] . ' vào thùng rác!');
         header("Location: index.php?page=devices/list");
         exit;
 
     } catch (Exception $e) {
-        $pdo->rollBack();
         set_message('error', 'Lỗi: ' . $e->getMessage());
         header("Location: index.php?page=devices/view&id=" . $device_id);
         exit;
@@ -57,20 +38,20 @@ if (isset($_POST['confirm_delete'])) {
 
 <div class="delete-confirmation-container">
     <div class="card delete-card">
-        <div class="warning-icon">
-            <i class="fas fa-exclamation-triangle"></i>
+        <div class="delete-modal-icon" style="background: #fef3c7; color: #d97706;">
+            <i class="fas fa-trash-alt"></i>
         </div>
-        <h2>Xác nhận xóa thiết bị?</h2>
-        <p>Bạn đang yêu cầu xóa thiết bị <strong><?php echo htmlspecialchars($device['ten_thiet_bi']); ?></strong> (<?php echo htmlspecialchars($device['ma_tai_san']); ?>).</p>
-        <div class="alert-box danger">
+        <h2 class="delete-modal-title">Bỏ vào Thùng rác?</h2>
+        <p class="delete-modal-text">Bạn đang yêu cầu bỏ thiết bị <strong><?php echo htmlspecialchars($device['ten_thiet_bi']); ?></strong> (<?php echo htmlspecialchars($device['ma_tai_san']); ?>) vào thùng rác.</p>
+        <div class="delete-alert-box" style="border-left-color: #f59e0b; background: #fffbeb; color: #92400e;">
             <i class="fas fa-info-circle"></i> 
-            Hành động này sẽ xóa vĩnh viễn thiết bị và <strong>tất cả lịch sử bảo trì, tài liệu đính kèm</strong> liên quan. Không thể hoàn tác!
+            Dữ liệu của thiết bị sẽ tạm thời bị ẩn. Bạn có thể khôi phục lại từ mục Thùng rác.
         </div>
         
-        <form action="index.php?page=devices/delete&id=<?php echo $device_id; ?>" method="POST" class="delete-actions">
+        <form action="index.php?page=devices/delete&id=<?php echo $device_id; ?>" method="POST" class="delete-actions" style="display:flex; justify-content:center; gap:15px;">
             <input type="hidden" name="confirm_delete" value="1">
             <a href="index.php?page=devices/view&id=<?php echo $device_id; ?>" class="btn btn-secondary">Hủy bỏ</a>
-            <button type="submit" class="btn btn-danger">Xác nhận Xóa vĩnh viễn</button>
+            <button type="submit" class="btn btn-warning" style="background: var(--gradient-warning); color:white; border:none; padding: 0 25px; height:42px;">Xác nhận</button>
         </form>
     </div>
 </div>

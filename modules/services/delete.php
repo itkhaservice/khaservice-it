@@ -28,9 +28,9 @@ if (!$service) {
 // Handle Confirmation
 if (isset($_REQUEST['confirm_delete'])) {
     try {
-        $stmt_del = $pdo->prepare("DELETE FROM services WHERE id = ?");
+        $stmt_del = $pdo->prepare("UPDATE services SET deleted_at = NOW() WHERE id = ?");
         $stmt_del->execute([$service_id]);
-        set_message('success', 'Đã xóa dịch vụ ' . $service['ten_dich_vu'] . ' thành công!');
+        set_message('success', 'Đã chuyển dịch vụ ' . $service['ten_dich_vu'] . ' vào thùng rác!');
         header("Location: index.php?page=services/list");
         exit;
     } catch (PDOException $e) {
@@ -43,23 +43,23 @@ if (isset($_REQUEST['confirm_delete'])) {
 
 <div class="delete-confirmation-container">
     <div class="card delete-card">
-        <div class="delete-modal-icon">
-            <i class="fas fa-exclamation-triangle"></i>
+        <div class="delete-modal-icon" style="background: #fef3c7; color: #d97706;">
+            <i class="fas fa-trash-alt"></i>
         </div>
-        <h2 class="delete-modal-title">Xác nhận xóa dịch vụ?</h2>
+        <h2 class="delete-modal-title">Bỏ vào Thùng rác?</h2>
         <p class="delete-modal-text">
-            Bạn đang yêu cầu xóa dịch vụ <strong><?php echo htmlspecialchars($service['ten_dich_vu']); ?></strong>.
+            Bạn đang yêu cầu bỏ dịch vụ <strong><?php echo htmlspecialchars($service['ten_dich_vu']); ?></strong> vào thùng rác.
         </p>
         
-        <div class="delete-alert-box">
+        <div class="delete-alert-box" style="border-left-color: #f59e0b; background: #fffbeb; color: #92400e;">
             <i class="fas fa-info-circle"></i> 
-            <span>Hành động này sẽ xóa vĩnh viễn dịch vụ khỏi hệ thống. Không thể hoàn tác!</span>
+            <span>Dữ liệu dịch vụ sẽ bị ẩn. Bạn có thể khôi phục lại từ mục Thùng rác.</span>
         </div>
         
         <form action="index.php?page=services/delete&id=<?php echo $service_id; ?>" method="POST" class="delete-modal-actions">
             <input type="hidden" name="confirm_delete" value="1">
             <a href="index.php?page=services/list" class="btn btn-secondary">Hủy bỏ</a>
-            <button type="submit" class="btn btn-danger">Xác nhận Xóa</button>
+            <button type="submit" class="btn btn-warning" style="background: var(--gradient-warning); color:white; border:none; padding: 0 25px; height:42px;">Xác nhận</button>
         </form>
     </div>
 </div>

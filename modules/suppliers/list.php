@@ -4,8 +4,20 @@ $current_page  = (isset($_GET['p']) && is_numeric($_GET['p'])) ? (int)$_GET['p']
 if ($current_page < 1) $current_page = 1;
 
 $filter_keyword = trim($_GET['filter_keyword'] ?? '');
-$where_sql = $filter_keyword !== '' ? " WHERE (ten_npp LIKE :kw1 OR nguoi_lien_he LIKE :kw2 OR email LIKE :kw3 OR dien_thoai LIKE :kw4 OR ghi_chu LIKE :kw5)" : "";
-$bind_params = $filter_keyword !== '' ? [':kw1' => '%'.$filter_keyword.'%', ':kw2' => '%'.$filter_keyword.'%', ':kw3' => '%'.$filter_keyword.'%', ':kw4' => '%'.$filter_keyword.'%', ':kw5' => '%'.$filter_keyword.'%', ] : [];
+
+$where_clauses = ["deleted_at IS NULL"];
+$bind_params   = [];
+
+if ($filter_keyword !== '') {
+    $where_clauses[] = "(ten_npp LIKE :kw1 OR nguoi_lien_he LIKE :kw2 OR email LIKE :kw3 OR dien_thoai LIKE :kw4 OR ghi_chu LIKE :kw5)";
+    $bind_params[':kw1'] = '%'.$filter_keyword.'%';
+    $bind_params[':kw2'] = '%'.$filter_keyword.'%';
+    $bind_params[':kw3'] = '%'.$filter_keyword.'%';
+    $bind_params[':kw4'] = '%'.$filter_keyword.'%';
+    $bind_params[':kw5'] = '%'.$filter_keyword.'%';
+}
+
+$where_sql = !empty($where_clauses) ? ' WHERE ' . implode(' AND ', $where_clauses) : '';
 
 $count_stmt = $pdo->prepare("SELECT COUNT(*) FROM suppliers $where_sql");
 foreach ($bind_params as $k => $v) $count_stmt->bindValue($k, $v);

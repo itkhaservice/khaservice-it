@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ids']) && is_array($_
     try {
         $pdo->beginTransaction();
         
-        $stmt_del = $pdo->prepare("DELETE FROM services WHERE id = ?");
+        $stmt_del = $pdo->prepare("UPDATE services SET deleted_at = NOW() WHERE id = ?");
 
         foreach ($ids as $id) {
             $stmt_del->execute([$id]);
@@ -24,9 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ids']) && is_array($_
         $pdo->commit();
 
         if ($deleted_count > 0) {
-            set_message('success', "Đã xóa thành công $deleted_count dịch vụ.");
+            set_message('success', "Đã chuyển thành công $deleted_count dịch vụ vào thùng rác.");
         } else {
-            set_message('warning', 'Không có dịch vụ nào được xóa.');
+            set_message('warning', 'Không có dịch vụ nào được xử lý.');
         }
 
     } catch (PDOException $e) {

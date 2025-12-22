@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ids']) && is_array($_
         
         $stmt_check_devices = $pdo->prepare("SELECT COUNT(*) FROM devices WHERE supplier_id = ?");
         $stmt_check_services = $pdo->prepare("SELECT COUNT(*) FROM services WHERE supplier_id = ?");
-        $stmt_del = $pdo->prepare("DELETE FROM suppliers WHERE id = ?");
+        $stmt_del = $pdo->prepare("UPDATE suppliers SET deleted_at = NOW() WHERE id = ?");
         $stmt_name = $pdo->prepare("SELECT ten_npp FROM suppliers WHERE id = ?");
 
         foreach ($ids as $id) {
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ids']) && is_array($_
         $pdo->commit();
 
         if ($deleted_count > 0) {
-            $msg = "Đã xóa thành công $deleted_count nhà cung cấp.";
+            $msg = "Đã chuyển thành công $deleted_count nhà cung cấp vào thùng rác.";
             if ($skipped_count > 0) {
                 set_message('warning', $msg . " Có $skipped_count mục bị bỏ qua do còn dữ liệu liên quan: " . implode(', ', $skipped_details));
             } else {
@@ -54,9 +54,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ids']) && is_array($_
             }
         } else {
             if ($skipped_count > 0) {
-                 set_message('error', "Không thể xóa các nhà cung cấp đã chọn vì họ đang liên kết với thiết bị hoặc dịch vụ. Chi tiết: " . implode(', ', $skipped_details));
+                 set_message('error', "Không thể xử lý các nhà cung cấp đã chọn vì họ đang liên kết với thiết bị hoặc dịch vụ. Chi tiết: " . implode(', ', $skipped_details));
             } else {
-                set_message('warning', 'Không có dữ liệu nào được xóa.');
+                set_message('warning', 'Không có dữ liệu nào được xử lý.');
             }
         }
 
