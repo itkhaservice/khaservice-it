@@ -61,7 +61,7 @@ $stmt->execute();
 $devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $projects_list = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du_an")->fetchAll(PDO::FETCH_ASSOC);
-$statuses = $pdo->query("SELECT DISTINCT trang_thai FROM devices ORDER BY trang_thai")->fetchAll(PDO::FETCH_ASSOC);
+$statuses_config = $pdo->query("SELECT status_name, color_class FROM settings_device_statuses")->fetchAll(PDO::FETCH_KEY_PAIR);
 
 $all_columns = [
     'ma_tai_san'   => ['label' => 'Mã Tài sản', 'default' => true],
@@ -144,7 +144,10 @@ $all_columns = [
                         <td data-col="loai_thiet_bi"><?php echo htmlspecialchars($d['loai_thiet_bi']); ?></td>
                         <td data-col="model"><?php echo htmlspecialchars($d['model']); ?></td>
                         <td data-col="ten_du_an"><?php echo htmlspecialchars($d['ten_du_an']); ?></td>
-                        <td data-col="trang_thai"><?php echo htmlspecialchars($d['trang_thai']); ?></td>
+                        <td data-col="trang_thai">
+                            <?php $cls = $statuses_config[$d['trang_thai']] ?? 'status-default'; ?>
+                            <span class="badge <?php echo $cls; ?>"><?php echo htmlspecialchars($d['trang_thai']); ?></span>
+                        </td>
                         <td class="actions text-center">
                             <a href="index.php?page=devices/view&id=<?php echo $d['id']; ?>" class="btn-icon" title="Xem"><i class="fas fa-eye"></i></a>
                             <?php if(isIT()): ?>

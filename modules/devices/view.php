@@ -1,3 +1,4 @@
+<?php
 $device = null;
 if (isset($_GET['id'])) {
     $device_id = $_GET['id'];
@@ -25,6 +26,11 @@ if (!$device) {
     exit;
 }
 
+// Fetch status color from settings
+$status_stmt = $pdo->prepare("SELECT color_class FROM settings_device_statuses WHERE status_name = ?");
+$status_stmt->execute([$device['trang_thai']]);
+$statusClass = $status_stmt->fetchColumn() ?: 'status-default';
+
 // Fetch child devices (components)
 $stmt_children = $pdo->prepare("SELECT id, ten_thiet_bi, ma_tai_san, loai_thiet_bi, trang_thai FROM devices WHERE parent_id = ? AND deleted_at IS NULL");
 $stmt_children->execute([$device_id]);
@@ -46,12 +52,6 @@ $children = $stmt_children->fetchAll();
         <div class="card info-card">
             <div class="card-header-custom">
                 <h3><i class="fas fa-microchip"></i> Thông tin Chung</h3>
-                <?php 
-                    $statusClass = 'status-default';
-                    if ($device['trang_thai'] === 'Đang sử dụng') $statusClass = 'status-active';
-                    elseif ($device['trang_thai'] === 'Hỏng') $statusClass = 'status-error';
-                    elseif ($device['trang_thai'] === 'Thanh lý') $statusClass = 'status-warning';
-                ?>
                 <span class="badge <?php echo $statusClass; ?>"><?php echo htmlspecialchars($device['trang_thai']); ?></span>
             </div>
             
