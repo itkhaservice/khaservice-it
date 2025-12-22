@@ -1,0 +1,204 @@
+/* assets/css/login.css */
+
+body {
+    margin: 0;
+    background-color: var(--background-light);
+    font-family: var(--font-family-base); /* Ensure font family is applied */
+    color: var(--text-color);
+}
+
+.split-login-wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.login-intro-section {
+    flex: 1;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light-color) 100%); /* Use a subtle gradient */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    color: #fff;
+    text-align: center;
+}
+
+.login-intro-content {
+    max-width: 500px;
+}
+
+.login-intro-content .logo {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    color: #fff;
+}
+
+.login-intro-content h1 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.3;
+}
+
+.login-intro-content p {
+    font-size: 1rem;
+    line-height: 1.6;
+    opacity: 0.9;
+}
+
+.login-form-section {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    background-color: #f8f9fa; /* Lighter background for the form side */
+}
+
+.login-container {
+    background-color: #fff;
+    padding: 3rem; /* More padding */
+    border-radius: var(--border-radius-card);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Stronger, softer shadow */
+    width: 100%;
+    max-width: 420px; /* Adjust max width for form container */
+    text-align: center;
+    position: relative; /* For potential absolute positioning of elements */
+}
+
+.login-container h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: var(--text-color);
+    font-size: 1.8rem;
+}
+
+/* Form Styles */
+.login-form-group {
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+.login-form-group label {
+    display: block;
+    margin-bottom: 0.6rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon i {
+    position: absolute;
+    left: 1.2rem;
+    color: #94a3b8;
+}
+
+.input-with-icon input {
+    width: 100%;
+    padding: 0.9rem 1.2rem 0.9rem 3rem !important; /* Dành chỗ cho icon bên trái */
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-base);
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+
+.remember-me-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.remember-me-container input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+}
+
+.remember-me-container label {
+    margin-bottom: 0;
+    font-weight: 400;
+    color: var(--text-light-color);
+    cursor: pointer;
+}
+
+.btn-login {
+    width: 100%;
+    padding: 1.1rem;
+    background-color: var(--primary-color);
+    color: #fff;
+    border: none;
+    border-radius: var(--border-radius-base);
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-login:hover {
+    background-color: var(--primary-dark-color);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+}
+
+.login-container .intro-text-block { /* Changed class name from .intro-text to .intro-text-block in HTML */
+    display: none; /* Hide the old intro text block as it's now in intro section */
+}
+
+/* Các định nghĩa cũ đã được thay thế bởi .login-form-group phía trên */
+
+.login-container .error {
+    color: var(--error-text);
+    background-color: var(--error-bg-light);
+    border: 1px solid var(--error-color);
+    padding: 10px;
+    border-radius: var(--border-radius-base);
+    margin-bottom: 1.5rem;
+    font-size: 0.95em;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) { /* Adjust breakpoint for stacking */
+    .split-login-wrapper {
+        flex-direction: column;
+    }
+
+    .login-intro-section {
+        padding: 3rem 1.5rem;
+    }
+
+    .login-intro-content {
+        max-width: none; /* Allow full width */
+    }
+
+    .login-form-section {
+        padding: 2rem 1.5rem;
+    }
+
+    .login-container {
+        max-width: 400px; /* Restore max-width for smaller screens */
+        margin: auto; /* Center it */
+    }
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        padding: 2rem 1.5rem;
+        margin: 1rem auto;
+    }
+
+    .login-intro-content h1 {
+        font-size: 1.7rem;
+    }
+
+    .login-intro-content .logo {
+        font-size: 2rem;
+    }
+}

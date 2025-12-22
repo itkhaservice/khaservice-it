@@ -1,0 +1,9 @@
+# Disable directory browsing for security
+Options -Indexes
+
+# Deny access to .php files or other executable scripts
+# This prevents malicious uploaded files from being executed as scripts
+<FilesMatch "\.(php|phtml|php3|php4|php5|phps)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>

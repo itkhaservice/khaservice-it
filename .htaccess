@@ -2,12 +2,15 @@
 Options -Indexes
 
 RewriteEngine On
-RewriteBase /
 
-# Redirect root access to public/
-RewriteRule ^$ public/ [L]
+# 1. Nếu tìm thấy file thực tế (css, js, png...) thì trả về luôn
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
 
-# Redirect all requests not starting with public/ to public/ directory
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^((?!public/).*)$ public/$1 [L,QSA]
+# 2. Nếu tìm thấy thư mục thực tế thì vào luôn
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# 3. Mọi thứ còn lại đẩy vào public/index.php
+RewriteRule ^$ public/index.php [L]
+RewriteRule ^(.*)$ public/index.php [L,QSA]
