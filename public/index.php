@@ -9,29 +9,28 @@ require_once __DIR__ . '/../includes/messages.php'; // Include messages helper
 if (($page ?? 'home') === 'home') {
     try {
         // 1. KPI Cards Data
-        $total_devices = $pdo->query("SELECT COUNT(id) FROM devices")->fetchColumn();
-        $devices_nearing_warranty = $pdo->query("SELECT COUNT(id) FROM devices WHERE bao_hanh_den IS NOT NULL AND bao_hanh_den BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 90 DAY)")->fetchColumn();
-        $broken_or_liquidated_devices = $pdo->query("SELECT COUNT(id) FROM devices WHERE trang_thai IN ('Hỏng', 'Thanh lý')")->fetchColumn();
-        $total_maintenance_logs = $pdo->query("SELECT COUNT(id) FROM maintenance_logs")->fetchColumn();
+        $total_devices = $pdo->query("SELECT COUNT(id) FROM devices WHERE deleted_at IS NULL")->fetchColumn();
+        $devices_nearing_warranty = $pdo->query("SELECT COUNT(id) FROM devices WHERE deleted_at IS NULL AND bao_hanh_den IS NOT NULL AND bao_hanh_den BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)")->fetchColumn();
+        $broken_devices = $pdo->query("SELECT COUNT(id) FROM devices WHERE deleted_at IS NULL AND trang_thai IN ('Hỏng', 'Cảnh báo')")->fetchColumn();
+        $total_maintenance_logs = $pdo->query("SELECT COUNT(id) FROM maintenance_logs WHERE deleted_at IS NULL")->fetchColumn();
 
         // 2. Action Zone - Critical Alerts
-        $overdue_warranty_devices_stmt = $pdo->prepare("SELECT id, ma_tai_san, ten_thiet_bi, bao_hanh_den FROM devices WHERE bao_hanh_den IS NOT NULL AND bao_hanh_den < CURDATE() LIMIT 5");
+        // Devices with overdue warranty
+        $overdue_warranty_devices_stmt = $pdo->prepare("SELECT id, ma_tai_san, ten_thiet_bi, bao_hanh_den FROM devices WHERE deleted_at IS NULL AND bao_hanh_den IS NOT NULL AND bao_hanh_den < CURDATE() ORDER BY bao_hanh_den ASC LIMIT 5");
         $overdue_warranty_devices_stmt->execute();
         $overdue_warranty_devices = $overdue_warranty_devices_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $broken_with_liquidation_notes_stmt = $pdo->prepare("SELECT id, ma_tai_san, ten_thiet_bi, ghi_chu FROM devices WHERE (trang_thai = 'Hỏng' OR trang_thai = 'Thanh lý') AND ghi_chu LIKE '%thanh lý%' LIMIT 5");
-        $broken_with_liquidation_notes_stmt->execute();
-        $broken_with_liquidation_notes = $broken_with_liquidation_notes_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // 3. Chart Data: Device Status Distribution
-        $device_status_stats = $pdo->query("SELECT trang_thai, COUNT(*) as count FROM devices GROUP BY trang_thai")->fetchAll(PDO::FETCH_KEY_PAIR);
-        $statuses = ['Đang sử dụng', 'Hỏng', 'Thanh lý', 'Mới nhập'];
-        foreach ($statuses as $s) {
-            if (!isset($device_status_stats[$s])) $device_status_stats[$s] = 0;
-        }
+        // 3. Chart Data: Device Status Distribution (Dynamic from config)
+        $status_stats_stmt = $pdo->query("
+            SELECT s.status_name, COUNT(d.id) as count 
+            FROM settings_device_statuses s 
+            LEFT JOIN devices d ON s.status_name = d.trang_thai AND d.deleted_at IS NULL 
+            GROUP BY s.status_name
+        ");
+        $device_status_stats = $status_stats_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
         // 4. Chart Data: Device Type Distribution (Top 5)
-        $device_type_stats_stmt = $pdo->query("SELECT loai_thiet_bi, COUNT(*) as count FROM devices GROUP BY loai_thiet_bi ORDER BY count DESC LIMIT 5");
+        $device_type_stats_stmt = $pdo->query("SELECT loai_thiet_bi, COUNT(*) as count FROM devices WHERE deleted_at IS NULL AND loai_thiet_bi != '' GROUP BY loai_thiet_bi ORDER BY count DESC LIMIT 5");
         $device_type_stats = $device_type_stats_stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // 5. Recent Activity Feed (Latest Maintenance Logs)
@@ -45,16 +44,17 @@ if (($page ?? 'home') === 'home') {
                 d.ten_thiet_bi 
             FROM maintenance_logs ml
             LEFT JOIN devices d ON ml.device_id = d.id
+            WHERE ml.deleted_at IS NULL
             ORDER BY ml.created_at DESC 
             LIMIT 5
         ");
         $recent_activities = $recent_activities_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // 6. Services Expiring Soon (New)
+        // 6. Services Expiring Soon
         $expiring_services_stmt = $pdo->query("
             SELECT id, ten_dich_vu, ngay_het_han, DATEDIFF(ngay_het_han, CURDATE()) as days_left 
             FROM services 
-            WHERE ngay_het_han <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+            WHERE deleted_at IS NULL AND ngay_het_han <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
             ORDER BY ngay_het_han ASC 
             LIMIT 5
         ");
@@ -62,9 +62,8 @@ if (($page ?? 'home') === 'home') {
 
     } catch (PDOException $e) {
         error_log("Dashboard data fetch error: " . $e->getMessage());
-        $total_devices = 0; $devices_nearing_warranty = 0; $broken_or_liquidated_devices = 0; $total_maintenance_logs = 0;
-        $overdue_warranty_devices = []; $broken_with_liquidation_notes = [];
-        $device_status_stats = []; $device_type_stats = []; $recent_activities = [];
+        $total_devices = 0; $devices_nearing_warranty = 0; $broken_devices = 0; $total_maintenance_logs = 0;
+        $overdue_warranty_devices = []; $device_status_stats = []; $device_type_stats = []; $recent_activities = []; $expiring_services = [];
         set_message("Lỗi tải dữ liệu Dashboard. Vui lòng thử lại sau.", "error");
     }
 }
@@ -128,8 +127,8 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
 
             <div class="stat-card danger">
                 <div class="stat-content">
-                    <span class="stat-label">Hỏng / Thanh lý</span>
-                    <span class="stat-value"><?= number_format($broken_or_liquidated_devices) ?></span>
+                    <span class="stat-label">Hỏng / Cảnh báo</span>
+                    <span class="stat-value"><?= number_format($broken_devices) ?></span>
                 </div>
                 <div class="stat-icon"><i class="fas fa-exclamation-circle"></i></div>
             </div>
@@ -204,7 +203,7 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
                     <h3><i class="fas fa-bell" style="color: #f59e0b;"></i> Cần Xử lý Gấp</h3>
                 </div>
 
-                <?php if (empty($overdue_warranty_devices) && empty($broken_with_liquidation_notes)): ?>
+                <?php if (empty($overdue_warranty_devices) && empty($expiring_services)): ?>
                     <div style="text-align: center; padding: 40px 20px;">
                         <i class="fas fa-check-circle" style="font-size: 3rem; color: #10b981; margin-bottom: 15px;"></i>
                         <p style="font-weight: 500; color: #059669;">Mọi thứ đều ổn định!</p>
@@ -214,24 +213,11 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
                     <ul class="action-list">
                         <?php foreach ($overdue_warranty_devices as $device): ?>
                             <li>
-                                <a href="index.php?page=devices/view&id=<?= $device['id'] ?>" class="action-item warning">
+                                <a href="index.php?page=devices/view&id=<?= $device['id'] ?>" class="action-item danger">
                                     <i class="fas fa-exclamation-triangle"></i>
                                     <div class="action-content">
-                                        <span class="action-title"><?= htmlspecialchars($device['ma_tai_san']) ?></span>
-                                        <span class="action-desc">Quá hạn BH: <?= date('d/m/Y', strtotime($device['bao_hanh_den'])) ?></span>
-                                    </div>
-                                    <i class="fas fa-chevron-right action-arrow"></i>
-                                </a>
-                            </li>
-                        <?php endforeach; ?>
-
-                        <?php foreach ($broken_with_liquidation_notes as $device): ?>
-                            <li>
-                                <a href="index.php?page=devices/view&id=<?= $device['id'] ?>" class="action-item danger">
-                                    <i class="fas fa-trash-alt"></i>
-                                    <div class="action-content">
-                                        <span class="action-title"><?= htmlspecialchars($device['ma_tai_san']) ?></span>
-                                        <span class="action-desc">Cần Thanh lý (Ghi chú có từ khóa 'thanh lý')</span>
+                                        <span class="action-title"><?= htmlspecialchars($device['ma_tai_san']) ?> - <?= htmlspecialchars($device['ten_thiet_bi']) ?></span>
+                                        <span class="action-desc">ĐÃ HẾT BẢO HÀNH: <?= date('d/m/Y', strtotime($device['bao_hanh_den'])) ?></span>
                                     </div>
                                     <i class="fas fa-chevron-right action-arrow"></i>
                                 </a>
@@ -240,7 +226,7 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
 
                         <?php foreach ($expiring_services as $service): ?>
                             <li>
-                                <a href="index.php?page=services/list" class="action-item <?= ($service['days_left'] <= 0) ? 'danger' : 'warning' ?>">
+                                <a href="index.php?page=services/view&id=<?= $service['id'] ?>" class="action-item <?= ($service['days_left'] <= 0) ? 'danger' : 'warning' ?>">
                                     <i class="fas fa-cloud"></i>
                                     <div class="action-content">
                                         <span class="action-title"><?= htmlspecialchars($service['ten_dich_vu']) ?></span>
@@ -260,6 +246,23 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
     </div>
 
     <!-- Chart Logic -->
+    <?php
+        // Prepare colors for chart
+        $chart_colors = [];
+        $status_configs = $pdo->query("SELECT status_name, color_class FROM settings_device_statuses")->fetchAll(PDO::FETCH_KEY_PAIR);
+        $color_map = [
+            'status-active' => '#10b981', // Green
+            'status-warning' => '#f59e0b', // Amber
+            'status-error' => '#ef4444', // Red
+            'status-info' => '#3b82f6', // Blue
+            'status-default' => '#94a3b8' // Slate/Gray
+        ];
+        
+        foreach (array_keys($device_status_stats) as $s_name) {
+            $class = $status_configs[$s_name] ?? 'status-default';
+            $chart_colors[] = $color_map[$class] ?? '#94a3b8';
+        }
+    ?>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             Chart.defaults.font.family = "'Inter', 'Segoe UI', sans-serif";
@@ -273,12 +276,7 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
                     labels: <?= json_encode(array_keys($device_status_stats)) ?>,
                     datasets: [{
                         data: <?= json_encode(array_values($device_status_stats)) ?>,
-                        backgroundColor: [
-                            '#10b981', // Đang sử dụng (Green)
-                            '#ef4444', // Hỏng (Red)
-                            '#f59e0b', // Thanh lý (Amber)
-                            '#3b82f6'  // Mới nhập (Blue)
-                        ],
+                        backgroundColor: <?= json_encode($chart_colors) ?>,
                         borderWidth: 0,
                         hoverOffset: 4
                     }]

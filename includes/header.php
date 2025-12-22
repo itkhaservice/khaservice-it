@@ -25,28 +25,36 @@
 </head>
 <body>
     <header class="main-header">
-        <div class="logo">
-            <a href="/khaservice-it/public/index.php">KHASERVICE IT</a>
+        <div class="header-left">
+            <button class="hamburger" id="hamburger-menu" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="logo">
+                <a href="/khaservice-it/public/index.php">KHASERVICE IT</a>
+            </div>
         </div>
         
-        <nav class="main-nav">
+        <nav class="main-nav" id="mobile-menu">
             <ul>
-                <li><a href="/khaservice-it/public/index.php?page=devices/list">Thiết bị</a></li>
-                <li><a href="/khaservice-it/public/index.php?page=maintenance/history">Công tác</a></li>
-                <li><a href="/khaservice-it/public/index.php?page=services/list">Dịch vụ</a></li>
-                <li><a href="/khaservice-it/public/index.php?page=projects/list">Dự án</a></li>
-                <li><a href="/khaservice-it/public/index.php?page=suppliers/list">Nhà cung cấp</a></li>
+                <li><a href="/khaservice-it/public/index.php?page=devices/list"><i class="fas fa-server"></i> Thiết bị</a></li>
+                <li><a href="/khaservice-it/public/index.php?page=maintenance/history"><i class="fas fa-tools"></i> Công tác</a></li>
+                <li><a href="/khaservice-it/public/index.php?page=services/list"><i class="fas fa-cloud"></i> Dịch vụ</a></li>
+                <li><a href="/khaservice-it/public/index.php?page=projects/list"><i class="fas fa-building"></i> Dự án</a></li>
+                <li><a href="/khaservice-it/public/index.php?page=suppliers/list"><i class="fas fa-truck"></i> Nhà cung cấp</a></li>
                 <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
-                    <li><a href="/khaservice-it/public/index.php?page=users/list">Người dùng</a></li>
-                    <li><a href="/khaservice-it/public/index.php?page=settings/system">Cài đặt</a></li>
+                    <li><a href="/khaservice-it/public/index.php?page=users/list"><i class="fas fa-users"></i> Người dùng</a></li>
+                    <li><a href="/khaservice-it/public/index.php?page=settings/system"><i class="fas fa-cogs"></i> Cài đặt</a></li>
                 <?php endif; ?>
-                <li><a href="/khaservice-it/public/index.php?page=trash/list" style="color: #64748b;"><i class="fas fa-trash-alt"></i> Thùng rác</a></li>
+                <li><a href="/khaservice-it/public/index.php?page=trash/list" class="trash-link"><i class="fas fa-trash-alt"></i> Thùng rác</a></li>
             </ul>
         </nav>
 
         <div class="user-info">
-            <span class="username"><i class="far fa-user-circle"></i> <?php echo htmlspecialchars($_SESSION['fullname'] ?? $_SESSION['username']); ?></span>
-            <a href="/khaservice-it/public/index.php?page=users/settings" class="settings-link" title="Cài đặt tài khoản"><i class="fas fa-cog"></i></a>
+            <div class="user-meta">
+                <span class="user-name-text"><?php echo htmlspecialchars($_SESSION['fullname'] ?? $_SESSION['username']); ?></span>
+                <span class="user-role"><?php echo strtoupper($_SESSION['role']); ?></span>
+            </div>
+            <a href="/khaservice-it/public/index.php?page=users/settings" class="settings-link" title="Cài đặt"><i class="fas fa-cog"></i></a>
             <a href="/khaservice-it/public/logout.php" class="logout-link" title="Thoát"><i class="fas fa-sign-out-alt"></i></a>
         </div>
     </header>

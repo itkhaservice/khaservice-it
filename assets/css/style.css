@@ -78,6 +78,24 @@ body {
     padding: 8px; border-radius: 8px; font-size: 1rem;
 }
 
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    .header-actions {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .header-actions .btn {
+        flex: 1;
+        min-width: 120px;
+    }
+}
+
 /* --- FILTER SECTION (FIXED HEIGHT 34PX) --- */
 .filter-section {
     padding: 15px 20px !important;
@@ -463,6 +481,44 @@ body {
     border-radius: 0 0 12px 12px;
     margin-top: -20px; /* Connect to table card if needed */
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+@media (max-width: 768px) {
+    .pagination-container {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    .rows-per-page {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+    .pagination-links {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 768px) {
+    .pagination-container {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    .rows-per-page {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+    .pagination-links {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
 }
 
 .rows-per-page-form {
@@ -901,10 +957,10 @@ body {
 }
 
 
-/* STYLE CHO CÁC M?C TR?NG TRONG PHI?U IN */
+/* STYLE CHO Cï¿½C M?C TR?NG TRONG PHI?U IN */
 .p-line-single:empty::after, 
 .p-line-single:blank::after {
-    content: '—————';
+    content: 'ï¿½ï¿½ï¿½ï¿½ï¿½';
     color: #999;
     display: block;
     text-align: center;

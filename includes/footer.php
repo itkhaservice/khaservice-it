@@ -1,7 +1,18 @@
 </div>
     </main>
     <footer class="main-footer">
-        <p>&copy; <?php echo date('Y'); ?> KHASERVICE IT. All rights reserved.</p>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand-info">
+                    <span class="footer-logo-text">KHASERVICE IT</span>
+                    <span class="footer-tagline">Hệ thống Quản lý Thiết bị & Công tác Nội bộ</span>
+                </div>
+                <div class="footer-copyright-text">
+                    <p>&copy; <?php echo date('Y'); ?> All rights reserved.</p>
+                    <p class="mobile-hide">Developed for KHASERVICE IT Department.</p>
+                </div>
+            </div>
+        </div>
     </footer>
 
     <!-- Shared Confirmation Modal -->

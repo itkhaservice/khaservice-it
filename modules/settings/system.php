@@ -58,21 +58,21 @@ $statuses = $pdo->query("SELECT * FROM settings_device_statuses ORDER BY status_
     <h2><i class="fas fa-cogs"></i> Cấu hình Hệ thống</h2>
 </div>
 
-<div class="view-grid-layout" style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px;">
+<div class="settings-grid-container">
     <!-- PHẦN 1: QUẢN LÝ LOẠI THIẾT BỊ -->
-    <div class="form-column">
-        <div class="card">
+    <div class="settings-card-wrapper">
+        <div class="card h-full">
             <div class="dashboard-card-header">
-                <h3><i class="fas fa-microchip"></i> Quản lý Loại thiết bị & Phân nhóm</h3>
+                <h3><i class="fas fa-microchip"></i> Loại thiết bị & Phân nhóm</h3>
             </div>
             
-            <form action="index.php?page=settings/system" method="POST" class="mt-20" style="display: flex; gap: 10px; margin-bottom: 25px; align-items: flex-end;">
+            <form action="index.php?page=settings/system" method="POST" class="settings-add-form inline">
                 <input type="hidden" name="action" value="add_type">
-                <div class="form-group" style="flex: 2; margin-bottom: 0;">
+                <div class="form-group flex-2">
                     <label>Tên Loại mới</label>
-                    <input type="text" name="type_name" placeholder="VD: Máy Scan, Cân điện tử..." required>
+                    <input type="text" name="type_name" placeholder="VD: Máy Scan..." required>
                 </div>
-                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <div class="form-group flex-1">
                     <label>Phân nhóm</label>
                     <select name="group_name">
                         <option value="Văn phòng">Văn phòng</option>
@@ -83,16 +83,16 @@ $statuses = $pdo->query("SELECT * FROM settings_device_statuses ORDER BY status_
                         <option value="Khác">Khác</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary" style="height: 42px;"><i class="fas fa-plus"></i></button>
+                <button type="submit" class="btn btn-primary btn-add-sm"><i class="fas fa-plus"></i></button>
             </form>
 
-            <div class="table-container" style="border:none;">
+            <div class="table-container mt-20">
                 <table class="content-table">
                     <thead>
                         <tr>
                             <th>Tên Loại</th>
-                            <th>Phân nhóm</th>
-                            <th width="50"></th>
+                            <th>Nhóm</th>
+                            <th width="40"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -100,7 +100,7 @@ $statuses = $pdo->query("SELECT * FROM settings_device_statuses ORDER BY status_
                             <tr>
                                 <td class="font-bold"><?php echo htmlspecialchars($t['type_name']); ?></td>
                                 <td><span class="badge status-info"><?php echo htmlspecialchars($t['group_name']); ?></span></td>
-                                <td>
+                                <td class="text-right">
                                     <form action="index.php?page=settings/system" method="POST" onsubmit="return confirm('Xóa loại này?')">
                                         <input type="hidden" name="action" value="delete_type">
                                         <input type="hidden" name="id" value="<?php echo $t['id']; ?>">
@@ -116,44 +116,44 @@ $statuses = $pdo->query("SELECT * FROM settings_device_statuses ORDER BY status_
     </div>
 
     <!-- PHẦN 2: QUẢN LÝ TÌNH TRẠNG -->
-    <div class="form-column">
-        <div class="card">
+    <div class="settings-card-wrapper">
+        <div class="card h-full">
             <div class="dashboard-card-header">
                 <h3><i class="fas fa-info-circle"></i> Trạng thái thiết bị</h3>
             </div>
 
-            <form action="index.php?page=settings/system" method="POST" class="mt-20" style="margin-bottom: 25px;">
+            <form action="index.php?page=settings/system" method="POST" class="settings-add-form vertical">
                 <input type="hidden" name="action" value="add_status">
                 <div class="form-group">
                     <label>Tên Trạng thái</label>
-                    <input type="text" name="status_name" placeholder="VD: Chờ sửa, Đã mất..." required>
+                    <input type="text" name="status_name" placeholder="VD: Chờ sửa..." required>
                 </div>
                 <div class="form-group">
                     <label>Màu hiển thị</label>
                     <select name="color_class">
                         <option value="status-active">Xanh lá (Tốt)</option>
                         <option value="status-error">Đỏ (Lỗi/Hỏng)</option>
-                        <option value="status-warning">Vàng (Thanh lý/Cảnh báo)</option>
+                        <option value="status-warning">Vàng (Cảnh báo)</option>
                         <option value="status-info">Xanh dương (Thông tin)</option>
                         <option value="status-default">Xám (Mặc định)</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary w-full" style="width: 100%; height: 42px;"><i class="fas fa-plus"></i> Thêm trạng thái</button>
+                <button type="submit" class="btn btn-primary w-full"><i class="fas fa-plus"></i> Thêm trạng thái</button>
             </form>
 
-            <div class="table-container" style="border:none;">
+            <div class="table-container mt-20">
                 <table class="content-table">
                     <thead>
                         <tr>
                             <th>Tên trạng thái</th>
-                            <th width="50"></th>
+                            <th width="40"></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($statuses as $s): ?>
                             <tr>
                                 <td><span class="badge <?php echo $s['color_class']; ?>"><?php echo htmlspecialchars($s['status_name']); ?></span></td>
-                                <td>
+                                <td class="text-right">
                                     <form action="index.php?page=settings/system" method="POST" onsubmit="return confirm('Xóa trạng thái này?')">
                                         <input type="hidden" name="action" value="delete_status">
                                         <input type="hidden" name="id" value="<?php echo $s['id']; ?>">
@@ -170,6 +170,51 @@ $statuses = $pdo->query("SELECT * FROM settings_device_statuses ORDER BY status_
 </div>
 
 <style>
-.w-full { width: 100%; }
-.mt-20 { margin-top: 20px; }
+.settings-grid-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    align-items: stretch;
+}
+
+.settings-card-wrapper {
+    flex: 1;
+    min-width: 300px;
+    max-width: 100%;
+}
+
+.h-full { height: 100%; }
+.w-full { width: 100%; height: 42px; }
+
+.settings-add-form.inline {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.settings-add-form.vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group.flex-2 { flex: 2; }
+.form-group.flex-1 { flex: 1; }
+.btn-add-sm { height: 42px; min-width: 42px; }
+
+@media (max-width: 992px) {
+    .settings-card-wrapper {
+        min-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .settings-add-form.inline {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .btn-add-sm {
+        width: 100%;
+    }
+}
 </style>

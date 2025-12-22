@@ -39,7 +39,7 @@ $services = $stmt_services->fetchAll();
     </div>
 </div>
 
-<div class="view-grid-layout" style="display: grid; grid-template-columns: 1fr 2fr; gap: 25px;">
+<div class="suppliers-view-grid">
     <!-- SIDEBAR: THÔNG TIN NHÀ CUNG CẤP -->
     <div class="side-content">
         <div class="card profile-card text-center">
@@ -62,16 +62,12 @@ $services = $stmt_services->fetchAll();
                     <span class="d-label">Email</span>
                     <span class="d-value"><?php echo htmlspecialchars($supplier['email'] ?: '---'); ?></span>
                 </div>
-                <div class="detail-row">
-                    <span class="d-label">Địa chỉ</span>
-                    <span class="d-value"><?php echo htmlspecialchars($supplier['dia_chi'] ?: '---'); ?></span>
-                </div>
             </div>
             
             <?php if(!empty($supplier['ghi_chu'])): ?>
-                <div class="mt-20" style="text-align: left; padding: 15px; background: #f8fafc; border-radius: 8px;">
-                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 700; margin-bottom: 5px;">Ghi chú</div>
-                    <div style="font-size: 0.9rem; line-height: 1.5;"><?php echo nl2br(htmlspecialchars($supplier['ghi_chu'])); ?></div>
+                <div class="mt-20 supplier-note">
+                    <div class="note-title">Ghi chú</div>
+                    <div class="note-content"><?php echo nl2br(htmlspecialchars($supplier['ghi_chu'])); ?></div>
                 </div>
             <?php endif; ?>
         </div>
@@ -87,13 +83,13 @@ $services = $stmt_services->fetchAll();
             <?php if(empty($devices)): ?>
                 <p class="text-muted">Chưa ghi nhận thiết bị nào từ nhà cung cấp này.</p>
             <?php else: ?>
-                <div class="table-container" style="border:none; box-shadow:none;">
+                <div class="table-container" style="border:none; box-shadow:none; margin-bottom: 0;">
                     <table class="content-table">
                         <thead>
                             <tr>
                                 <th>Mã tài sản</th>
                                 <th>Tên thiết bị</th>
-                                <th>Loại</th>
+                                <th class="mobile-hide">Loại</th>
                                 <th>Trạng thái</th>
                             </tr>
                         </thead>
@@ -102,7 +98,7 @@ $services = $stmt_services->fetchAll();
                                 <tr>
                                     <td><a href="index.php?page=devices/view&id=<?php echo $d['id']; ?>" class="text-primary font-medium"><?php echo htmlspecialchars($d['ma_tai_san']); ?></a></td>
                                     <td><?php echo htmlspecialchars($d['ten_thiet_bi']); ?></td>
-                                    <td><?php echo htmlspecialchars($d['loai_thiet_bi']); ?></td>
+                                    <td class="mobile-hide"><?php echo htmlspecialchars($d['loai_thiet_bi']); ?></td>
                                     <td><span class="badge"><?php echo htmlspecialchars($d['trang_thai']); ?></span></td>
                                 </tr>
                             <?php endforeach; ?>
@@ -120,12 +116,12 @@ $services = $stmt_services->fetchAll();
             <?php if(empty($services)): ?>
                 <p class="text-muted">Chưa ghi nhận dịch vụ nào từ nhà cung cấp này.</p>
             <?php else: ?>
-                <div class="table-container" style="border:none; box-shadow:none;">
+                <div class="table-container" style="border:none; box-shadow:none; margin-bottom: 0;">
                     <table class="content-table">
                         <thead>
                             <tr>
                                 <th>Tên dịch vụ</th>
-                                <th>Dự án</th>
+                                <th class="mobile-hide">Dự án</th>
                                 <th>Ngày hết hạn</th>
                                 <th>Trạng thái</th>
                             </tr>
@@ -134,7 +130,7 @@ $services = $stmt_services->fetchAll();
                             <?php foreach($services as $s): ?>
                                 <tr>
                                     <td><a href="index.php?page=services/view&id=<?php echo $s['id']; ?>" class="font-bold"><?php echo htmlspecialchars($s['ten_dich_vu']); ?></a></td>
-                                    <td><?php echo htmlspecialchars($s['ten_du_an'] ?: 'Dùng chung'); ?></td>
+                                    <td class="mobile-hide"><?php echo htmlspecialchars($s['ten_du_an'] ?: 'Dùng chung'); ?></td>
                                     <td><?php echo date('d/m/Y', strtotime($s['ngay_het_han'])); ?></td>
                                     <td><span class="badge"><?php echo htmlspecialchars($s['trang_thai']); ?></span></td>
                                 </tr>
@@ -148,8 +144,70 @@ $services = $stmt_services->fetchAll();
 </div>
 
 <style>
-.detail-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px; }
+.suppliers-view-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 25px;
+    align-items: start;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+    border-bottom: 1px dashed #f1f5f9;
+    padding-bottom: 8px;
+}
+
 .d-label { color: #64748b; font-weight: 500; }
 .d-value { font-weight: 600; color: #334155; text-align: right; max-width: 60%; }
-.mt-20 { margin-top: 20px; }
+
+.supplier-note {
+    text-align: left;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.note-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.note-content {
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 992px) {
+    .suppliers-view-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .mobile-hide {
+        display: none;
+    }
+}
+
+@media (max-width: 576px) {
+    .profile-card {
+        padding: 20px !important;
+    }
+    
+    .detail-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .d-value {
+        text-align: left;
+        max-width: 100%;
+    }
+}
 </style>

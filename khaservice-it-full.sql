@@ -1,5 +1,5 @@
--- KHASERVICE IT FULL DATABASE DUMP --
--- Generated at: 2025-12-22 07:40:36 --
+-- KHASERVICE IT FINAL DATABASE DUMP --
+-- Generated at: 2025-12-22 08:23:06 --
 
 SET FOREIGN_KEY_CHECKS=0;
 
@@ -103,8 +103,8 @@ CREATE TABLE `maintenance_logs` (
   CONSTRAINT `fk_log_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='L???ch s??? s???a ch???a thi???t b???';
 
-INSERT INTO `maintenance_logs` VALUES('11','4','15',NULL,NULL,NULL,'2025-12-22',NULL,'','Toàn bộ phương tiện được kiểm tra đều có dữ liệu trên hệ thống xe','0.00','2025-12-22 10:46:40','Trưởng BQL','0912374068','2025-12-22 05:15:00','2025-12-22 12:00:00','Kiểm tra thực tế bãi giữ xe',NULL);
-INSERT INTO `maintenance_logs` VALUES('13','1','15',NULL,NULL,NULL,'2025-12-22',NULL,'','','0.00','2025-12-22 13:02:16','','',NULL,NULL,'Bảo trì / Sửa chữa',NULL);
+INSERT INTO `maintenance_logs` VALUES('11','4','15',NULL,NULL,NULL,'2025-12-22',NULL,'','Toàn bộ phương tiện được kiểm tra đều có dữ liệu trên hệ thống xe','0.00','2025-12-22 10:46:40','Trưởng BQL','0912374068','2025-12-22 05:15:00','2025-12-22 12:00:00','Kiểm tra thực tế bãi giữ xe','2025-12-22 13:50:56');
+INSERT INTO `maintenance_logs` VALUES('13','1','15',NULL,NULL,NULL,'2025-12-22',NULL,'','','0.00','2025-12-22 13:02:16','','',NULL,NULL,'Bảo trì / Sửa chữa','2025-12-22 13:50:54');
 INSERT INTO `maintenance_logs` VALUES('14','1','38','2',NULL,NULL,'2025-12-22','Vệ sinh định kỳ trạm máy tính','Bụi bẩn nhiều','Vệ sinh thổi bụi, tra keo tản nhiệt',NULL,'2025-12-22 13:34:13',NULL,NULL,NULL,NULL,'Bảo trì định kỳ',NULL);
 INSERT INTO `maintenance_logs` VALUES('15','1','38','4',NULL,NULL,'2025-12-22','Máy tính chạy chậm, treo xanh','Ổ cứng SSD cũ bị bad sector','Thay thế ổ cứng SSD mới 256GB',NULL,'2025-12-22 13:34:13',NULL,NULL,NULL,NULL,'Sửa chữa đột xuất',NULL);
 
