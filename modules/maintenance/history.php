@@ -102,7 +102,7 @@ $all_columns = [
         <div class="action-buttons">
             <button type="button" class="btn btn-secondary btn-sm" id="clear-selection-btn"><i class="fas fa-times"></i> Bỏ chọn</button>
             <button type="submit" name="export_selected" class="btn btn-secondary btn-sm"><i class="fas fa-file-export"></i> Xuất file</button>
-            <?php if(isAdmin()): ?>
+            <?php if(isIT()): ?>
                 <button type="button" class="btn btn-danger btn-sm" id="delete-selected-btn" data-action="index.php?page=maintenance/delete_multiple">Xóa đã chọn</button>
             <?php endif; ?>
         </div>
@@ -151,7 +151,7 @@ $all_columns = [
                             <a href="index.php?page=maintenance/view&id=<?php echo $log['id']; ?>" class="btn-icon" title="Xem"><i class="fas fa-eye"></i></a>
                             <?php if(isIT()): ?>
                                 <a href="index.php?page=maintenance/edit&id=<?php echo $log['id']; ?>" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
-                                <button type="button" class="btn-icon delete-btn" title="Xóa" data-url="index.php?page=maintenance/delete&id=<?php echo $log['id']; ?>&confirm_delete=1" style="border:none; background:none; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
+                                <a href="index.php?page=maintenance/delete&id=<?php echo $log['id']; ?>" data-url="index.php?page=maintenance/delete&id=<?php echo $log['id']; ?>&confirm_delete=1" class="btn-icon delete-btn" title="Xóa"><i class="fas fa-trash-alt"></i></a>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -185,39 +185,89 @@ $all_columns = [
             <a href="<?php echo $base . '&p=' . $i; ?>" class="page-link <?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
         <?php endfor; ?>
         <a href="<?php echo $base . '&p=' . min($total_pages, $current_page + 1); ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang sau"><i class="fas fa-angle-right"></i></a>
-        <a href="<?php echo $base . '&p=' . total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang cuối"><i class="fas fa-angle-double-right"></i></a>
+        <a href="<?php echo $base . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang cuối"><i class="fas fa-angle-double-right"></i></a>
     </div>
 </div>
 
 <script>
-function toggleColumnMenu() { document.getElementById('columnMenu').classList.toggle('show'); }
+function toggleColumnMenu() { 
+    const menu = document.getElementById('columnMenu');
+    if(menu) menu.classList.toggle('show'); 
+}
+
+// Column Visibility Logic
 const colCbs = document.querySelectorAll('.col-checkbox');
 function updateCols() {
     const s = {};
     colCbs.forEach(cb => {
-        const t = cb.dataset.target; s[t] = cb.checked;
-        document.querySelectorAll(`[data-col="${t}"]`).forEach(el => el.style.display = cb.checked ? '' : 'none');
+        const t = cb.dataset.target; 
+        s[t] = cb.checked;
+        const cells = document.querySelectorAll(`[data-col="${t}"]`);
+        cells.forEach(el => el.style.display = cb.checked ? '' : 'none');
     });
     localStorage.setItem('maintenanceColumns', JSON.stringify(s));
 }
 colCbs.forEach(cb => cb.addEventListener('change', updateCols));
+
+// Batch Selection Logic
 document.addEventListener('DOMContentLoaded', () => {
+    // Restore columns
     const saved = JSON.parse(localStorage.getItem('maintenanceColumns'));
-    if(saved) colCbs.forEach(cb => { if(saved.hasOwnProperty(cb.dataset.target)) cb.checked = saved[cb.dataset.target]; });
+    if(saved) {
+        colCbs.forEach(cb => { 
+            if(saved.hasOwnProperty(cb.dataset.target)) cb.checked = saved[cb.dataset.target]; 
+        });
+    }
     updateCols();
+
+    // Elements
     const selectAll = document.getElementById('select-all');
-    const rowCbs = document.querySelectorAll('.row-checkbox');
-    const batch = document.getElementById('batch-actions');
-    const count = document.getElementById('selected-count');
+    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+    const batchActions = document.getElementById('batch-actions');
+    const selectedCountDisplay = document.getElementById('selected-count');
     const clearBtn = document.getElementById('clear-selection-btn');
 
-    function updateBatch() {
-        const n = document.querySelectorAll('.row-checkbox:checked').length;
-        if(batch) batch.style.display = n > 0 ? 'flex' : 'none';
-        if(count) count.textContent = n;
+    function updateBatchUI() {
+        const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+        const totalCount = rowCheckboxes.length;
+        
+        if (batchActions) {
+            batchActions.style.display = (checkedCount > 0) ? 'flex' : 'none';
+        }
+        
+        if (selectedCountDisplay) {
+            selectedCountDisplay.textContent = checkedCount;
+        }
+
+        if (selectAll) {
+            selectAll.checked = (totalCount > 0 && checkedCount === totalCount);
+            selectAll.indeterminate = (checkedCount > 0 && checkedCount < totalCount);
+        }
     }
-    if(selectAll) selectAll.addEventListener('change', () => { rowCbs.forEach(cb => cb.checked = selectAll.checked); updateBatch(); });
-    rowCbs.forEach(cb => cb.addEventListener('change', updateBatch));
-    if(clearBtn) clearBtn.addEventListener('click', () => { if(selectAll) selectAll.checked = false; rowCbs.forEach(cb => cb.checked = false); updateBatch(); });
+
+    // Individual checkboxes
+    rowCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateBatchUI);
+    });
+
+    // Select All checkbox
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            const isChecked = this.checked;
+            rowCheckboxes.forEach(cb => cb.checked = isChecked);
+            updateBatchUI();
+        });
+    }
+
+    // Clear selection
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (selectAll) selectAll.checked = false;
+            rowCheckboxes.forEach(cb => cb.checked = false);
+            updateBatchUI();
+        });
+    }
+    
+    updateBatchUI(); // Initial call
 });
 </script>

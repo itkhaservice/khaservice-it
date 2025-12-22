@@ -7,6 +7,13 @@ if (!isset($_GET['id'])) {
 
 $id = $_GET['id'];
 
+// Check permissions
+if ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'it') {
+    set_message('error', 'Bạn không có quyền thực hiện thao tác này.');
+    header("Location: index.php?page=maintenance/history");
+    exit;
+}
+
 // Check existence
 $stmt = $pdo->prepare("
     SELECT ml.*, d.ma_tai_san 
@@ -23,16 +30,39 @@ if (!$log) {
     exit;
 }
 
+// Check for dependencies (attached files)
+$stmt_files = $pdo->prepare("SELECT COUNT(*) FROM maintenance_files WHERE maintenance_id = ?");
+$stmt_files->execute([$id]);
+$file_count = $stmt_files->fetchColumn();
+
 $display_name = $log['ma_tai_san'] ?? $log['custom_device_name'] ?? 'Không xác định';
 
-if (isset($_POST['confirm_delete'])) {
+if (isset($_REQUEST['confirm_delete'])) {
     try {
-        $stmt_del = $pdo->prepare("DELETE FROM maintenance_logs WHERE id = ?");
-        $stmt_del->execute([$id]);
+        $pdo->beginTransaction();
+
+        // 1. Delete physical files
+        $stmt_get_files = $pdo->prepare("SELECT file_path FROM maintenance_files WHERE maintenance_id = ?");
+        $stmt_get_files->execute([$id]);
+        $files = $stmt_get_files->fetchAll(PDO::FETCH_COLUMN);
+
+        foreach ($files as $file_path) {
+            $full_path = __DIR__ . "/../../" . $file_path;
+            if (file_exists($full_path)) {
+                unlink($full_path);
+            }
+        }
+
+        // 2. Delete database records
+        $pdo->prepare("DELETE FROM maintenance_files WHERE maintenance_id = ?")->execute([$id]);
+        $pdo->prepare("DELETE FROM maintenance_logs WHERE id = ?")->execute([$id]);
+
+        $pdo->commit();
         set_message('success', 'Đã xóa lịch sử bảo trì thành công!');
         header("Location: index.php?page=maintenance/history");
         exit;
     } catch (PDOException $e) {
+        $pdo->rollBack();
         set_message('error', 'Lỗi: ' . $e->getMessage());
         header("Location: index.php?page=maintenance/view&id=$id");
         exit;
@@ -50,10 +80,17 @@ if (isset($_POST['confirm_delete'])) {
             Bạn đang yêu cầu xóa phiếu bảo trì ngày <strong><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></strong> của đối tượng <strong><?php echo htmlspecialchars($display_name); ?></strong>.
         </p>
         
-        <div class="delete-alert-box">
-            <i class="fas fa-info-circle"></i> 
-            <span>Hành động này sẽ xóa vĩnh viễn phiếu bảo trì này khỏi hệ thống. Không thể hoàn tác!</span>
-        </div>
+        <?php if ($file_count > 0): ?>
+            <div class="delete-alert-box" style="border-left-color: #f59e0b; background: #fffbeb; color: #92400e;">
+                <i class="fas fa-paperclip" style="font-size: 1.2rem;"></i> 
+                <span><strong>Cảnh báo:</strong> Phiếu này đang có <strong><?php echo $file_count; ?></strong> tài liệu đính kèm. Hành động này sẽ xóa vĩnh viễn phiếu và toàn bộ tài liệu liên quan.</span>
+            </div>
+        <?php else: ?>
+            <div class="delete-alert-box">
+                <i class="fas fa-info-circle"></i> 
+                <span>Hành động này sẽ xóa vĩnh viễn phiếu bảo trì này khỏi hệ thống. Không thể hoàn tác!</span>
+            </div>
+        <?php endif; ?>
         
         <form action="index.php?page=maintenance/delete&id=<?php echo $id; ?>" method="POST" class="delete-modal-actions">
             <input type="hidden" name="confirm_delete" value="1">

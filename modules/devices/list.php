@@ -146,8 +146,13 @@ $all_columns = [
                         <td data-col="ten_du_an"><?php echo htmlspecialchars($d['ten_du_an']); ?></td>
                         <td data-col="trang_thai"><?php echo htmlspecialchars($d['trang_thai']); ?></td>
                         <td class="actions text-center">
-                            <a href="index.php?page=devices/view&id=<?php echo $d['id']; ?>" class="btn-icon"><i class="fas fa-eye"></i></a>
-                            <?php if(isIT()): ?><a href="index.php?page=devices/edit&id=<?php echo $d['id']; ?>" class="btn-icon"><i class="fas fa-edit"></i></a><?php endif; ?>
+                            <a href="index.php?page=devices/view&id=<?php echo $d['id']; ?>" class="btn-icon" title="Xem"><i class="fas fa-eye"></i></a>
+                            <?php if(isIT()): ?>
+                                <a href="index.php?page=devices/edit&id=<?php echo $d['id']; ?>" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
+                                <?php if(isAdmin()): ?>
+                                    <a href="index.php?page=devices/delete&id=<?php echo $d['id']; ?>" data-url="index.php?page=devices/delete&id=<?php echo $d['id']; ?>&confirm_delete=1" class="btn-icon delete-btn" title="Xóa"><i class="fas fa-trash-alt"></i></a>
+                                <?php endif; ?>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>

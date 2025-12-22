@@ -96,15 +96,21 @@ $all_columns = [
                             <td data-col="dien_thoai"><?php echo htmlspecialchars($s['dien_thoai']); ?></td>
                             <td data-col="email"><?php echo htmlspecialchars($s['email']); ?></td>
                             <td data-col="ghi_chu" class="text-muted small"><?php echo htmlspecialchars($s['ghi_chu']); ?></td>
-                            <td class="actions text-center">
-                                <?php if(isIT()): ?><a href="index.php?page=suppliers/edit&id=<?php echo $s['id']; ?>" class="btn-icon"><i class="fas fa-edit"></i></a><?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
+                        <td class="actions text-center">
+                            <a href="index.php?page=suppliers/view&id=<?php echo $s['id']; ?>" class="btn-icon" title="Xem chi tiết"><i class="fas fa-eye"></i></a>
+                            <?php if(isIT()): ?>
+                                <a href="index.php?page=suppliers/edit&id=<?php echo $s['id']; ?>" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
+                                <?php if(isAdmin()): ?>
+                                    <a href="index.php?page=suppliers/delete&id=<?php echo $s['id']; ?>" data-url="index.php?page=suppliers/delete&id=<?php echo $s['id']; ?>&confirm_delete=1" class="btn-icon delete-btn" title="Xóa"><i class="fas fa-trash-alt"></i></a>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </tbody>
+    </table>
+</div>
 </form>
 
 <div class="pagination-container">
@@ -125,8 +131,13 @@ $all_columns = [
     </div>
     <div class="pagination-links">
         <?php $q = $_GET; unset($q['p']); $base = 'index.php?' . http_build_query($q); ?>
-        <a href="<?php echo $base . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-left"></i></a>
-        <a href="<?php echo $base . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-right"></i></a>
+        <a href="<?php echo $base . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>" title="Trang đầu"><i class="fas fa-angle-double-left"></i></a>
+        <a href="<?php echo $base . '&p=' . max(1, $current_page - 1); ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>" title="Trang trước"><i class="fas fa-angle-left"></i></a>
+        <?php for ($i = max(1, $current_page - 2); $i <= min($total_pages, $current_page + 2); $i++): ?>
+            <a href="<?php echo $base . '&p=' . $i; ?>" class="page-link <?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
+        <?php endfor; ?>
+        <a href="<?php echo $base . '&p=' . min($total_pages, $current_page + 1); ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang sau"><i class="fas fa-angle-right"></i></a>
+        <a href="<?php echo $base . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang cuối"><i class="fas fa-angle-double-right"></i></a>
     </div>
 </div>
 

@@ -118,8 +118,13 @@ $all_columns = [
                         </td>
                         <td data-col="loai_du_an"><span class="badge status-info"><?php echo htmlspecialchars($p['loai_du_an']); ?></span></td>
                         <td class="actions text-center">
-                            <a href="index.php?page=projects/view&id=<?php echo $p['id']; ?>" class="btn-icon"><i class="fas fa-eye"></i></a>
-                            <?php if(isIT()): ?><a href="index.php?page=projects/edit&id=<?php echo $p['id']; ?>" class="btn-icon"><i class="fas fa-edit"></i></a><?php endif; ?>
+                            <a href="index.php?page=projects/view&id=<?php echo $p['id']; ?>" class="btn-icon" title="Xem"><i class="fas fa-eye"></i></a>
+                            <?php if(isIT()): ?>
+                                <a href="index.php?page=projects/edit&id=<?php echo $p['id']; ?>" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
+                                <?php if(isAdmin()): // Only Admin can delete projects ?>
+                                    <a href="index.php?page=projects/delete&id=<?php echo $p['id']; ?>" data-url="index.php?page=projects/delete&id=<?php echo $p['id']; ?>&confirm_delete=1" class="btn-icon delete-btn" title="Xóa"><i class="fas fa-trash-alt"></i></a>
+                                <?php endif; ?>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>

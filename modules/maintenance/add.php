@@ -4,11 +4,15 @@ $projects = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du_an")
 
 $preselected_device_id = $_GET['device_id'] ?? null;
 $preselected_project_id = null;
+$preselected_device_data = null;
 
 if ($preselected_device_id) {
-    $stmt = $pdo->prepare("SELECT project_id FROM devices WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, project_id, ten_thiet_bi, ma_tai_san FROM devices WHERE id = ?");
     $stmt->execute([$preselected_device_id]);
-    $preselected_project_id = $stmt->fetchColumn();
+    $preselected_device_data = $stmt->fetch();
+    if ($preselected_device_data) {
+        $preselected_project_id = $preselected_device_data['project_id'];
+    }
 }
 
 // Hàm hỗ trợ gộp thời gian từ các ô nhập lẻ
@@ -18,23 +22,19 @@ function getFastDateTime($h, $m, $d, $mon, $y) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validation được nới lỏng: Chỉ bắt buộc chọn Dự án
     if (empty($_POST['project_id'])) {
         set_message('error', 'Vui lòng chọn Dự án.');
     } else {
         try {
-            // Gộp thời gian từ các ô nhập nhanh
             $arrival_time = getFastDateTime($_POST['arr_h'], $_POST['arr_m'], $_POST['arr_d'], $_POST['arr_mon'], $_POST['arr_y']);
             $completion_time = getFastDateTime($_POST['comp_h'], $_POST['comp_m'], $_POST['comp_d'], $_POST['comp_mon'], $_POST['comp_y']);
-
-            // Xử lý ngày sự cố: Nếu không nhập thì lấy ngày hiện tại
             $ngay_su_co = !empty($_POST['ngay_su_co']) ? $_POST['ngay_su_co'] : date('Y-m-d');
 
             $stmt = $pdo->prepare("INSERT INTO maintenance_logs 
                 (user_id, project_id, device_id, custom_device_name, usage_time_manual, ngay_su_co, noi_dung, hu_hong, xu_ly, chi_phi, client_name, client_phone, arrival_time, completion_time, work_type) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
-                $_SESSION['user_id'], // Lưu ID người tạo phiếu
+                $_SESSION['user_id'], 
                 $_POST['project_id'],
                 !empty($_POST['device_id']) ? $_POST['device_id'] : null,
                 !empty($_POST['custom_device_name']) ? $_POST['custom_device_name'] : null,
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $completion_time,
                 $_POST['work_type'] ?: 'Bảo trì / Sửa chữa'
             ]);
-            set_message('success', 'Đã tạo phiếu bảo trì thành công!');
+            set_message('success', 'Đã tạo phiếu công tác thành công!');
             header("Location: index.php?page=maintenance/history");
             exit;
         } catch (PDOException $e) {
@@ -60,58 +60,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<style>
-    /* Style cho bộ nhập nhanh thời gian */
-    .fast-time-group { display: flex; align-items: center; gap: 2px; background: #fff; border: 1px solid #ddd; padding: 2px 5px; border-radius: 4px; width: fit-content; }
-    .fast-time-group input { border: none; padding: 5px 2px; text-align: center; font-size: 14px; outline: none; }
-    .fast-time-group input:focus { background: #e0f2fe; }
-    .fast-time-group .sep { font-weight: bold; color: #999; margin: 0 1px; }
-    .input-h, .input-m, .input-d, .input-mon { width: 25px; }
-    .input-y { width: 45px; }
-    /* Ẩn mũi tên input number */
-    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-</style>
-
 <div class="page-header">
-    <h2><i class="fas fa-plus-circle"></i> Tạo Phiếu Công tác mới</h2>
+    <h2><i class="fas fa-file-medical"></i> Tạo Phiếu Công tác Mới</h2>
     <div class="header-actions">
-        <a href="index.php?page=maintenance/history" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+        <a href="index.php?page=maintenance/history" class="btn btn-secondary"><i class="fas fa-times"></i> Hủy</a>
         <button type="submit" form="add-maintenance-form" class="btn btn-primary"><i class="fas fa-save"></i> Lưu Phiếu</button>
     </div>
 </div>
 
-<form action="index.php?page=maintenance/add" method="POST" id="add-maintenance-form" class="edit-layout">
-    <div class="left-panel">
-        <div class="card">
-            <div class="card-header-custom"><h3><i class="fas fa-edit"></i> Nội dung Sửa chữa</h3></div>
-            <div class="card-body-custom">
-                <div class="form-group">
-                    <label>Loại công việc</label>
-                    <input type="text" name="work_type" value="Bảo trì / Sửa chữa">
+<form action="index.php?page=maintenance/add" method="POST" id="add-maintenance-form">
+    <div class="form-grid">
+        <!-- CỘT TRÁI: THÔNG TIN CHÍNH -->
+        <div class="form-column">
+            <div class="card">
+                <div class="dashboard-card-header">
+                    <h3><i class="fas fa-tools"></i> Nội dung Công việc</h3>
                 </div>
+                
                 <div class="form-group">
-                    <label>Mô tả sự cố / Yêu cầu</label>
-                    <textarea name="noi_dung" rows="4"></textarea>
+                    <label>Loại công việc <span class="required">*</span></label>
+                    <input type="text" name="work_type" value="Bảo trì / Sửa chữa" required placeholder="VD: Bảo trì định kỳ, Sửa chữa đột xuất...">
                 </div>
+
                 <div class="form-group">
-                    <label>Xác định Hư hỏng</label>
-                    <textarea name="hu_hong" rows="3"></textarea>
+                    <label>Mô tả sự cố / Yêu cầu của khách hàng</label>
+                    <textarea name="noi_dung" rows="4" placeholder="Nhập nội dung yêu cầu hoặc hiện tượng hư hỏng..."></textarea>
                 </div>
-                <div class="form-group">
-                    <label>Giải pháp / Kết quả xử lý</label>
-                    <textarea name="xu_ly" rows="3"></textarea>
+
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label>Xác định Nguyên nhân / Hư hỏng</label>
+                        <textarea name="hu_hong" rows="4" placeholder="Kết quả kiểm tra thực tế..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Giải pháp / Kết quả xử lý</label>
+                        <textarea name="xu_ly" rows="4" placeholder="Các bước đã thực hiện và kết quả..."></textarea>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="card mt-20">
-            <div class="card-header-custom"><h3><i class="fas fa-clock"></i> Thời gian thực hiện (Giờ:Phút Ngày/Tháng/Năm)</h3></div>
-            <div class="card-body-custom">
-                <div class="form-row">
-                    <!-- NHẬP NHANH CÓ MẶT -->
-                    <div class="form-group half">
+            <div class="card mt-20">
+                <div class="dashboard-card-header">
+                    <h3><i class="fas fa-user-clock"></i> Thời gian Thực hiện</h3>
+                </div>
+                
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
                         <label>Thời điểm có mặt</label>
-                        <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="fast-time-container">
                             <div class="fast-time-group" id="group-arr">
                                 <input type="number" name="arr_h" class="input-h auto-tab" maxlength="2" placeholder="HH">
                                 <span class="sep">:</span>
@@ -127,10 +123,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
 
-                    <!-- NHẬP NHANH HOÀN THÀNH -->
-                    <div class="form-group half">
+                    <div class="form-group">
                         <label>Thời điểm hoàn thành</label>
-                        <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="fast-time-container">
                             <div class="fast-time-group" id="group-comp">
                                 <input type="number" name="comp_h" class="input-h auto-tab" maxlength="2" placeholder="HH">
                                 <span class="sep">:</span>
@@ -146,17 +141,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                 </div>
+                <p style="font-size: 0.8rem; color: #64748b; margin-top: 10px;"><i class="fas fa-info-circle"></i> Nhập theo thứ tự Giờ:Phút Ngày/Tháng/Năm. Bấm "Nay" để lấy thời gian hiện tại.</p>
             </div>
         </div>
-    </div>
 
-    <div class="right-panel">
-        <div class="card">
-            <div class="card-header-custom"><h3><i class="fas fa-cog"></i> Thông tin Đối tượng</h3></div>
-            <div class="card-body-custom">
+        <!-- CỘT PHẢI: ĐỐI TƯỢNG & KHÁCH HÀNG -->
+        <div class="form-column">
+            <div class="card">
+                <div class="dashboard-card-header">
+                    <h3><i class="fas fa-map-marker-alt"></i> Thông tin Đối tượng</h3>
+                </div>
+
                 <div class="form-group">
-                    <label>Chọn Dự án <span class="required">*</span></label>
-                    <select name="project_id" required class="input-highlight" onchange="loadDevices(this.value)">
+                    <label>Dự án <span class="required">*</span></label>
+                    <select name="project_id" id="project_id" required onchange="loadDevices(this.value)">
                         <option value="">-- Chọn dự án --</option>
                         <?php foreach ($projects as $p): ?>
                             <option value="<?php echo $p['id']; ?>" <?php echo ($preselected_project_id == $p['id']) ? 'selected' : ''; ?>>
@@ -165,46 +163,181 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php endforeach; ?>
                     </select>
                 </div>
+
                 <div class="form-group">
-                    <label>Loại đối tượng:</label>
-                    <div style="display: flex; gap: 15px; margin-top: 5px;">
-                        <label><input type="radio" name="target_mode" value="device" checked onclick="toggleTargetMode('device')"> Thiết bị</label>
-                        <label><input type="radio" name="target_mode" value="custom" onclick="toggleTargetMode('custom')"> Nhập tay</label>
+                    <label>Phân loại đối tượng</label>
+                    <div class="radio-group-modern">
+                        <label class="radio-item">
+                            <input type="radio" name="target_mode" value="device" checked onclick="toggleTargetMode('device')">
+                            <span class="radio-label"><i class="fas fa-laptop"></i> Thiết bị hệ thống</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="target_mode" value="custom" onclick="toggleTargetMode('custom')">
+                            <span class="radio-label"><i class="fas fa-keyboard"></i> Nhập tay đối tượng khác</span>
+                        </label>
                     </div>
                 </div>
+
                 <div id="device-selection-area">
                     <div class="form-group">
                         <label>Thiết bị</label>
-                        <select id="device_id" name="device_id" class="input-highlight" disabled>
-                            <option value="">-- Chọn dự án trước --</option>
+                        <select id="device_id" name="device_id" <?php echo !$preselected_device_id ? 'disabled' : ''; ?>>
+                            <?php if($preselected_device_data): ?>
+                                <option value="<?php echo $preselected_device_data['id']; ?>">
+                                    <?php echo htmlspecialchars($preselected_device_data['ten_thiet_bi'] . ' (' . $preselected_device_data['ma_tai_san'] . ')'); ?>
+                                </option>
+                            <?php else: ?>
+                                <option value="">-- Chọn dự án trước --</option>
+                            <?php endif; ?>
                         </select>
                     </div>
                 </div>
+
                 <div id="custom-name-area" style="display: none;">
                     <div class="form-group">
-                        <label>Tên Đối tượng</label>
-                        <input type="text" name="custom_device_name" placeholder="VD: Phần mềm...">
-                    </div>
-                    <div class="form-group">
-                        <label>Thời gian sử dụng</label>
-                        <input type="text" name="usage_time_manual" placeholder="VD: 2 năm, Mới mua...">
+                        <label>Tên Đối tượng / Hạng mục</label>
+                        <input type="text" name="custom_device_name" placeholder="VD: Hệ thống mạng, Cài đặt phần mềm...">
                     </div>
                 </div>
+
                 <div class="form-group">
-                    <label>Ngày yêu cầu</label>
+                    <label>Ngày yêu cầu xử lý</label>
                     <input type="date" name="ngay_su_co" value="<?php echo date('Y-m-d'); ?>">
                 </div>
+
+                <div class="form-group">
+                    <label>Thời gian sử dụng (Ghi chú)</label>
+                    <input type="text" name="usage_time_manual" placeholder="VD: 2 năm, Mới mua... (Để trống để lấy từ hồ sơ thiết bị)">
+                </div>
             </div>
-        </div>
-        <div class="card mt-20">
-            <div class="card-header-custom"><h3><i class="fas fa-user-tag"></i> Khách hàng</h3></div>
-            <div class="card-body-custom">
-                <div class="form-group"><label>Đại diện</label><input type="text" name="client_name"></div>
-                <div class="form-group"><label>SĐT</label><input type="text" name="client_phone"></div>
+
+            <div class="card mt-20">
+                <div class="dashboard-card-header">
+                    <h3><i class="fas fa-id-card"></i> Thông tin Khách hàng</h3>
+                </div>
+                <div class="form-group">
+                    <label>Người đại diện / Người liên hệ</label>
+                    <input type="text" name="client_name" placeholder="Tên người báo sự cố hoặc người nghiệm thu">
+                </div>
+                <div class="form-group">
+                    <label>Số điện thoại liên hệ</label>
+                    <input type="text" name="client_phone" placeholder="SĐT khách hàng">
+                </div>
+                <div class="form-group">
+                    <label>Chi phí xử lý (nếu có)</label>
+                    <div class="input-icon-wrapper">
+                        <input type="number" name="chi_phi" value="0" step="1000">
+                        <span class="input-icon">VNĐ</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </form>
+
+<style>
+/* Modern Radio Group */
+.radio-group-modern { display: flex; gap: 10px; margin: 5px 0; }
+.radio-item { flex: 1; cursor: pointer; }
+.radio-item input { display: none; }
+.radio-label { 
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px;
+    font-size: 0.85rem; font-weight: 600; color: #64748b; transition: all 0.2s;
+}
+.radio-item input:checked + .radio-label {
+    background: #ecfdf5; border-color: var(--primary-color); color: var(--primary-color);
+}
+
+/* Fast Time Input Styles */
+.fast-time-container { display: flex; align-items: center; gap: 8px; }
+.fast-time-group { 
+    display: flex; align-items: center; gap: 0; background: #fff; 
+    border: 1px solid #cbd5e1; padding: 2px 8px; border-radius: 8px; flex: 1;
+}
+.fast-time-group input { 
+    border: none; padding: 8px 2px; text-align: center; font-size: 0.9rem; 
+    outline: none; background: transparent; box-shadow: none !important;
+}
+.fast-time-group input:focus { background: #f0fdf4; color: var(--primary-color); }
+.fast-time-group .sep { font-weight: 700; color: #94a3b8; margin: 0 2px; }
+.input-h, .input-m, .input-d, .input-mon { width: 30px; }
+.input-y { width: 50px; }
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.mt-20 { margin-top: 20px; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Tự động load thiết bị nếu đã có dự án được chọn (trường hợp quay lại từ URL)
+    const pid = document.getElementById('project_id').value;
+    if (pid && !document.getElementById('device_id').value) {
+        loadDevices(pid);
+    }
+});
+
+// Tự động chuyển ô khi gõ đủ số
+document.querySelectorAll('.auto-tab').forEach(input => {
+    input.addEventListener('input', function() {
+        const maxLength = parseInt(this.getAttribute('maxlength'));
+        if (this.value.length >= maxLength) {
+            let next = this.nextElementSibling;
+            while (next && next.tagName !== 'INPUT') { next = next.nextElementSibling; }
+            if (next) next.focus();
+        }
+    });
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && this.value.length === 0) {
+            let prev = this.previousElementSibling;
+            while (prev && prev.tagName !== 'INPUT') { prev = prev.previousElementSibling; }
+            if (prev) prev.focus();
+        }
+    });
+});
+
+function fillNow(prefix) {
+    const now = new Date();
+    document.querySelector(`input[name="${prefix}_h"]`).value = String(now.getHours()).padStart(2, '0');
+    document.querySelector(`input[name="${prefix}_m"]`).value = String(now.getMinutes()).padStart(2, '0');
+    document.querySelector(`input[name="${prefix}_d"]`).value = String(now.getDate()).padStart(2, '0');
+    document.querySelector(`input[name="${prefix}_mon"]`).value = String(now.getMonth() + 1).padStart(2, '0');
+    document.querySelector(`input[name="${prefix}_y"]`).value = now.getFullYear();
+}
+
+function toggleTargetMode(mode) {
+    document.getElementById('device-selection-area').style.display = (mode === 'device' ? 'block' : 'none');
+    document.getElementById('custom-name-area').style.display = (mode === 'custom' ? 'block' : 'none');
+}
+
+function loadDevices(projectId) {
+    const ds = document.getElementById('device_id');
+    const currentDeviceId = "<?php echo $preselected_device_id; ?>";
+    
+    if (!projectId) { 
+        ds.disabled = true; 
+        ds.innerHTML = '<option value="">-- Chọn dự án trước --</option>';
+        return; 
+    }
+    
+    ds.innerHTML = '<option value="">Đang tải...</option>';
+    ds.disabled = true;
+
+    fetch(`api/get_devices_by_project.php?project_id=${projectId}`)
+        .then(r => r.json()).then(data => {
+            ds.innerHTML = '<option value="">-- Chọn thiết bị --</option>';
+            data.forEach(d => { 
+                const selected = (d.id == currentDeviceId) ? 'selected' : '';
+                ds.innerHTML += `<option value="${d.id}" ${selected}>${d.ten_thiet_bi} (${d.ma_tai_san})</option>`; 
+            });
+            ds.disabled = false;
+        })
+        .catch(err => {
+            console.error(err);
+            ds.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+        });
+}
+</script>
 
 <script>
 // Tự động chuyển ô khi gõ đủ số

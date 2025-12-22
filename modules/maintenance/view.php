@@ -45,7 +45,9 @@ $display_city = !empty($log['dia_chi_tinh_tp']) ? $log['dia_chi_tinh_tp'] : "TP.
 $display_project_name = !empty($log['ten_du_an']) ? $log['ten_du_an'] : "Khác / Không xác định";
 
 $print_usage_time = "";
-if (!$is_custom_device && !empty($log['ngay_mua'])) {
+if (!empty($log['usage_time_manual'])) {
+    $print_usage_time = $log['usage_time_manual'];
+} elseif (!$is_custom_device && !empty($log['ngay_mua'])) {
     try {
         $purchase_date = new DateTime($log['ngay_mua']);
         $now = new DateTime();
@@ -53,8 +55,6 @@ if (!$is_custom_device && !empty($log['ngay_mua'])) {
         $print_usage_time = ($interval->y > 0 ? $interval->y . " năm " : "") . ($interval->m > 0 ? $interval->m . " tháng" : "");
         if ($print_usage_time == "") $print_usage_time = "Mới mua";
     } catch (Exception $e) { $print_usage_time = ""; }
-} elseif ($is_custom_device) {
-    $print_usage_time = $log['usage_time_manual'] ?? "";
 }
 
 // Lấy lần hỗ trợ cuối
@@ -148,7 +148,10 @@ function getFileIconInfo($filePath) {
             <a href="index.php?page=maintenance/history" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
             <button class="btn btn-warning" onclick="togglePrintDebug()"><i class="fas fa-eye"></i> Soi mẫu in</button>
             <button class="btn btn-secondary" onclick="window.print()"><i class="fas fa-print"></i> In phiếu A4</button>
-            <a href="index.php?page=maintenance/edit&id=<?php echo $log['id']; ?>" class="btn btn-primary"><i class="fas fa-edit"></i> Chỉnh sửa</a>
+            <?php if(isIT()): ?>
+                <a href="index.php?page=maintenance/edit&id=<?php echo $log['id']; ?>" class="btn btn-primary"><i class="fas fa-edit"></i> Chỉnh sửa</a>
+                <a href="index.php?page=maintenance/delete&id=<?php echo $log['id']; ?>" data-url="index.php?page=maintenance/delete&id=<?php echo $log['id']; ?>&confirm_delete=1" class="btn btn-danger delete-btn"><i class="fas fa-trash-alt"></i> Xóa phiếu</a>
+            <?php endif; ?>
         </div>
     </div>
 

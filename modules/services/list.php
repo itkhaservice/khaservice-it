@@ -50,70 +50,139 @@ $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </form>
 </div>
 
-<div class="table-container card">
-    <table class="content-table">
-        <thead>
-            <tr>
-                <th>Tên Dịch vụ</th>
-                <th>Dự án</th>
-                <th>Ngày hết hạn</th>
-                <th>Còn lại</th>
-                <th>Đề nghị TT</th>
-                <th>Trạng thái</th>
-                <th width="100" class="text-center">Thao tác</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (empty($services)): ?>
-                <tr><td colspan="7" class="empty-state">Chưa có dịch vụ nào</td></tr>
-            <?php else: ?>
-                <?php foreach ($services as $s): 
-                    $today = new DateTime();
-                    $expiry = new DateTime($s['ngay_het_han']);
-                    $diff = $today->diff($expiry);
-                    $days_left = (int)$diff->format("%r%a");
-                    
-                    $status_class = "text-success";
-                    if ($days_left <= 0) $status_class = "text-danger font-bold";
-                    elseif ($days_left <= 30) $status_class = "text-warning font-bold";
-                ?>
-                    <tr>
-                        <td>
-                            <div class="font-bold"><?php echo htmlspecialchars($s['ten_dich_vu']); ?></div>
-                            <small class="text-muted"><?php echo htmlspecialchars($s['loai_dich_vu']); ?> - <?php echo htmlspecialchars($s['ten_npp'] ?? 'N/A'); ?></small>
-                        </td>
-                        <td><?php echo htmlspecialchars($s['ten_du_an'] ?: "Dùng chung"); ?></td>
-                        <td class="<?php echo $status_class; ?>"><?php echo date('d/m/Y', strtotime($s['ngay_het_han'])); ?></td>
-                        <td class="<?php echo $status_class; ?>">
-                            <?php 
-                                if($days_left < 0) echo "Quá hạn " . abs($days_left) . " ngày";
-                                elseif($days_left == 0) echo "Hết hạn hôm nay";
-                                else echo $days_left . " ngày";
-                            ?>
-                        </td>
-                        <td>
-                            <?php if($s['ngay_nhan_de_nghi']): ?>
-                                <span class="text-info"><i class="fas fa-envelope-open-text"></i> <?php echo date('d/m/Y', strtotime($s['ngay_nhan_de_nghi'])); ?></span>
-                            <?php else: ?>
-                                <span class="text-muted">Chưa nhận</span>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <?php 
-                                $trang_thai = $s['trang_thai'];
-                                $badge_class = "status-info";
-                                if($trang_thai === 'Chờ thanh toán') $badge_class = "status-warning";
-                                if($trang_thai === 'Đang hoạt động') $badge_class = "status-active";
-                            ?>
-                            <span class="badge <?php echo $badge_class; ?>"><?php echo htmlspecialchars($trang_thai); ?></span>
-                        </td>
-                        <td class="actions text-center">
-                            <a href="index.php?page=services/view&id=<?php echo $s['id']; ?>" class="btn-icon" title="Chi tiết"><i class="fas fa-eye"></i></a>
-                            <?php if(isIT()): ?><a href="index.php?page=services/edit&id=<?php echo $s['id']; ?>" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a><?php endif; ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
+<form action="index.php?page=services/export" method="POST" id="services-form">
+    <div class="batch-actions" id="batch-actions" style="display: none;">
+        <span class="selected-count-label">Đã chọn <strong id="selected-count">0</strong> mục</span>
+        <div class="action-buttons">
+            <button type="button" class="btn btn-secondary btn-sm" id="clear-selection-btn"><i class="fas fa-times"></i> Bỏ chọn</button>
+            <?php if(isIT()): ?>
+                <button type="button" class="btn btn-danger btn-sm" id="delete-selected-btn" data-action="index.php?page=services/delete_multiple">Xóa đã chọn</button>
             <?php endif; ?>
-        </tbody>
-    </table>
+        </div>
+    </div>
+
+    <div class="table-container card">
+        <table class="content-table" id="servicesTable">
+            <thead>
+                <tr>
+                    <th width="40"><input type="checkbox" id="select-all"></th>
+                    <th>Tên Dịch vụ</th>
+                    <th>Dự án</th>
+                    <th>Ngày hết hạn</th>
+                    <th>Còn lại</th>
+                    <th>Đề nghị TT</th>
+                    <th>Trạng thái</th>
+                    <th width="100" class="text-center">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($services)): ?>
+                    <tr><td colspan="8" class="empty-state">Chưa có dịch vụ nào</td></tr>
+                <?php else: ?>
+                    <?php foreach ($services as $s): 
+                        $today = new DateTime();
+                        $expiry = new DateTime($s['ngay_het_han']);
+                        $diff = $today->diff($expiry);
+                        $days_left = (int)$diff->format("%r%a");
+                        
+                        $status_class = "text-success";
+                        if ($days_left <= 0) $status_class = "text-danger font-bold";
+                        elseif ($days_left <= 30) $status_class = "text-warning font-bold";
+                    ?>
+                        <tr>
+                            <td><input type="checkbox" name="ids[]" value="<?php echo $s['id']; ?>" class="row-checkbox"></td>
+                            <td>
+                                <div class="font-bold"><?php echo htmlspecialchars($s['ten_dich_vu']); ?></div>
+                                <small class="text-muted"><?php echo htmlspecialchars($s['loai_dich_vu']); ?> - <?php echo htmlspecialchars($s['ten_npp'] ?? 'N/A'); ?></small>
+                            </td>
+                            <td><?php echo htmlspecialchars($s['ten_du_an'] ?: "Dùng chung"); ?></td>
+                            <td class="<?php echo $status_class; ?>"><?php echo date('d/m/Y', strtotime($s['ngay_het_han'])); ?></td>
+                            <td class="<?php echo $status_class; ?>">
+                                <?php 
+                                    if($days_left < 0) echo "Quá hạn " . abs($days_left) . " ngày";
+                                    elseif($days_left == 0) echo "Hết hạn hôm nay";
+                                    else echo $days_left . " ngày";
+                                ?>
+                            </td>
+                            <td>
+                                <?php if($s['ngay_nhan_de_nghi']): ?>
+                                    <span class="text-info"><i class="fas fa-envelope-open-text"></i> <?php echo date('d/m/Y', strtotime($s['ngay_nhan_de_nghi'])); ?></span>
+                                <?php else: ?>
+                                    <span class="text-muted">Chưa nhận</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php 
+                                    $trang_thai = $s['trang_thai'];
+                                    $badge_class = "status-info";
+                                    if($trang_thai === 'Chờ thanh toán') $badge_class = "status-warning";
+                                    if($trang_thai === 'Đang hoạt động') $badge_class = "status-active";
+                                ?>
+                                <span class="badge <?php echo $badge_class; ?>"><?php echo htmlspecialchars($trang_thai); ?></span>
+                            </td>
+                            <td class="actions text-center">
+                                <a href="index.php?page=services/view&id=<?php echo $s['id']; ?>" class="btn-icon" title="Chi tiết"><i class="fas fa-eye"></i></a>
+                                <?php if(isIT()): ?>
+                                    <a href="index.php?page=services/edit&id=<?php echo $s['id']; ?>" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
+                                    <a href="index.php?page=services/delete&id=<?php echo $s['id']; ?>" data-url="index.php?page=services/delete&id=<?php echo $s['id']; ?>&confirm_delete=1" class="btn-icon delete-btn" title="Xóa"><i class="fas fa-trash-alt"></i></a>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</form>
+
+<div class="pagination-container">
+    <!-- Keep existing pagination code -->
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const selectAll = document.getElementById('select-all');
+    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+    const batchActions = document.getElementById('batch-actions');
+    const selectedCountDisplay = document.getElementById('selected-count');
+    const clearBtn = document.getElementById('clear-selection-btn');
+
+    function updateBatchUI() {
+        const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+        const totalCount = rowCheckboxes.length;
+        
+        if (batchActions) {
+            batchActions.style.display = (checkedCount > 0) ? 'flex' : 'none';
+        }
+        
+        if (selectedCountDisplay) {
+            selectedCountDisplay.textContent = checkedCount;
+        }
+
+        if (selectAll) {
+            selectAll.checked = (totalCount > 0 && checkedCount === totalCount);
+            selectAll.indeterminate = (checkedCount > 0 && checkedCount < totalCount);
+        }
+    }
+
+    rowCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateBatchUI);
+    });
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            const isChecked = this.checked;
+            rowCheckboxes.forEach(cb => cb.checked = isChecked);
+            updateBatchUI();
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (selectAll) selectAll.checked = false;
+            rowCheckboxes.forEach(cb => cb.checked = false);
+            updateBatchUI();
+        });
+    }
+});
+</script>

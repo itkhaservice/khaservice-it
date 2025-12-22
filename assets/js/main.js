@@ -154,17 +154,50 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Handle individual delete buttons/links
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+    // Handle individual delete buttons/links (Event Delegation)
+    document.addEventListener('click', (e) => {
+        // Find the closest element with the class 'delete-btn'
+        const btn = e.target.closest('.delete-btn');
+        
+        if (btn) {
+            // CRITICAL: Stop default link behavior immediately
             e.preventDefault();
-            const url = btn.getAttribute('href') || btn.dataset.url;
-            if (!url) return;
+            e.stopPropagation();
+            
+            console.log('Delete button clicked:', btn);
 
-            showCustomConfirm('Bạn có chắc chắn muốn xóa mục này không? Hành động này không thể hoàn tác.', 'Xác nhận xóa', () => {
-                window.location.href = url;
-            });
-        });
+            // Prioritize data-url (used for JS actions), then fallback to href
+            let url = btn.getAttribute('data-url') || btn.dataset.url;
+            
+            if (!url) {
+                const href = btn.getAttribute('href');
+                if (href && href !== '#' && href !== 'javascript:void(0);') {
+                    url = href;
+                }
+            }
+            
+            console.log('Target URL for delete:', url);
+
+            if (url) {
+                if (typeof window.showCustomConfirm === 'function') {
+                    window.showCustomConfirm(
+                        'Bạn có chắc chắn muốn xóa mục này không? Hành động này không thể hoàn tác.', 
+                        'Xác nhận xóa', 
+                        () => {
+                            console.log('Confirmed delete, redirecting to:', url);
+                            window.location.href = url;
+                        }
+                    );
+                } else {
+                    // Fallback if modal function is missing
+                    if (confirm('Bạn có chắc chắn muốn xóa mục này không?')) {
+                        window.location.href = url;
+                    }
+                }
+            } else {
+                console.warn('Delete button clicked but no URL found.', btn);
+            }
+        }
     });
 
     // Quick Search Logic

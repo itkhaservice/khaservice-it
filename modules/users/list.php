@@ -103,7 +103,10 @@ $users_list = $stmt->fetchAll();
                         <td><?php echo ucfirst(htmlspecialchars($u['role'])); ?></td>
                         <td class="text-muted"><?php echo date('d/m/Y H:i', strtotime($u['created_at'])); ?></td>
                         <td class="actions text-center">
-                            <a href="index.php?page=users/edit&id=<?php echo $u['id']; ?>" class="btn-icon"><i class="fas fa-user-edit"></i></a>
+                            <a href="index.php?page=users/edit&id=<?php echo $u['id']; ?>" class="btn-icon" title="Sửa"><i class="fas fa-user-edit"></i></a>
+                            <?php if($u['username'] !== $_SESSION['username']): ?>
+                                <a href="index.php?page=users/delete&id=<?php echo $u['id']; ?>" data-url="index.php?page=users/delete&id=<?php echo $u['id']; ?>&confirm_delete=1" class="btn-icon delete-btn" title="Xóa"><i class="fas fa-trash-alt"></i></a>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -130,24 +133,51 @@ $users_list = $stmt->fetchAll();
     </div>
     <div class="pagination-links">
         <?php $q = $_GET; unset($q['p']); $base = 'index.php?' . http_build_query($q); ?>
-        <a href="<?php echo $base . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-left"></i></a>
+        <a href="<?php echo $base . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>" title="Trang đầu"><i class="fas fa-angle-double-left"></i></a>
+        <a href="<?php echo $base . '&p=' . max(1, $current_page - 1); ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>" title="Trang trước"><i class="fas fa-angle-left"></i></a>
         <?php for ($i = max(1, $current_page - 2); $i <= min($total_pages, $current_page + 2); $i++): ?>
             <a href="<?php echo $base . '&p=' . $i; ?>" class="page-link <?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
         <?php endfor; ?>
-        <a href="<?php echo $base . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-right"></i></a>
+        <a href="<?php echo $base . '&p=' . min($total_pages, $current_page + 1); ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang sau"><i class="fas fa-angle-right"></i></a>
+        <a href="<?php echo $base . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang cuối"><i class="fas fa-angle-double-right"></i></a>
     </div>
 </div>
 
 <script>
-const selectAll = document.getElementById('select-all');
-const rowCbs = document.querySelectorAll('.row-checkbox');
-const batchActions = document.getElementById('batch-actions');
-const selectedCount = document.getElementById('selected-count');
-function updateBatch() {
-    const n = document.querySelectorAll('.row-checkbox:checked').length;
-    batchActions.style.display = n > 0 ? 'flex' : 'none';
-    selectedCount.textContent = n;
-}
-if(selectAll) selectAll.addEventListener('change', function() { rowCbs.forEach(cb => cb.checked = this.checked); updateBatch(); });
-rowCbs.forEach(cb => cb.addEventListener('change', updateBatch));
+document.addEventListener('DOMContentLoaded', () => {
+    const selectAll = document.getElementById('select-all');
+    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+    const batchActions = document.getElementById('batch-actions');
+    const selectedCountDisplay = document.getElementById('selected-count');
+
+    function updateBatchUI() {
+        const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+        const totalCount = rowCheckboxes.length;
+        
+        if (batchActions) {
+            batchActions.style.display = (checkedCount > 0) ? 'flex' : 'none';
+        }
+        
+        if (selectedCountDisplay) {
+            selectedCountDisplay.textContent = checkedCount;
+        }
+
+        if (selectAll) {
+            selectAll.checked = (totalCount > 0 && checkedCount === totalCount);
+            selectAll.indeterminate = (checkedCount > 0 && checkedCount < totalCount);
+        }
+    }
+
+    rowCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateBatchUI);
+    });
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            const isChecked = this.checked;
+            rowCheckboxes.forEach(cb => cb.checked = isChecked);
+            updateBatchUI();
+        });
+    }
+});
 </script>
