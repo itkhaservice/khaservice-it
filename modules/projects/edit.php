@@ -80,21 +80,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </select>
                     </div>
 
-                    <!-- ĐỊA CHỈ PHÂN TÁCH -->
+                    <!-- ĐỊA CHỈ PHÂN TÁCH (THIẾT KẾ MỚI) -->
                     <div class="form-group full-width">
                         <label style="font-weight: 700; color: var(--primary-color); margin-bottom: 10px; display: block;">Địa chỉ chi tiết</label>
-                        <div class="address-grid">
-                            <div class="address-item">
-                                <label for="dia_chi_duong">Số nhà / Đường</label>
-                                <input type="text" id="dia_chi_duong" name="dia_chi_duong" placeholder="VD: 123 Lê Lợi" value="<?php echo htmlspecialchars($_POST['dia_chi_duong'] ?? $project['dia_chi_duong']); ?>">
+                        <div class="address-layout">
+                            <div class="address-row full-width-row">
+                                <div class="address-item">
+                                    <label for="dia_chi_duong">Số nhà / Đường</label>
+                                    <input type="text" id="dia_chi_duong" name="dia_chi_duong" placeholder="VD: 123 Lê Lợi" value="<?php echo htmlspecialchars($_POST['dia_chi_duong'] ?? $project['dia_chi_duong']); ?>">
+                                </div>
                             </div>
-                            <div class="address-item">
-                                <label for="dia_chi_phuong_xa">Phường / Xã</label>
-                                <input type="text" id="dia_chi_phuong_xa" name="dia_chi_phuong_xa" placeholder="VD: Phường 1" value="<?php echo htmlspecialchars($_POST['dia_chi_phuong_xa'] ?? $project['dia_chi_phuong_xa']); ?>">
-                            </div>
-                            <div class="address-item">
-                                <label for="dia_chi_tinh_tp">Quận / Huyện / Tỉnh / TP</label>
-                                <input type="text" id="dia_chi_tinh_tp" name="dia_chi_tinh_tp" placeholder="VD: Quận 1, TP.HCM" value="<?php echo htmlspecialchars($project['dia_chi_tinh_tp'] ?? ''); ?>">
+                            <div class="address-row split-row">
+                                <div class="address-item">
+                                    <label for="dia_chi_phuong_xa">Phường / Xã</label>
+                                    <input type="text" id="dia_chi_phuong_xa" name="dia_chi_phuong_xa" placeholder="VD: Phường 1" value="<?php echo htmlspecialchars($_POST['dia_chi_phuong_xa'] ?? $project['dia_chi_phuong_xa']); ?>">
+                                </div>
+                                <div class="address-item">
+                                    <label for="dia_chi_tinh_tp">Quận / Huyện / Tỉnh / TP</label>
+                                    <input type="text" id="dia_chi_tinh_tp" name="dia_chi_tinh_tp" placeholder="VD: Quận 1, TP.HCM" value="<?php echo htmlspecialchars($project['dia_chi_tinh_tp'] ?? ''); ?>">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -110,10 +114,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <style>
-.address-grid {
+.address-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.address-row {
     display: flex;
     gap: 20px;
-    margin-top: 5px;
 }
 .address-item {
     flex: 1;
@@ -144,6 +152,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     color: var(--primary-dark-color);
 }
 @media (max-width: 768px) {
-    .address-grid { flex-direction: column; gap: 10px; }
+    .address-row { flex-direction: column; gap: 15px; }
 }
 </style>

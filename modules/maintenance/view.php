@@ -1,4 +1,6 @@
 <?php
+// modules/maintenance/view.php
+
 $log = null;
 if (isset($_GET['id'])) {
     $log_id = $_GET['id'];
@@ -30,78 +32,31 @@ if (!$log) {
 // Xử lý logic hiển thị
 $is_custom_device = empty($log['device_id']);
 $web_display_name = $is_custom_device ? ($log['custom_device_name'] ?: "Hỗ trợ chung") : $log['ten_thiet_bi'];
-// Nếu là phiếu chung (không có thiết bị), hiển thị Loại công việc thay cho Mã tài sản
 $web_display_code = $is_custom_device ? ($log['work_type'] ?: "Công tác") : $log['ma_tai_san'];
 $print_device_name = $is_custom_device ? ($log['custom_device_name'] ?: "Hỗ trợ chung") : $log['ten_thiet_bi'];
 
-// Logic gộp địa chỉ hiển thị
 $addr_parts = [];
 if(!empty($log['dia_chi_duong'])) $addr_parts[] = $log['dia_chi_duong'];
 if(!empty($log['dia_chi_phuong_xa'])) $addr_parts[] = $log['dia_chi_phuong_xa'];
 if(!empty($log['dia_chi_tinh_tp'])) $addr_parts[] = $log['dia_chi_tinh_tp'];
-
-$display_address = !empty($addr_parts) ? implode(', ', $addr_parts) : "";
+$display_address = implode(', ', $addr_parts);
 $display_city = !empty($log['dia_chi_tinh_tp']) ? $log['dia_chi_tinh_tp'] : "TP.HCM";
 $display_project_name = !empty($log['ten_du_an']) ? $log['ten_du_an'] : "Khác / Không xác định";
 
-$print_usage_time = "";
-if (!empty($log['usage_time_manual'])) {
-    $print_usage_time = $log['usage_time_manual'];
-} elseif (!$is_custom_device && !empty($log['ngay_mua'])) {
-    try {
-        $purchase_date = new DateTime($log['ngay_mua']);
-        $now = new DateTime();
-        $interval = $purchase_date->diff($now);
-        $print_usage_time = ($interval->y > 0 ? $interval->y . " năm " : "") . ($interval->m > 0 ? $interval->m . " tháng" : "");
-        if ($print_usage_time == "") $print_usage_time = "Mới mua";
-    } catch (Exception $e) { $print_usage_time = ""; }
-}
+$print_usage_time = $log['usage_time_manual'] ?: "";
+$current_user_name = $_SESSION['fullname'] ?? 'IT Support';
 
-// Lấy lần hỗ trợ cuối
-$last_support_date = '';
-$last_support_work = '';
-$last_support_performer = '';
-
-$stmt_last = null;
-$sql_last = "SELECT ml.ngay_su_co, ml.work_type, u.fullname 
-             FROM maintenance_logs ml 
-             LEFT JOIN users u ON ml.user_id = u.id 
-             WHERE ";
-
-if (!$is_custom_device) {
-    $sql_last .= "ml.device_id = ? AND ml.id < ? ORDER BY ml.ngay_su_co DESC LIMIT 1";
-    $stmt_last = $pdo->prepare($sql_last);
-    $stmt_last->execute([$log['device_id'], $log['id']]);
-} elseif (!empty($log['project_id'])) {
-    $sql_last .= "ml.project_id = ? AND ml.id < ? ORDER BY ml.ngay_su_co DESC LIMIT 1";
-    $stmt_last = $pdo->prepare($sql_last);
-    $stmt_last->execute([$log['project_id'], $log['id']]);
-}
-
-if ($stmt_last) {
-    $last_log = $stmt_last->fetch();
-    if ($last_log) {
-        $last_support_date = date('d/m/Y', strtotime($last_log['ngay_su_co']));
-        $last_support_work = $last_log['work_type'];
-        $last_support_performer = $last_log['fullname'];
-    }
-}
-
-$current_user_name = $_SESSION['username'] ?? 'IT Support';
-
-// --- LOGIC TỆP ĐÍNH KÈM ---
+// --- ATTACHMENTS LOGIC ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_file'])) {
     $loai_file = $_POST['loai_file'] ?? 'Khác';
     $target_dir = __DIR__ . "/../../uploads/maintenance/";
     if (!is_dir($target_dir)) mkdir($target_dir, 0777, true);
-
     if (isset($_FILES['file_upload']) && $_FILES['file_upload']['error'] === UPLOAD_ERR_OK) {
         $file_name = basename($_FILES['file_upload']['name']);
         $file_path = $target_dir . uniqid() . '_' . $file_name;
         if (move_uploaded_file($_FILES['file_upload']['tmp_name'], $file_path)) {
             $relative_path = "uploads/maintenance/" . basename($file_path);
-            $stmt = $pdo->prepare("INSERT INTO maintenance_files (maintenance_id, loai_file, file_path) VALUES (?, ?, ?)");
-            $stmt->execute([$log_id, $loai_file, $relative_path]);
+            $pdo->prepare("INSERT INTO maintenance_files (maintenance_id, loai_file, file_path) VALUES (?, ?, ?)")->execute([$log_id, $loai_file, $relative_path]);
             set_message('success', 'Tải tệp lên thành công.');
             header("Location: index.php?page=maintenance/view&id=$log_id");
             exit;
@@ -109,48 +64,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_file'])) {
     }
 }
 if (isset($_GET['action']) && $_GET['action'] === 'delete_file' && isset($_GET['file_id'])) {
-    $file_id = $_GET['file_id'];
     $stmt = $pdo->prepare("SELECT file_path FROM maintenance_files WHERE id = ? AND maintenance_id = ?");
-    $stmt->execute([$file_id, $log_id]);
+    $stmt->execute([$_GET['file_id'], $log_id]);
     $file = $stmt->fetch();
     if ($file) {
         $full_path = __DIR__ . "/../../" . $file['file_path'];
         if (file_exists($full_path)) unlink($full_path);
-        $pdo->prepare("DELETE FROM maintenance_files WHERE id = ?")->execute([$file_id]);
+        $pdo->prepare("DELETE FROM maintenance_files WHERE id = ?")->execute([$_GET['file_id']]);
         set_message('success', 'Đã xóa tệp.');
     }
     header("Location: index.php?page=maintenance/view&id=$log_id");
     exit;
 }
-$files = $pdo->prepare("SELECT * FROM maintenance_files WHERE maintenance_id = ? ORDER BY uploaded_at DESC");
-$files->execute([$log_id]);
-$attachments = $files->fetchAll();
+$attachments = $pdo->prepare("SELECT * FROM maintenance_files WHERE maintenance_id = ? ORDER BY uploaded_at DESC");
+$attachments->execute([$log_id]);
+$attachments = $attachments->fetchAll();
 
 function getFileIconInfo($filePath) {
     $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
     switch ($ext) {
-        case 'jpg': case 'jpeg': case 'png': case 'gif': case 'webp': return ['type' => 'image', 'icon' => 'fa-file-image', 'color' => '#3b82f6'];
+        case 'jpg': case 'jpeg': case 'png': case 'webp': return ['type' => 'image', 'icon' => 'fa-file-image', 'color' => '#3b82f6'];
         case 'pdf': return ['type' => 'icon', 'icon' => 'fa-file-pdf', 'color' => '#ef4444'];
-        case 'doc': case 'docx': return ['type' => 'icon', 'icon' => 'fa-file-word', 'color' => '#2563eb'];
-        case 'xls': case 'xlsx': return ['type' => 'icon', 'icon' => 'fa-file-excel', 'color' => '#10b981'];
-        case 'zip': case 'rar': return ['type' => 'icon', 'icon' => 'fa-file-archive', 'color' => '#f59e0b'];
         default: return ['type' => 'icon', 'icon' => 'fa-file', 'color' => '#94a3b8'];
     }
 }
-// --- KẾT THÚC LOGIC TỆP ---
 ?>
 
-<!-- GIAO DIỆN WEB -->
 <div class="web-view">
     <div class="page-header">
-        <h2><i class="fas fa-file-invoice"></i> Chi tiết Phiếu Công tác #<?php echo $log['id']; ?></h2>
+        <h2><i class="fas fa-file-invoice"></i> Chi tiết Phiếu #<?php echo $log['id']; ?></h2>
         <div class="header-actions">
             <a href="index.php?page=maintenance/history" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
             <button class="btn btn-warning" onclick="togglePrintDebug()"><i class="fas fa-eye"></i> Soi mẫu in</button>
             <button class="btn btn-secondary" onclick="window.print()"><i class="fas fa-print"></i> In phiếu A4</button>
             <?php if(isIT()): ?>
-                <a href="index.php?page=maintenance/edit&id=<?php echo $log['id']; ?>" class="btn btn-primary"><i class="fas fa-edit"></i> Chỉnh sửa</a>
-                <a href="index.php?page=maintenance/delete&id=<?php echo $log['id']; ?>" data-url="index.php?page=maintenance/delete&id=<?php echo $log['id']; ?>&confirm_delete=1" class="btn btn-danger delete-btn"><i class="fas fa-trash-alt"></i> Xóa phiếu</a>
+                <a href="index.php?page=maintenance/edit&id=<?php echo $log['id']; ?>" class="btn btn-primary"><i class="fas fa-edit"></i> Sửa</a>
+                <a href="index.php?page=maintenance/delete&id=<?php echo $log['id']; ?>" data-url="index.php?page=maintenance/delete&id=<?php echo $log['id']; ?>&confirm_delete=1" class="btn btn-danger delete-btn"><i class="fas fa-trash-alt"></i> Xóa</a>
             <?php endif; ?>
         </div>
     </div>
@@ -162,73 +111,40 @@ function getFileIconInfo($filePath) {
                     <div class="ticket-status"><span class="label">Ngày sự cố</span><span class="value date"><i class="far fa-calendar-alt"></i> <?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></span></div>
                 </div>
                 <div class="ticket-body">
-                    <div class="content-block problem"><h4 class="block-title"><i class="fas fa-exclamation-circle"></i> Hiện tượng / Yêu cầu</h4><div class="block-content"><?php echo nl2br(htmlspecialchars($log['noi_dung'])); ?></div></div>
-                    <div class="content-block diagnosis"><h4 class="block-title"><i class="fas fa-microscope"></i> Nguyên nhân / Hư hỏng</h4><div class="block-content"><?php echo !empty($log['hu_hong']) ? nl2br(htmlspecialchars($log['hu_hong'])) : '<em>Chưa ghi nhận</em>'; ?></div></div>
-                    <div class="content-block solution"><h4 class="block-title"><i class="fas fa-check-circle"></i> Biện pháp Xử lý</h4><div class="block-content"><?php echo !empty($log['xu_ly']) ? nl2br(htmlspecialchars($log['xu_ly'])) : '<em>Chưa ghi nhận</em>'; ?></div></div>
+                    <div class="content-block"><h4 class="block-title"><i class="fas fa-exclamation-circle"></i> Hiện tượng / Yêu cầu</h4><div class="block-content"><?php echo nl2br(htmlspecialchars($log['noi_dung'])); ?></div></div>
+                    <div class="content-block"><h4 class="block-title"><i class="fas fa-microscope"></i> Nguyên nhân / Hư hỏng</h4><div class="block-content"><?php echo !empty($log['hu_hong']) ? nl2br(htmlspecialchars($log['hu_hong'])) : '<em>Chưa ghi nhận</em>'; ?></div></div>
+                    <div class="content-block"><h4 class="block-title"><i class="fas fa-check-circle"></i> Biện pháp Xử lý</h4><div class="block-content"><?php echo !empty($log['xu_ly']) ? nl2br(htmlspecialchars($log['xu_ly'])) : '<em>Chưa ghi nhận</em>'; ?></div></div>
                 </div>
             </div>
 
-            <!-- FILE ATTACHMENTS SECTION -->
+            <!-- RESTORED ATTACHMENTS SECTION -->
             <div class="card mt-20 attachment-section">
-                <div class="card-header-custom"><h3><i class="fas fa-paperclip"></i> Tài liệu đính kèm</h3></div>
+                <div class="dashboard-card-header"><h3><i class="fas fa-paperclip"></i> Tài liệu đính kèm</h3></div>
                 <div class="card-body-custom">
-                    <!-- Upload Form -->
                     <div class="upload-zone">
                         <form action="index.php?page=maintenance/view&id=<?php echo $log['id']; ?>" method="POST" enctype="multipart/form-data" class="upload-form">
-                            <div class="upload-group">
-                                <label>Loại tài liệu</label>
-                                <select name="loai_file">
-                                    <option value="HinhAnh">Hình ảnh</option>
-                                    <option value="BienBan">Biên bản</option>
-                                    <option value="BaoGia">Báo giá</option>
-                                    <option value="Khác">Khác</option>
-                                </select>
-                            </div>
-                            <div class="upload-group" style="flex: 2;">
-                                <label>Chọn tệp đính kèm</label>
-                                <div class="custom-file-input">
-                                    <label for="file-upload-input" class="btn-file-select">
-                                        <i class="far fa-folder-open"></i> Chọn tệp...
-                                    </label>
-                                    <input type="file" id="file-upload-input" name="file_upload" required onchange="document.getElementById('file-name-display').textContent = this.files[0] ? this.files[0].name : 'Chưa chọn tệp'">
-                                    <span id="file-name-display" class="file-name-text">Chưa chọn tệp</span>
-                                </div>
-                            </div>
-                            <button type="submit" name="upload_file" class="btn btn-primary upload-btn"><i class="fas fa-upload"></i> Tải lên</button>
+                            <select name="loai_file" class="form-select"><option value="HinhAnh">Hình ảnh</option><option value="BienBan">Biên bản</option><option value="Khác">Khác</option></select>
+                            <input type="file" name="file_upload" required>
+                            <button type="submit" name="upload_file" class="btn btn-primary"><i class="fas fa-upload"></i> Tải lên</button>
                         </form>
                     </div>
-
-                    <!-- Files Grid -->
                     <?php if (empty($attachments)): ?>
-                        <div class="empty-files">
-                            <i class="far fa-folder-open"></i>
-                            <p>Chưa có tài liệu nào.</p>
-                        </div>
+                        <div class="text-center" style="padding: 20px; color: #94a3b8;"><i class="far fa-folder-open" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i> Chưa có tài liệu.</div>
                     <?php else: ?>
-                        <div class="files-grid">
+                        <div class="files-grid-simple">
                             <?php foreach ($attachments as $file): 
-                                $info = getFileIconInfo($file['file_path']);
-                                $url = "../" . htmlspecialchars($file['file_path']);
-                                $name = htmlspecialchars(basename($file['file_path']));
+                                $info = getFileIconInfo($file['file_path']); $url = "../" . $file['file_path'];
                             ?>
-                                <div class="file-card">
-                                    <div class="file-preview">
-                                        <?php if ($info['type'] === 'image'): ?>
-                                            <div class="file-preview-img" style="background-image: url('<?php echo $url; ?>');"></div>
-                                            <a href="<?php echo $url; ?>" target="_blank" class="file-overlay-link"><i class="fas fa-search-plus"></i></a>
-                                        <?php else: ?>
-                                            <i class="fas <?php echo $info['icon']; ?> file-icon-large" style="color: <?php echo $info['color']; ?>;"></i>
-                                        <?php endif; ?>
-                                        <span class="file-badge"><?php echo htmlspecialchars($file['loai_file']); ?></span>
+                                <div class="file-item-card">
+                                    <div class="file-thumb">
+                                        <?php if ($info['type'] === 'image'): ?><img src="<?php echo $url; ?>">
+                                        <?php else: ?><i class="fas <?php echo $info['icon']; ?> icon-file"></i><?php endif; ?>
                                     </div>
-                                    <div class="file-info">
-                                        <a href="<?php echo $url; ?>" target="_blank" class="file-name" title="<?php echo $name; ?>"><?php echo $name; ?></a>
-                                        <div class="file-meta-row">
-                                            <span class="file-date"><?php echo date('d/m', strtotime($file['uploaded_at'])); ?></span>
-                                            <div class="file-actions">
-                                                <a href="<?php echo $url; ?>" download title="Tải xuống" class="file-action-btn"><i class="fas fa-download"></i></a>
-                                                <button type="button" data-url="index.php?page=maintenance/view&id=<?php echo $log['id']; ?>&action=delete_file&file_id=<?php echo $file['id']; ?>" class="file-action-btn delete delete-btn" title="Xóa"><i class="fas fa-trash-alt"></i></button>
-                                            </div>
+                                    <div class="file-meta">
+                                        <span class="name"><?php echo basename($file['file_path']); ?></span>
+                                        <div class="actions">
+                                            <a href="<?php echo $url; ?>" download><i class="fas fa-download"></i></a>
+                                            <a href="index.php?page=maintenance/view&id=<?php echo $log_id; ?>&action=delete_file&file_id=<?php echo $file['id']; ?>" class="text-danger" onclick="return confirm('Xóa tệp?')"><i class="fas fa-trash-alt"></i></a>
                                         </div>
                                     </div>
                                 </div>
@@ -242,232 +158,85 @@ function getFileIconInfo($filePath) {
             <div class="card device-profile-card">
                 <div class="profile-header">
                     <div class="device-icon-large"><i class="fas fa-<?php echo $is_custom_device ? 'cube' : 'server'; ?>"></i></div>
-                    <div class="profile-title">
-                        <h3><?php echo htmlspecialchars($web_display_name); ?></h3>
-                        <span class="code"><?php echo htmlspecialchars($web_display_code); ?></span>
-                    </div>
+                    <div class="profile-title"><h3><?php echo htmlspecialchars($web_display_name); ?></h3><span class="code"><?php echo htmlspecialchars($web_display_code); ?></span></div>
                 </div>
                 <div class="profile-details">
                     <div class="detail-row"><span class="d-label">Dự án</span><span class="d-value"><?php echo htmlspecialchars($display_project_name); ?></span></div>
-                    <div class="detail-row"><span class="d-label">Đại diện dự án</span><span class="d-value"><?php echo htmlspecialchars($log['client_name'] ?? '---'); ?></span></div>
-                    <div class="detail-row"><span class="d-label">Liên hệ</span><span class="d-value"><?php echo htmlspecialchars($log['client_phone'] ?? '---'); ?></span></div>
-                    <div class="detail-row"><span class="d-label">TG Có mặt</span><span class="d-value"><?php echo $log['arrival_time'] ? date('H:i d/m/Y', strtotime($log['arrival_time'])) : '-'; ?></span></div>
-                    <div class="detail-row"><span class="d-label">Hoàn thành</span><span class="d-value"><?php echo $log['completion_time'] ? date('H:i d/m/Y', strtotime($log['completion_time'])) : '-'; ?></span></div>
-                    <div class="detail-row"><span class="d-label">Người thực hiện</span><span class="d-value"><?php echo htmlspecialchars($log['nguoi_thuc_hien'] ?? 'N/A'); ?></span></div>
+                    <div class="detail-row"><span class="d-label">Đại diện</span><span class="d-value"><?php echo htmlspecialchars($log['client_name'] ?? '---'); ?></span></div>
+                    <div class="detail-row"><span class="d-label">TG Có mặt</span><span class="d-value"><?php echo $log['arrival_time'] ? date('H:i d/m', strtotime($log['arrival_time'])) : '-'; ?></span></div>
+                    <div class="detail-row"><span class="d-label">Hoàn thành</span><span class="d-value"><?php echo $log['completion_time'] ? date('H:i d/m', strtotime($log['completion_time'])) : '-'; ?></span></div>
+                    <div class="detail-row"><span class="d-label">Thực hiện</span><span class="d-value"><?php echo htmlspecialchars($log['nguoi_thuc_hien'] ?? 'N/A'); ?></span></div>
                 </div>
-                <?php if (!$is_custom_device): ?>
-                <div class="profile-actions"><a href="index.php?page=devices/view&id=<?php echo $log['device_id']; ?>" class="btn btn-primary" style="display: flex; width: auto; justify-content: center;"><i class="fas fa-external-link-alt"></i> Xem hồ sơ thiết bị</a></div>
-                <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ========================================================================== -->
-<!-- MẪU IN PHIẾU CÔNG TÁC (LAYOUT A4 CHUẨN - 1 TRANG) -->
-<!-- ========================================================================== -->
 <div class="print-only">
-    <div class="a4-page-wrapper">
-        
-        <!-- NỘI DUNG CHÍNH -->
-        <div class="print-content-flow">
-            <!-- HEADER -->
-            <table class="p-header-table" style="margin-bottom: 0; border-bottom: 2px solid #000;">
-                <tr>
-                    <td colspan="2" style="padding-bottom: 0;">
-                        <img src="../uploads/system/logo.png" alt="Logo" style="width: 160px; height: auto; display: block;">
-                    </td>
-                </tr>
-                <tr>
-                    <td style="text-align: left; vertical-align: bottom; padding: 2px 0;">
-                        <div class="p-ticket-no-clean">Số: <?php echo str_pad($log['id'], 4, '0', STR_PAD_LEFT); ?>/CT-P.IT/<?php echo date('Y'); ?></div>
-                    </td>
-                    <td style="text-align: right; vertical-align: bottom; padding: 2px 0;">
-                        <div class="p-date"><?php echo htmlspecialchars($display_city); ?>, ngày <?php echo date('d'); ?> tháng <?php echo date('m'); ?> năm <?php echo date('Y'); ?></div>
-                    </td>
-                </tr>
-            </table>
-
-            <div class="p-title" style="margin: 5px 0 10px 0;">PHIẾU CÔNG TÁC</div>
-
-            <!-- DETAIL TABLE -->
-            <table class="p-table">
-                <colgroup><col style="width: 18%;"><col style="width: 32%;"><col style="width: 18%;"><col style="width: 32%;"></colgroup>
-                <tr>
-                    <td class="pt-label">Dự Án:</td>
-                    <td class="p-line-single"><?php echo htmlspecialchars($display_project_name); ?></td>
-                    <td class="pt-label">Bộ phận:</td>
-                    <td class="p-line-single">IT / Kỹ thuật</td>
-                </tr>
-                <tr>
-                    <td class="pt-label-top">Địa chỉ:</td>
-                    <td class="p-line-double"><?php echo htmlspecialchars($display_address); ?></td>
-                    <td class="pt-label-top">Người đại diện:</td>
-                    <td class="p-line-double" style="text-transform: uppercase;"><?php echo htmlspecialchars($current_user_name); ?></td>
-                </tr>
-                <tr>
-                    <td class="pt-label">Đại diện:</td>
-                    <td class="p-line-single"><?php echo htmlspecialchars($log['client_name'] ?? ''); ?></td>
-                    <td class="pt-label-top" rowspan="2">Công việc:</td>
-                    <td class="p-line-double" rowspan="2" style="height: 60px;"><?php echo htmlspecialchars($log['work_type'] ?? 'Bảo trì / Sửa chữa'); ?></td>
-                </tr>
-                <tr>
-                    <td class="pt-label">Điện thoại:</td>
-                    <td class="p-line-single"><?php echo htmlspecialchars($log['client_phone'] ?? ''); ?></td>
-                </tr>
-                <tr><td colspan="4" style="padding: 10px 0;"><div style="border-top: 2px solid #000;"></div></td></tr>
-                <tr>
-                    <td class="pt-label">Thiết bị:</td>
-                    <td class="p-line-single"><strong><?php echo htmlspecialchars($print_device_name); ?></strong></td>
-                    <td class="pt-label">TG sử dụng:</td>
-                    <td class="p-line-single"><?php echo $print_usage_time; ?></td>
-                </tr>
-                <tr>
-                    <td class="pt-label">TG yêu cầu:</td>
-                    <td class="p-line-single"><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></td>
-                    <td class="pt-label">Hỗ trợ lần cuối:</td>
-                    <td class="p-line-single"><?php echo $last_support_date ?: ''; ?></td>
-                </tr>
-                <tr>
-                    <td class="pt-label">TG có mặt:</td>
-                    <td class="p-line-single"><?php echo $log['arrival_time'] ? date('H:i d/m/Y', strtotime($log['arrival_time'])) : ''; ?></td>
-                    <td class="pt-label">Công việc:</td>
-                    <td class="p-line-single"><?php echo !empty($last_support_work) ? htmlspecialchars($last_support_work) : ''; ?></td>
-                </tr>
-                <tr>
-                    <td class="pt-label">TG hoàn thành:</td>
-                    <td class="p-line-single"><?php echo $log['completion_time'] ? date('H:i d/m/Y', strtotime($log['completion_time'])) : ''; ?></td>
-                    <td class="pt-label">Người thực hiện:</td>
-                    <td class="p-line-single" style="text-transform: uppercase;"><?php echo !empty($last_support_performer) ? htmlspecialchars($last_support_performer) : ''; ?></td>
-                </tr>
-            </table>
-
-            <!-- CONTENT BOXES -->
-            <div class="p-content-boxes">
-                <div class="p-box box-short">
-                    <div class="pb-title">I. YÊU CẦU CỦA DỰ ÁN</div>
-                    <div class="pb-content lined-paper"><?php 
-                        $noi_dung = trim($log['noi_dung'] ?? '');
-                        echo !empty($noi_dung) ? nl2br(htmlspecialchars($noi_dung)) : ''; 
-                    ?></div>
-                </div>
-                <div class="p-box box-long">
-                    <div class="pb-title">II. CÔNG VIỆC THỰC HIỆN / KẾT QUẢ</div>
-                    <div class="pb-content lined-paper"><?php 
-                        $hu_hong = trim($log['hu_hong'] ?? '');
-                        $xu_ly = trim($log['xu_ly'] ?? '');
-                        if(!empty($hu_hong)) echo "<strong>- Tình trạng:</strong> " . nl2br(htmlspecialchars($hu_hong)) . "<br><br>";
-                        if(!empty($xu_ly)) echo "<strong>- Xử lý:</strong> " . nl2br(htmlspecialchars($xu_ly));
-                    ?></div>
-                </div>
-            </div>
-        </div> 
-
-        <div class="print-footer-signature">
-            <div class="p-sig"><strong>ĐẠI DIỆN BAN QUẢN LÝ</strong><br><span>(Ký, ghi rõ họ tên)</span><div class="sig-space"></div></div>
-            <div class="p-sig"><strong>NGƯỜI LẬP PHIẾU</strong><br><span>(Ký, ghi rõ họ tên)</span><div class="sig-space"></div></div>
-        </div>
+    <div class="a4-container">
+        <table class="p-head"><tr><td><img src="../uploads/system/logo.png" width="150"></td><td class="text-right">Số: <?php echo str_pad($log['id'], 4, '0', STR_PAD_LEFT); ?></td></tr></table>
+        <h1 class="p-title">PHIẾU CÔNG TÁC</h1>
+        <table class="p-table">
+            <tr><td width="15%">Dự án:</td><td class="p-border" width="35%"><?php echo htmlspecialchars($display_project_name); ?></td><td width="15%">Ngày:</td><td class="p-border"><?php echo date('d/m/Y'); ?></td></tr>
+            <tr><td>Địa chỉ:</td><td class="p-border" colspan="3"><?php echo htmlspecialchars($display_address); ?></td></tr>
+            <tr><td>Thiết bị:</td><td class="p-border"><strong><?php echo htmlspecialchars($print_device_name); ?></strong></td><td>Công việc:</td><td class="p-border"><?php echo htmlspecialchars($log['work_type']); ?></td></tr>
+        </table>
+        <div class="p-box"><strong>I. YÊU CẦU:</strong><div class="p-content"><?php echo nl2br(htmlspecialchars($log['noi_dung'])); ?></div></div>
+        <div class="p-box"><strong>II. KẾT QUẢ:</strong><div class="p-content"><?php echo "Tình trạng: ".nl2br(htmlspecialchars($log['hu_hong']))."<br>Xử lý: ".nl2br(htmlspecialchars($log['xu_ly'])); ?></div></div>
+        <table class="p-sig"><tr><td>ĐẠI DIỆN DỰ ÁN<br>(Ký tên)</td><td>NGƯỜI THỰC HIỆN<br>(Ký tên)</td></tr></table>
     </div>
 </div>
 
-<script>
-function togglePrintDebug() { document.body.classList.toggle('debug-print-mode'); }
-</script>
+<script>function togglePrintDebug() { document.body.classList.toggle('debug-print-mode'); }</script>
 
 <style>
-/* WEB STYLES - TỐI ƯU RESPONSIVE */
+/* WEB STYLES */
 .maintenance-view { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; align-items: start; }
+.ticket-card, .device-profile-card { padding: 0; overflow: hidden; }
+.ticket-header, .profile-header { background: #f8fafc; padding: 20px; border-bottom: 1px solid #e2e8f0; }
+.ticket-body, .profile-details { padding: 20px; }
+.content-block { margin-bottom: 20px; padding-left: 15px; border-left: 4px solid #e2e8f0; }
+.block-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 10px; color: #334155; }
+.block-content { font-size: 0.95rem; color: #1e293b; line-height: 1.6; background: #f8fafc; padding: 12px; border-radius: 6px; }
+.device-icon-large { font-size: 2rem; color: var(--primary-color); margin-bottom: 10px; text-align: center; }
+.profile-title { text-align: center; }
+.detail-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem; }
+.d-value { font-weight: 600; }
+
+/* ATTACHMENTS UI */
+.upload-zone { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 15px; }
+.upload-form { display: flex; gap: 10px; align-items: center; }
+.files-grid-simple { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; margin-top: 20px; }
+.file-item-card { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+.file-thumb { height: 80px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.file-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.icon-file { font-size: 2rem; color: #94a3b8; }
+.file-meta { padding: 8px; display: flex; justify-content: space-between; align-items: center; background: #fff; }
+.file-meta .name { font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; }
 
 @media (max-width: 992px) {
     .maintenance-view { grid-template-columns: 1fr; }
-    .side-content { order: -1; } /* Đưa hồ sơ thiết bị lên trước nội dung phiếu trên mobile */
-}
-
-@media (max-width: 768px) {
-    .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
-    .header-actions { 
-        width: 100%; 
-        display: flex; 
-        flex-direction: row !important; 
-        flex-wrap: wrap; 
-        gap: 8px; 
-    }
-    .header-actions .btn, .header-actions a { 
-        flex: 1 1 auto; 
-        min-width: calc(50% - 8px); /* Tối đa 2 nút trên 1 hàng */
-        justify-content: center;
-        font-size: 0.8rem;
-        height: 40px;
-    }
-    
-    .ticket-header { flex-direction: column; gap: 10px; padding: 15px; }
-    .ticket-body { padding: 15px; }
-    .block-content { padding: 10px; font-size: 0.9rem; }
-    
+    .side-content { order: -1; }
+    .header-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .header-actions .btn, .header-actions a { flex: 1 1 calc(50% - 8px); justify-content: center; height: 44px; font-size: 0.85rem; }
     .upload-form { flex-direction: column; align-items: stretch; }
-    .upload-group { width: 100% !important; }
 }
-
-.ticket-card { padding: 0; overflow: hidden; }
-.ticket-header { background: #f8fafc; padding: 20px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; }
-.ticket-status .label, .ticket-cost .label { display: block; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 600; margin-bottom: 4px; }
-.ticket-status .value { font-size: 1.1rem; font-weight: 600; color: #334155; }
-.ticket-cost .value { font-size: 1.2rem; font-weight: 700; color: #d97706; }
-.ticket-body { padding: 25px; }
-.content-block { margin-bottom: 25px; background: #fff; border-left: 4px solid transparent; padding-left: 15px; }
-.block-title { margin: 0 0 10px 0; font-size: 0.95rem; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 8px; }
-.block-content { font-size: 0.95rem; color: #1e293b; line-height: 1.6; background: #f8fafc; padding: 12px 15px; border-radius: 6px; }
-.device-profile-card { padding: 0; overflow: hidden; }
-.profile-header { padding: 25px; text-align: center; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid #e2e8f0; }
-.device-icon-large { width: 64px; height: 64px; background: #fff; border-radius: 50%; margin: 0 auto 15px auto; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--primary-color); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-.profile-title h3 { margin: 0; font-size: 1.1rem; color: #0f172a; }
-.profile-title .code { font-size: 0.85rem; color: #64748b; font-weight: 600; background: #e2e8f0; padding: 2px 8px; border-radius: 12px; margin-top: 5px; display: inline-block; }
-.profile-details { padding: 20px; }
-.detail-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px; }
-.d-label { color: #64748b; }
-.d-value { font-weight: 600; color: #334155; text-align: right; padding-left: 10px; }
-.profile-actions { padding: 0 20px 20px 20px; }
-
-/* CSS CHO PHẦN IN ẤN */
-.print-only { display: none; }
-
-/* DEBUG PRINT MODE */
-body.debug-print-mode { background: #555 !important; padding: 40px 0 !important; overflow: auto; }
-body.debug-print-mode .web-view, body.debug-print-mode .main-header, body.debug-print-mode .footer { display: none !important; }
-body.debug-print-mode .print-only { 
-    display: block !important; width: 210mm; height: 297mm; background: #fff; margin: 0 auto; 
-    padding: 0; box-shadow: 0 0 20px rgba(0,0,0,0.5); box-sizing: border-box; position: relative;
-}
-body.debug-print-mode .a4-page-wrapper { padding: 10mm; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
 
 /* PRINT STYLES */
+.print-only { display: none; }
+body.debug-print-mode .web-view { display: none !important; }
+body.debug-print-mode .print-only { display: block !important; width: 210mm; background: #fff; margin: 20px auto; padding: 10mm; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
 @media print {
-    @page { size: A4; margin: 10mm; }
-    html, body { height: 100%; overflow: hidden !important; margin: 0; padding: 0; }
-    body { background: #fff !important; font-family: "Times New Roman", Times, serif; font-size: 11pt; color: #000; }
-    .web-view, .main-header, .footer, .page-header, footer, .header-actions { display: none !important; }
-    .print-only { display: block !important; width: 100%; height: 270mm; box-sizing: border-box; font-family: "Times New Roman", Times, serif; font-size: 13pt; color: #000; line-height: 1.4; overflow: hidden; position: relative; }
-    .a4-page-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; }
-    .print-content-flow { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
-    .p-header-table { width: 100%; margin-bottom: 5px; flex-shrink: 0; }
-    .p-header-table td { vertical-align: bottom; }
-    .p-date { font-size: 13pt; font-style: italic; margin-bottom: 0; }
-    .p-ticket-no-clean { font-size: 13pt; font-weight: bold; margin-bottom: 0; }
-    .p-title { text-align: center; font-size: 24pt; font-weight: bold; margin: 5px 0 10px 0; text-transform: uppercase; flex-shrink: 0; }
-    .p-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; flex-shrink: 0; table-layout: fixed; }
-    .p-table td { padding: 0; margin: 0; vertical-align: bottom; }
-    .pt-label { font-weight: bold; white-space: nowrap; padding-right: 5px; height: 30px; line-height: 30px; font-size: 13pt; vertical-align: bottom; }
-    .pt-label-top { font-weight: bold; white-space: nowrap; padding-right: 5px; vertical-align: top !important; padding-top: 0; line-height: 30px; font-size: 13pt; }
-    .p-line-single { padding-left: 5px; width: auto; height: 30px; line-height: 30px; background-image: repeating-linear-gradient(transparent, transparent 29px, #000 30px); background-attachment: local; font-size: 13pt; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; vertical-align: bottom; }
-    .p-line-double { padding-left: 5px; width: auto; height: 60px; line-height: 30px; background-image: repeating-linear-gradient(transparent, transparent 29px, #000 30px); background-attachment: local; vertical-align: top !important; font-size: 13pt; }
-    .p-content-boxes { display: flex; flex-direction: column; gap: 10px; flex-grow: 1; overflow: hidden; }
-    .p-box { border: 1.5pt solid #000; display: flex; flex-direction: column; }
-    .box-short { flex-grow: 2; min-height: 80px; } 
-    .box-long { flex-grow: 1.5; min-height: 80px; }
-    .pb-title { font-weight: bold; background: #e0e0e0 !important; padding: 4px 8px; border-bottom: 1.5pt solid #000; -webkit-print-color-adjust: exact; font-size: 13pt; }
-    .pb-content { padding: 4px 8px; flex-grow: 1; background-image: repeating-linear-gradient(transparent, transparent 29px, #bbb 30px); line-height: 30px; background-attachment: local; font-size: 13pt; }
-    .print-footer-signature { display: flex; justify-content: space-between; width: 100%; margin-top: 5px; flex-shrink: 0; }
-    .p-sig { text-align: center; width: 45%; font-size: 13pt; }
-    .sig-space { height: 3.5cm; }
+    .web-view, .main-header, footer { display: none !important; }
+    .print-only { display: block !important; font-family: serif; font-size: 12pt; }
+    .a4-container { width: 100%; }
+    .p-head { width: 100%; margin-bottom: 20px; }
+    .p-title { text-align: center; font-size: 20pt; font-weight: bold; margin: 20px 0; }
+    .p-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .p-table td { padding: 8px 5px; }
+    .p-border { border-bottom: 1px solid #000; }
+    .p-box { border: 1px solid #000; margin-top: 15px; padding: 10px; min-height: 120px; }
+    .p-sig { width: 100%; margin-top: 50px; text-align: center; }
+    .p-sig td { width: 50%; }
 }
 </style>

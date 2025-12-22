@@ -18,8 +18,8 @@ if (!$device) {
     exit;
 }
 
-// Check for confirmation
-if (isset($_POST['confirm_delete'])) {
+// Check for confirmation (Both POST and GET confirm_delete=1)
+if (isset($_POST['confirm_delete']) || (isset($_GET['confirm_delete']) && $_GET['confirm_delete'] == '1')) {
     try {
         $stmt_del = $pdo->prepare("UPDATE devices SET deleted_at = NOW() WHERE id = ?");
         $stmt_del->execute([$device_id]);
@@ -30,7 +30,7 @@ if (isset($_POST['confirm_delete'])) {
 
     } catch (Exception $e) {
         set_message('error', 'Lỗi: ' . $e->getMessage());
-        header("Location: index.php?page=devices/view&id=" . $device_id);
+        header("Location: index.php?page=devices/list");
         exit;
     }
 }

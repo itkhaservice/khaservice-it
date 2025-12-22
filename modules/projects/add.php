@@ -34,12 +34,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="form-container">
     <form action="index.php?page=projects/add" method="POST" id="add-project-form">
-        <div class="card">
+        <div class="card" style="padding: 15px;">
             <div class="card-header-custom">
                 <h3><i class="fas fa-building"></i> Thông tin Dự án</h3>
             </div>
             
-            <div class="card-body-custom" style="padding: 20px;">
+            <div class="card-body-custom" style="padding: 10px 0;">
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="ma_du_an">Mã Dự án <span class="required">*</span></label>
@@ -65,18 +65,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <!-- ĐỊA CHỈ PHÂN TÁCH -->
                     <div class="form-group full-width">
                         <label style="font-weight: 700; color: var(--primary-color); margin-bottom: 10px; display: block;">Địa chỉ chi tiết</label>
-                        <div class="address-grid">
-                            <div class="address-item">
-                                <label for="dia_chi_duong">Số nhà / Đường</label>
-                                <input type="text" id="dia_chi_duong" name="dia_chi_duong" placeholder="VD: 123 Lê Lợi" value="<?php echo htmlspecialchars($_POST['dia_chi_duong'] ?? ''); ?>">
+                        <div class="address-layout">
+                            <div class="address-row">
+                                <div class="address-item" style="flex: 1;">
+                                    <label for="dia_chi_duong">Số nhà / Đường</label>
+                                    <input type="text" id="dia_chi_duong" name="dia_chi_duong" placeholder="VD: 123 Lê Lợi" value="<?php echo htmlspecialchars($_POST['dia_chi_duong'] ?? ''); ?>">
+                                </div>
                             </div>
-                            <div class="address-item">
-                                <label for="dia_chi_phuong_xa">Phường / Xã</label>
-                                <input type="text" id="dia_chi_phuong_xa" name="dia_chi_phuong_xa" placeholder="VD: Phường 1" value="<?php echo htmlspecialchars($_POST['dia_chi_phuong_xa'] ?? ''); ?>">
-                            </div>
-                            <div class="address-item">
-                                <label for="dia_chi_tinh_tp">Quận / Huyện / Tỉnh / TP</label>
-                                <input type="text" id="dia_chi_tinh_tp" name="dia_chi_tinh_tp" placeholder="VD: Quận 1, TP.HCM" value="<?php echo htmlspecialchars($_POST['dia_chi_tinh_tp'] ?? ''); ?>">
+                            <div class="address-row split-row">
+                                <div class="address-item">
+                                    <label for="dia_chi_phuong_xa">Phường / Xã</label>
+                                    <input type="text" id="dia_chi_phuong_xa" name="dia_chi_phuong_xa" placeholder="VD: Phường 1" value="<?php echo htmlspecialchars($_POST['dia_chi_phuong_xa'] ?? ''); ?>">
+                                </div>
+                                <div class="address-item">
+                                    <label for="dia_chi_tinh_tp">Quận / Huyện / Tỉnh / TP</label>
+                                    <input type="text" id="dia_chi_tinh_tp" name="dia_chi_tinh_tp" placeholder="VD: Quận 1, TP.HCM" value="<?php echo htmlspecialchars($_POST['dia_chi_tinh_tp'] ?? ''); ?>">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -92,13 +96,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <style>
-.address-grid {
+.address-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+}
+.address-row {
     display: flex;
     gap: 20px;
-    margin-top: 5px;
+    width: 100%;
 }
 .address-item {
     flex: 1;
+    min-width: 0; /* Quan trọng để flex item không bị tràn */
 }
 .address-item label {
     font-size: 0.8rem;
@@ -107,6 +118,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     font-weight: 600;
     margin-bottom: 6px;
     display: block;
+}
+.address-item input {
+    width: 100% !important;
 }
 .card-header-custom {
     padding-bottom: 15px;
@@ -126,6 +140,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     color: var(--primary-dark-color);
 }
 @media (max-width: 768px) {
-    .address-grid { flex-direction: column; gap: 10px; }
+    .address-row { flex-direction: column; gap: 15px; }
+    .card { padding: 15px !important; }
+    .form-grid { gap: 15px; }
 }
 </style>
