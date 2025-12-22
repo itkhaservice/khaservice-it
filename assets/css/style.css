@@ -1007,10 +1007,10 @@ body {
 }
 
 
-/* STYLE CHO C�C M?C TR?NG TRONG PHI?U IN */
+/* STYLE CHO CÁC MỤC TRỐNG TRONG PHIẾU IN */
 .p-line-single:empty::after, 
 .p-line-single:blank::after {
-    content: '�����';
+    content: '.....';
     color: #999;
     display: block;
     text-align: center;
@@ -1029,4 +1029,3 @@ body {
     background: linear-gradient(to top right, transparent calc(50% - 0.5px), #ccc 50%, transparent calc(50% + 0.5px));
     pointer-events: none;
 }
-

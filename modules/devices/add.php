@@ -235,11 +235,11 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <style>
-/* Layout Styles - Specific to Edit/Add Page */
+/* Layout Styles - TỐI ƯU CHO CẢ DESKTOP VÀ MOBILE */
 .edit-layout {
     display: grid;
-    grid-template-columns: 1.5fr 1fr; /* 60% - 40% split */
-    gap: 30px; /* Increased gap */
+    grid-template-columns: 1.5fr 1fr;
+    gap: 30px;
     align-items: start;
 }
 
@@ -260,17 +260,12 @@ document.addEventListener('DOMContentLoaded', () => {
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--text-color);
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    display: flex; align-items: center; gap: 12px;
 }
 
 .card-header-custom h3 i {
-    color: #fff;
-    background: var(--gradient-primary);
-    padding: 8px;
-    border-radius: 8px;
-    font-size: 1rem;
+    color: #fff; background: var(--gradient-primary); 
+    padding: 8px; border-radius: 8px; font-size: 1rem;
     box-shadow: 0 4px 6px -1px rgba(36, 162, 92, 0.3);
 }
 
@@ -279,6 +274,8 @@ document.addEventListener('DOMContentLoaded', () => {
     gap: 20px;
 }
 
+.form-group.half { flex: 1; }
+
 .input-highlight {
     background-color: #f8fafc;
     border-color: #cbd5e1;
@@ -286,10 +283,21 @@ document.addEventListener('DOMContentLoaded', () => {
     font-weight: 600;
 }
 
-/* Responsive */
+/* RESPONSIVE BREAKPOINTS */
 @media (max-width: 992px) {
-    .edit-layout {
-        grid-template-columns: 1fr;
-    }
+    .edit-layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+    .header-actions { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+    .header-actions .btn { width: 100%; justify-content: center; height: 44px; }
+    
+    .form-row { flex-direction: column; gap: 0; }
+    .form-group.half { width: 100%; }
+    
+    .card { padding: 15px; }
+    .card-header-custom { margin-bottom: 15px; padding-bottom: 10px; }
+    .card-header-custom h3 { font-size: 1.1rem; }
 }
 </style>

@@ -310,7 +310,9 @@ $statuses = $pdo->query("SELECT * FROM settings_device_statuses ORDER BY status_
 
 @media (max-width: 768px) {
     .settings-layout-grid { grid-template-columns: 1fr; }
-    .form-row { flex-direction: column; }
-    .btn-full-height { width: 100%; }
+    .form-row { flex-direction: column; gap: 15px; }
+    .form-col, .form-col-btn { width: 100%; }
+    .form-col-btn label { display: none; } /* Ẩn nhãn trống trên mobile */
+    .btn-full-height { width: 100%; height: 44px; }
 }
 </style>

@@ -375,8 +375,39 @@ function togglePrintDebug() { document.body.classList.toggle('debug-print-mode')
 </script>
 
 <style>
-/* WEB STYLES */
+/* WEB STYLES - TỐI ƯU RESPONSIVE */
 .maintenance-view { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; align-items: start; }
+
+@media (max-width: 992px) {
+    .maintenance-view { grid-template-columns: 1fr; }
+    .side-content { order: -1; } /* Đưa hồ sơ thiết bị lên trước nội dung phiếu trên mobile */
+}
+
+@media (max-width: 768px) {
+    .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+    .header-actions { 
+        width: 100%; 
+        display: flex; 
+        flex-direction: row !important; 
+        flex-wrap: wrap; 
+        gap: 8px; 
+    }
+    .header-actions .btn, .header-actions a { 
+        flex: 1 1 auto; 
+        min-width: calc(50% - 8px); /* Tối đa 2 nút trên 1 hàng */
+        justify-content: center;
+        font-size: 0.8rem;
+        height: 40px;
+    }
+    
+    .ticket-header { flex-direction: column; gap: 10px; padding: 15px; }
+    .ticket-body { padding: 15px; }
+    .block-content { padding: 10px; font-size: 0.9rem; }
+    
+    .upload-form { flex-direction: column; align-items: stretch; }
+    .upload-group { width: 100% !important; }
+}
+
 .ticket-card { padding: 0; overflow: hidden; }
 .ticket-header { background: #f8fafc; padding: 20px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; }
 .ticket-status .label, .ticket-cost .label { display: block; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 600; margin-bottom: 4px; }
@@ -393,7 +424,8 @@ function togglePrintDebug() { document.body.classList.toggle('debug-print-mode')
 .profile-title .code { font-size: 0.85rem; color: #64748b; font-weight: 600; background: #e2e8f0; padding: 2px 8px; border-radius: 12px; margin-top: 5px; display: inline-block; }
 .profile-details { padding: 20px; }
 .detail-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px; }
-.d-value { font-weight: 500; color: #334155; }
+.d-label { color: #64748b; }
+.d-value { font-weight: 600; color: #334155; text-align: right; padding-left: 10px; }
 .profile-actions { padding: 0 20px 20px 20px; }
 
 /* CSS CHO PHẦN IN ẤN */
