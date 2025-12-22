@@ -429,12 +429,31 @@ $children = $stmt_children->fetchAll();
 .icon-circle i { font-size: 1.5rem; color: #94a3b8; }
 
 /* Responsive */
-@media (max-width: 992px) {
-    .view-grid-layout {
-        grid-template-columns: 1fr;
+@media (max-width: 1100px) {
+    .view-grid-layout { grid-template-columns: 1fr; }
+    .history-column { order: 2; } /* Đưa lịch sử bảo trì xuống dưới cùng */
+}
+
+@media (max-width: 768px) {
+    .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+    .header-actions { 
+        width: 100%; 
+        display: flex; 
+        flex-direction: row !important; 
+        flex-wrap: wrap; 
+        gap: 8px; 
     }
-    .info-grid {
-        grid-template-columns: 1fr;
+    .header-actions .btn, .header-actions a { 
+        flex: 1 1 auto;
+        min-width: calc(50% - 8px); 
+        justify-content: center;
+        height: 40px;
+        font-size: 0.85rem;
     }
+    
+    .info-grid { grid-template-columns: 1fr; gap: 15px; }
+    .card { padding: 15px; }
+    .card-header-custom { margin-bottom: 15px; padding-bottom: 10px; flex-direction: column; align-items: flex-start; gap: 10px; }
+    .card-header-custom .badge { align-self: flex-start; }
 }
 </style>

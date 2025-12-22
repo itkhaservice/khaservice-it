@@ -246,9 +246,15 @@ function getFileIconInfo($filePath) {
 .act-btn:hover { color: var(--primary-color); }
 .act-btn.del:hover { color: #ef4444; }
 
-.empty-files-state {
-    text-align: center; padding: 40px; color: #94a3b8;
-    border: 2px dashed #e2e8f0; border-radius: 12px;
+@media (max-width: 768px) {
+    .upload-zone { padding: 15px; }
+    .upload-wrapper { flex-direction: column; align-items: stretch; gap: 15px; }
+    .upload-wrapper .select-group, .upload-wrapper .file-group { width: 100%; }
+    .upload-wrapper select, .upload-wrapper input { width: 100%; height: 44px; }
+    .upload-wrapper .btn { width: 100%; height: 44px; justify-content: center; }
+    
+    .files-modern-grid { grid-template-columns: 1fr; }
+    .file-modern-card { margin-bottom: 10px; }
+    .file-top { height: 160px; } /* Cao hơn chút trên mobile để ảnh rõ hơn */
 }
-.empty-files-state i { font-size: 2.5rem; margin-bottom: 10px; opacity: 0.5; }
 </style>

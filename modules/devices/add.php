@@ -289,10 +289,6 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 @media (max-width: 768px) {
-    .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
-    .header-actions { width: 100%; display: flex; flex-direction: column; gap: 10px; }
-    .header-actions .btn { width: 100%; justify-content: center; height: 44px; }
-    
     .form-row { flex-direction: column; gap: 0; }
     .form-group.half { width: 100%; }
     

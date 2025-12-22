@@ -117,18 +117,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label>Thời điểm có mặt</label>
                     <div class="fast-time-container">
                         <div class="fast-time-group">
-                            <div class="time-inputs">
-                                <input type="number" name="arr_h" class="input-h auto-tab" maxlength="2" placeholder="HH">
-                                <span class="sep">:</span>
-                                <input type="number" name="arr_m" class="input-m auto-tab" maxlength="2" placeholder="mm">
-                            </div>
-                            <div class="date-inputs">
-                                <input type="number" name="arr_d" class="input-d auto-tab" maxlength="2" placeholder="DD">
-                                <span class="sep">/</span>
-                                <input type="number" name="arr_mon" class="input-mon auto-tab" maxlength="2" placeholder="MM">
-                                <span class="sep">/</span>
-                                <input type="number" name="arr_y" class="input-y auto-tab" maxlength="4" placeholder="YYYY">
-                            </div>
+                            <input type="number" name="arr_h" class="input-h auto-tab" maxlength="2" placeholder="HH">
+                            <span class="sep">:</span>
+                            <input type="number" name="arr_m" class="input-m auto-tab" maxlength="2" placeholder="mm">
+                            <span class="sep" style="margin: 0 8px;">&nbsp;</span>
+                            <input type="number" name="arr_d" class="input-d auto-tab" maxlength="2" placeholder="DD">
+                            <span class="sep">/</span>
+                            <input type="number" name="arr_mon" class="input-mon auto-tab" maxlength="2" placeholder="MM">
+                            <span class="sep">/</span>
+                            <input type="number" name="arr_y" class="input-y auto-tab" maxlength="4" placeholder="YYYY">
                         </div>
                         <button type="button" class="btn btn-sm btn-secondary btn-now" onclick="fillNow('arr')">Nay</button>
                     </div>
@@ -138,18 +135,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label>Thời điểm hoàn thành</label>
                     <div class="fast-time-container">
                         <div class="fast-time-group">
-                            <div class="time-inputs">
-                                <input type="number" name="comp_h" class="input-h auto-tab" maxlength="2" placeholder="HH">
-                                <span class="sep">:</span>
-                                <input type="number" name="comp_m" class="input-m auto-tab" maxlength="2" placeholder="mm">
-                            </div>
-                            <div class="date-inputs">
-                                <input type="number" name="comp_d" class="input-d auto-tab" maxlength="2" placeholder="DD">
-                                <span class="sep">/</span>
-                                <input type="number" name="comp_mon" class="input-mon auto-tab" maxlength="2" placeholder="MM">
-                                <span class="sep">/</span>
-                                <input type="number" name="comp_y" class="input-y auto-tab" maxlength="4" placeholder="YYYY">
-                            </div>
+                            <input type="number" name="comp_h" class="input-h auto-tab" maxlength="2" placeholder="HH">
+                            <span class="sep">:</span>
+                            <input type="number" name="comp_m" class="input-m auto-tab" maxlength="2" placeholder="mm">
+                            <span class="sep" style="margin: 0 8px;">&nbsp;</span>
+                            <input type="number" name="comp_d" class="input-d auto-tab" maxlength="2" placeholder="DD">
+                            <span class="sep">/</span>
+                            <input type="number" name="comp_mon" class="input-mon auto-tab" maxlength="2" placeholder="MM">
+                            <span class="sep">/</span>
+                            <input type="number" name="comp_y" class="input-y auto-tab" maxlength="4" placeholder="YYYY">
                         </div>
                         <button type="button" class="btn btn-sm btn-secondary btn-now" onclick="fillNow('comp')">Nay</button>
                     </div>
@@ -210,12 +204,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 /* Fast Time Styles */
 .fast-time-container { display: flex; align-items: center; gap: 10px; width: 100%; }
-.fast-time-group { display: flex; flex-direction: column; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; flex: 1; padding: 5px; gap: 5px; }
-.time-inputs, .date-inputs { display: flex; align-items: center; justify-content: center; }
-.fast-time-group input { border: none; background: transparent; text-align: center; font-size: 0.95rem; outline: none; padding: 5px 0; }
-.input-h, .input-m, .input-d, .input-mon { width: 35px; }
-.input-y { width: 55px; }
-.sep { font-weight: bold; color: #94a3b8; margin: 0 2px; }
+.fast-time-group { display: flex; align-items: center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; flex: 1; padding: 2px 8px; justify-content: center; overflow: hidden; }
+.fast-time-group input { border: none; background: transparent; text-align: center; font-size: 0.95rem; outline: none; padding: 8px 0; }
+.input-h, .input-m, .input-d, .input-mon { width: 32px; }
+.input-y { width: 50px; }
+.sep { font-weight: bold; color: #94a3b8; margin: 0 1px; }
 .btn-now { height: 42px; min-width: 60px; }
 
 /* Radio Group */
@@ -226,8 +219,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 .radio-item input:checked + .radio-label { background: #ecfdf5; border-color: var(--primary-color); color: var(--primary-color); }
 
 @media (max-width: 768px) {
-    .fast-time-container { flex-direction: column; align-items: stretch; }
-    .btn-now { width: 100%; margin-top: 5px; }
+    .fast-time-container { flex-direction: row; align-items: center; } /* Giữ nguyên hàng ngang trên mobile */
+    .fast-time-group { padding: 2px 4px; } /* Thu nhỏ padding trên mobile */
+    .btn-now { width: auto; margin-top: 0; min-width: 50px; }
     .radio-group-modern { flex-direction: column; }
 }
 </style>
