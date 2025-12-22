@@ -31,13 +31,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ngay_su_co = !empty($_POST['ngay_su_co']) ? $_POST['ngay_su_co'] : date('Y-m-d');
 
             $stmt = $pdo->prepare("INSERT INTO maintenance_logs 
-                (user_id, project_id, device_id, custom_device_name, ngay_su_co, noi_dung, hu_hong, xu_ly, chi_phi, client_name, client_phone, arrival_time, completion_time, work_type) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                (user_id, project_id, device_id, custom_device_name, usage_time_manual, ngay_su_co, noi_dung, hu_hong, xu_ly, chi_phi, client_name, client_phone, arrival_time, completion_time, work_type) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $_SESSION['user_id'], // Lưu ID người tạo phiếu
                 $_POST['project_id'],
                 !empty($_POST['device_id']) ? $_POST['device_id'] : null,
                 !empty($_POST['custom_device_name']) ? $_POST['custom_device_name'] : null,
+                !empty($_POST['usage_time_manual']) ? $_POST['usage_time_manual'] : null,
                 $ngay_su_co,
                 $_POST['noi_dung'] ?: null, 
                 $_POST['hu_hong'],
@@ -183,6 +184,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="form-group">
                         <label>Tên Đối tượng</label>
                         <input type="text" name="custom_device_name" placeholder="VD: Phần mềm...">
+                    </div>
+                    <div class="form-group">
+                        <label>Thời gian sử dụng</label>
+                        <input type="text" name="usage_time_manual" placeholder="VD: 2 năm, Mới mua...">
                     </div>
                 </div>
                 <div class="form-group">

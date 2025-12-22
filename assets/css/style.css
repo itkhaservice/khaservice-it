@@ -900,3 +900,27 @@ body {
     user-select: none;
 }
 
+
+/* STYLE CHO CÁC M?C TR?NG TRONG PHI?U IN */
+.p-line-single:empty::after, 
+.p-line-single:blank::after {
+    content: '—————';
+    color: #999;
+    display: block;
+    text-align: center;
+    width: 100%;
+}
+
+.pb-content:empty, .pb-content:blank {
+    position: relative;
+    min-height: 80px;
+}
+
+.pb-content:empty::after, .pb-content:blank::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to top right, transparent calc(50% - 0.5px), #ccc 50%, transparent calc(50% + 0.5px));
+    pointer-events: none;
+}
+

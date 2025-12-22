@@ -121,13 +121,29 @@ $all_columns = [
             </thead>
             <tbody>
                 <?php foreach ($logs as $log): 
-                    $d_name = !empty($log['device_id']) ? $log['ten_thiet_bi'] : ($log['custom_device_name'] ?: "Hỗ trợ chung");
-                    $d_code = !empty($log['device_id']) ? $log['ma_tai_san'] : "N/A";
+                    // Xử lý hiển thị cho phiếu không có thiết bị
+                    if (!empty($log['device_id'])) {
+                        $d_name = $log['ten_thiet_bi'];
+                        $d_code = $log['ma_tai_san'];
+                        $d_sub  = $log['nhom_thiet_bi']; // Phụ đề là nhóm thiết bị
+                    } else {
+                        $d_name = $log['custom_device_name'] ?: "Hỗ trợ chung";
+                        // Nếu không có thiết bị, cột Mã hiển thị Loại công việc
+                        $d_code = $log['work_type'] ?: "Khác"; 
+                        $d_sub  = "Phiếu công tác"; // Phụ đề
+                    }
                 ?>
                     <tr>
                         <td><input type="checkbox" name="ids[]" value="<?php echo $log['id']; ?>" class="row-checkbox"></td>
-                        <td data-col="ten_thiet_bi" class="font-bold"><?php echo htmlspecialchars($d_name); ?></td>
-                        <td data-col="ma_tai_san" class="text-primary"><?php echo htmlspecialchars($d_code); ?></td>
+                        <td data-col="ten_thiet_bi">
+                            <div class="font-bold"><?php echo htmlspecialchars($d_name); ?></div>
+                            <?php if(empty($log['device_id'])): ?>
+                                <div style="font-size: 0.8rem; color: #64748b;"><?php echo htmlspecialchars($log['noi_dung'] ? mb_strimwidth($log['noi_dung'], 0, 50, "...") : ''); ?></div>
+                            <?php endif; ?>
+                        </td>
+                        <td data-col="ma_tai_san" class="<?php echo !empty($log['device_id']) ? 'text-primary font-medium' : 'text-muted'; ?>">
+                            <?php echo htmlspecialchars($d_code); ?>
+                        </td>
                         <td data-col="ten_du_an"><?php echo htmlspecialchars($log['ten_du_an']); ?></td>
                         <td data-col="nguoi_thuc_hien"><?php echo htmlspecialchars($log['nguoi_thuc_hien'] ?? 'N/A'); ?></td>
                         <td data-col="ngay_su_co"><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></td>

@@ -34,11 +34,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $completion_time = getFastDateTime($_POST['comp_h'], $_POST['comp_m'], $_POST['comp_d'], $_POST['comp_mon'], $_POST['comp_y']);
 
         $stmt = $pdo->prepare("UPDATE maintenance_logs SET 
-            project_id=?, device_id=?, custom_device_name=?, ngay_su_co=?, noi_dung=?, hu_hong=?, xu_ly=?, chi_phi=?, 
+            project_id=?, device_id=?, custom_device_name=?, usage_time_manual=?, ngay_su_co=?, noi_dung=?, hu_hong=?, xu_ly=?, chi_phi=?, 
             client_name=?, client_phone=?, arrival_time=?, completion_time=?, work_type=? WHERE id=?");
         $stmt->execute([
             $_POST['project_id'], !empty($_POST['device_id']) ? $_POST['device_id'] : null,
             !empty($_POST['custom_device_name']) ? $_POST['custom_device_name'] : null,
+            !empty($_POST['usage_time_manual']) ? $_POST['usage_time_manual'] : null,
             $_POST['ngay_su_co'] ?: date('Y-m-d'), 
             $_POST['noi_dung'] ?: null, 
             $_POST['hu_hong'], $_POST['xu_ly'], $_POST['chi_phi'] ?: 0,
@@ -143,8 +144,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div id="custom-name-area" style="<?php echo empty($log['device_id']) ? 'display:block' : 'display:none'; ?>">
                     <div class="form-group"><label>Tên</label><input type="text" name="custom_device_name" value="<?php echo htmlspecialchars($log['custom_device_name']); ?>"></div>
+                    <div class="form-group"><label>Thời gian sử dụng</label><input type="text" name="usage_time_manual" value="<?php echo htmlspecialchars($log['usage_time_manual'] ?? ''); ?>" placeholder="VD: 2 năm"></div>
                 </div>
                 <div class="form-group"><label>Ngày yêu cầu</label><input type="date" name="ngay_su_co" value="<?php echo $log['ngay_su_co']; ?>"></div>
+            </div>
+        </div>
+        <div class="card mt-20">
+            <div class="card-header-custom"><h3><i class="fas fa-user-tag"></i> Khách hàng</h3></div>
+            <div class="card-body-custom">
+                <div class="form-group"><label>Đại diện</label><input type="text" name="client_name" value="<?php echo htmlspecialchars($log['client_name'] ?? ''); ?>"></div>
+                <div class="form-group"><label>SĐT</label><input type="text" name="client_phone" value="<?php echo htmlspecialchars($log['client_phone'] ?? ''); ?>"></div>
             </div>
         </div>
     </div>

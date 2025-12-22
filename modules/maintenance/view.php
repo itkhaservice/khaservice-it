@@ -29,9 +29,10 @@ if (!$log) {
 
 // Xử lý logic hiển thị
 $is_custom_device = empty($log['device_id']);
-$web_display_name = $is_custom_device ? ($log['custom_device_name'] ?? "Hỗ trợ chung") : $log['ten_thiet_bi'];
-$web_display_code = $is_custom_device ? "N/A" : $log['ma_tai_san'];
-$print_device_name = $is_custom_device ? "" : $log['ten_thiet_bi'];
+$web_display_name = $is_custom_device ? ($log['custom_device_name'] ?: "Hỗ trợ chung") : $log['ten_thiet_bi'];
+// Nếu là phiếu chung (không có thiết bị), hiển thị Loại công việc thay cho Mã tài sản
+$web_display_code = $is_custom_device ? ($log['work_type'] ?: "Công tác") : $log['ma_tai_san'];
+$print_device_name = $is_custom_device ? ($log['custom_device_name'] ?: "Hỗ trợ chung") : $log['ten_thiet_bi'];
 
 // Logic gộp địa chỉ hiển thị
 $addr_parts = [];
@@ -52,6 +53,8 @@ if (!$is_custom_device && !empty($log['ngay_mua'])) {
         $print_usage_time = ($interval->y > 0 ? $interval->y . " năm " : "") . ($interval->m > 0 ? $interval->m . " tháng" : "");
         if ($print_usage_time == "") $print_usage_time = "Mới mua";
     } catch (Exception $e) { $print_usage_time = ""; }
+} elseif ($is_custom_device) {
+    $print_usage_time = $log['usage_time_manual'] ?? "";
 }
 
 // Lấy lần hỗ trợ cuối
@@ -320,19 +323,19 @@ function getFileIconInfo($filePath) {
                     <td class="pt-label">TG yêu cầu:</td>
                     <td class="p-line-single"><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></td>
                     <td class="pt-label">Hỗ trợ lần cuối:</td>
-                    <td class="p-line-single"><?php echo $last_support_date; ?></td>
+                    <td class="p-line-single"><?php echo $last_support_date ?: ''; ?></td>
                 </tr>
                 <tr>
                     <td class="pt-label">TG có mặt:</td>
                     <td class="p-line-single"><?php echo $log['arrival_time'] ? date('H:i d/m/Y', strtotime($log['arrival_time'])) : ''; ?></td>
                     <td class="pt-label">Công việc:</td>
-                    <td class="p-line-single"><?php echo htmlspecialchars($last_support_work); ?></td>
+                    <td class="p-line-single"><?php echo !empty($last_support_work) ? htmlspecialchars($last_support_work) : ''; ?></td>
                 </tr>
                 <tr>
                     <td class="pt-label">TG hoàn thành:</td>
                     <td class="p-line-single"><?php echo $log['completion_time'] ? date('H:i d/m/Y', strtotime($log['completion_time'])) : ''; ?></td>
                     <td class="pt-label">Người thực hiện:</td>
-                    <td class="p-line-single" style="text-transform: uppercase;"><?php echo htmlspecialchars($last_support_performer); ?></td>
+                    <td class="p-line-single" style="text-transform: uppercase;"><?php echo !empty($last_support_performer) ? htmlspecialchars($last_support_performer) : ''; ?></td>
                 </tr>
             </table>
 
@@ -340,16 +343,19 @@ function getFileIconInfo($filePath) {
             <div class="p-content-boxes">
                 <div class="p-box box-short">
                     <div class="pb-title">I. YÊU CẦU CỦA DỰ ÁN</div>
-                    <div class="pb-content lined-paper"><?php echo nl2br(htmlspecialchars($log['noi_dung'])); ?></div>
+                    <div class="pb-content lined-paper"><?php 
+                        $noi_dung = trim($log['noi_dung'] ?? '');
+                        echo !empty($noi_dung) ? nl2br(htmlspecialchars($noi_dung)) : ''; 
+                    ?></div>
                 </div>
                 <div class="p-box box-long">
                     <div class="pb-title">II. CÔNG VIỆC THỰC HIỆN / KẾT QUẢ</div>
-                    <div class="pb-content lined-paper">
-                        <?php 
-                        if(!empty($log['hu_hong'])) echo "<strong>- Tình trạng:</strong> " . nl2br(htmlspecialchars($log['hu_hong'])) . "<br><br>";
-                        if(!empty($log['xu_ly'])) echo "<strong>- Xử lý:</strong> " . nl2br(htmlspecialchars($log['xu_ly']));
-                        ?>
-                    </div>
+                    <div class="pb-content lined-paper"><?php 
+                        $hu_hong = trim($log['hu_hong'] ?? '');
+                        $xu_ly = trim($log['xu_ly'] ?? '');
+                        if(!empty($hu_hong)) echo "<strong>- Tình trạng:</strong> " . nl2br(htmlspecialchars($hu_hong)) . "<br><br>";
+                        if(!empty($xu_ly)) echo "<strong>- Xử lý:</strong> " . nl2br(htmlspecialchars($xu_ly));
+                    ?></div>
                 </div>
             </div>
         </div> 
