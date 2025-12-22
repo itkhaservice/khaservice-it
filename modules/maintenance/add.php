@@ -30,13 +30,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $completion_time = getFastDateTime($_POST['comp_h'], $_POST['comp_m'], $_POST['comp_d'], $_POST['comp_mon'], $_POST['comp_y']);
             $ngay_su_co = !empty($_POST['ngay_su_co']) ? $_POST['ngay_su_co'] : date('Y-m-d');
 
+            // Logic chọn đối tượng: Ưu tiên linh kiện con nếu có chọn
+            $final_device_id = !empty($_POST['component_id']) ? $_POST['component_id'] : (!empty($_POST['device_id']) ? $_POST['device_id'] : null);
+
             $stmt = $pdo->prepare("INSERT INTO maintenance_logs 
                 (user_id, project_id, device_id, custom_device_name, usage_time_manual, ngay_su_co, noi_dung, hu_hong, xu_ly, chi_phi, client_name, client_phone, arrival_time, completion_time, work_type) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $_SESSION['user_id'], 
                 $_POST['project_id'],
-                !empty($_POST['device_id']) ? $_POST['device_id'] : null,
+                $final_device_id,
                 !empty($_POST['custom_device_name']) ? $_POST['custom_device_name'] : null,
                 !empty($_POST['usage_time_manual']) ? $_POST['usage_time_manual'] : null,
                 $ngay_su_co,
@@ -180,8 +183,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div id="device-selection-area">
                     <div class="form-group">
-                        <label>Thiết bị</label>
-                        <select id="device_id" name="device_id" <?php echo !$preselected_device_id ? 'disabled' : ''; ?>>
+                        <label>Thiết bị chính</label>
+                        <select id="device_id" name="device_id" onchange="loadComponents(this.value)" <?php echo !$preselected_device_id ? 'disabled' : ''; ?>>
                             <?php if($preselected_device_data): ?>
                                 <option value="<?php echo $preselected_device_data['id']; ?>">
                                     <?php echo htmlspecialchars($preselected_device_data['ten_thiet_bi'] . ' (' . $preselected_device_data['ma_tai_san'] . ')'); ?>
@@ -190,6 +193,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="">-- Chọn dự án trước --</option>
                             <?php endif; ?>
                         </select>
+                    </div>
+
+                    <!-- Component Selection -->
+                    <div class="form-group" id="component-group" style="display: none;">
+                        <label>Linh kiện cụ thể (Nếu có)</label>
+                        <select id="component_id" name="component_id">
+                            <option value="">-- Kiểm tra tổng thể thiết bị --</option>
+                        </select>
+                        <small class="text-info"><i class="fas fa-info-circle"></i> Để trống nếu kiểm tra toàn bộ CPU. Chọn cụ thể nếu chỉ kiểm tra RAM/SSD.</small>
                     </div>
                 </div>
 
@@ -234,6 +246,148 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 </form>
+
+<style>
+/* Modern Radio Group */
+.radio-group-modern { display: flex; gap: 10px; margin: 5px 0; }
+.radio-item { flex: 1; cursor: pointer; }
+.radio-item input { display: none; }
+.radio-label { 
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px;
+    font-size: 0.85rem; font-weight: 600; color: #64748b; transition: all 0.2s;
+}
+.radio-item input:checked + .radio-label {
+    background: #ecfdf5; border-color: var(--primary-color); color: var(--primary-color);
+}
+
+/* Fast Time Input Styles */
+.fast-time-container { display: flex; align-items: center; gap: 8px; }
+.fast-time-group { 
+    display: flex; align-items: center; gap: 0; background: #fff; 
+    border: 1px solid #cbd5e1; padding: 2px 8px; border-radius: 8px; flex: 1;
+}
+.fast-time-group input { 
+    border: none; padding: 8px 2px; text-align: center; font-size: 0.9rem; 
+    outline: none; background: transparent; box-shadow: none !important;
+}
+.fast-time-group input:focus { background: #f0fdf4; color: var(--primary-color); }
+.fast-time-group .sep { font-weight: 700; color: #94a3b8; margin: 0 2px; }
+.input-h, .input-m, .input-d, .input-mon { width: 30px; }
+.input-y { width: 50px; }
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.mt-20 { margin-top: 20px; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const pid = document.getElementById('project_id').value;
+    if (pid && !document.getElementById('device_id').value) {
+        loadDevices(pid);
+    }
+    
+    // Nếu có preselected device, load linh kiện cho nó luôn
+    const preDeviceId = "<?php echo $preselected_device_id; ?>";
+    if (preDeviceId) {
+        loadComponents(preDeviceId);
+    }
+});
+
+function loadComponents(deviceId) {
+    const compGroup = document.getElementById('component-group');
+    const compSelect = document.getElementById('component_id');
+    
+    if (!deviceId) {
+        compGroup.style.display = 'none';
+        return;
+    }
+
+    // Tận dụng API có sẵn (vì bản chất linh kiện cũng là thiết bị có parent_id)
+    fetch(`api/get_devices_by_project.php?parent_id=${deviceId}`)
+        .then(r => r.json()).then(data => {
+            if (data && data.length > 0) {
+                compSelect.innerHTML = '<option value="">-- Kiểm tra tổng thể thiết bị --</option>';
+                data.forEach(c => {
+                    compSelect.innerHTML += `<option value="${c.id}">${c.ten_thiet_bi} (${c.ma_tai_san})</option>`;
+                });
+                compGroup.style.display = 'block';
+            } else {
+                compGroup.style.display = 'none';
+                compSelect.innerHTML = '<option value="">-- Không có linh kiện con --</option>';
+            }
+        }).catch(err => {
+            console.error(err);
+            compGroup.style.display = 'none';
+        });
+}
+
+// Tự động chuyển ô khi gõ đủ số
+document.querySelectorAll('.auto-tab').forEach(input => {
+    input.addEventListener('input', function() {
+        const maxLength = parseInt(this.getAttribute('maxlength'));
+        if (this.value.length >= maxLength) {
+            let next = this.nextElementSibling;
+            while (next && next.tagName !== 'INPUT') { next = next.nextElementSibling; }
+            if (next) next.focus();
+        }
+    });
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && this.value.length === 0) {
+            let prev = this.previousElementSibling;
+            while (prev && prev.tagName !== 'INPUT') { prev = prev.previousElementSibling; }
+            if (prev) prev.focus();
+        }
+    });
+});
+
+function fillNow(prefix) {
+    const now = new Date();
+    document.querySelector(`input[name="${prefix}_h"]`).value = String(now.getHours()).padStart(2, '0');
+    document.querySelector(`input[name="${prefix}_m"]`).value = String(now.getMinutes()).padStart(2, '0');
+    document.querySelector(`input[name="${prefix}_d"]`).value = String(now.getDate()).padStart(2, '0');
+    document.querySelector(`input[name="${prefix}_mon"]`).value = String(now.getMonth() + 1).padStart(2, '0');
+    document.querySelector(`input[name="${prefix}_y"]`).value = now.getFullYear();
+}
+
+function toggleTargetMode(mode) {
+    document.getElementById('device-selection-area').style.display = (mode === 'device' ? 'block' : 'none');
+    document.getElementById('custom-name-area').style.display = (mode === 'custom' ? 'block' : 'none');
+}
+
+function loadDevices(projectId) {
+    const ds = document.getElementById('device_id');
+    const currentDeviceId = "<?php echo $preselected_device_id; ?>";
+    
+    if (!projectId) { 
+        ds.disabled = true; 
+        ds.innerHTML = '<option value="">-- Chọn dự án trước --</option>';
+        return; 
+    }
+    
+    ds.innerHTML = '<option value="">Đang tải...</option>';
+    ds.disabled = true;
+
+    fetch(`api/get_devices_by_project.php?project_id=${projectId}`)
+        .then(r => r.json()).then(data => {
+            ds.innerHTML = '<option value="">-- Chọn thiết bị --</option>';
+            data.forEach(d => { 
+                // Chỉ hiện các thiết bị chính (không có parent_id) trong danh sách chọn thiết bị chính
+                if (!d.parent_id) {
+                    const selected = (d.id == currentDeviceId) ? 'selected' : '';
+                    ds.innerHTML += `<option value="${d.id}" ${selected}>${d.ten_thiet_bi} (${d.ma_tai_san})</option>`; 
+                }
+            });
+            ds.disabled = false;
+            // Nếu có thiết bị được chọn mặc định, load components luôn
+            if (ds.value) loadComponents(ds.value);
+        })
+        .catch(err => {
+            console.error(err);
+            ds.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+        });
+}
+</script>
 
 <style>
 /* Modern Radio Group */

@@ -82,8 +82,8 @@ $module_path = realpath($requested_file);
 
 // --- PHÂN QUYỀN TẬP TRUNG (CENTRALIZED AUTHORIZATION) ---
 if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($module_path)) {
-    // 1. Chỉ Admin mới được vào các trang Quản lý Người dùng (TRỪ trang Settings cá nhân)
-    if (strpos($page, 'users/') !== false && $page !== 'users/settings') {
+    // 1. Chỉ Admin mới được vào các trang Quản lý Người dùng hoặc Cài đặt hệ thống
+    if ((strpos($page, 'users/') !== false && $page !== 'users/settings') || strpos($page, 'settings/') !== false) {
         requireAdmin();
     }
     // 2. Chỉ Admin mới được vào các trang XÓA (Trừ module Maintenance hoặc Trash do IT cũng có quyền)

@@ -1,4 +1,3 @@
-<?php
 $device = null;
 if (isset($_GET['id'])) {
     $device_id = $_GET['id'];
@@ -7,10 +6,13 @@ if (isset($_GET['id'])) {
         SELECT
             d.*,
             p.ten_du_an,
-            s.ten_npp
+            s.ten_npp,
+            parent.ten_thiet_bi as parent_name,
+            parent.ma_tai_san as parent_code
         FROM devices d
         LEFT JOIN projects p ON d.project_id = p.id
         LEFT JOIN suppliers s ON d.supplier_id = s.id
+        LEFT JOIN devices parent ON d.parent_id = parent.id
         WHERE d.id = ?
     ");
     $stmt->execute([$device_id]);
@@ -22,6 +24,11 @@ if (!$device) {
     header("Location: index.php?page=devices/list");
     exit;
 }
+
+// Fetch child devices (components)
+$stmt_children = $pdo->prepare("SELECT id, ten_thiet_bi, ma_tai_san, loai_thiet_bi, trang_thai FROM devices WHERE parent_id = ? AND deleted_at IS NULL");
+$stmt_children->execute([$device_id]);
+$children = $stmt_children->fetchAll();
 ?>
 
 <div class="page-header">
@@ -60,6 +67,17 @@ if (!$device) {
                         <span class="info-value strong"><?php echo htmlspecialchars($device['ten_thiet_bi']); ?></span>
                     </div>
 
+                    <?php if ($device['parent_id']): ?>
+                    <div class="info-item full-width">
+                        <span class="info-label"><i class="fas fa-level-up-alt"></i> Thuộc thiết bị (Cha)</span>
+                        <span class="info-value">
+                            <a href="index.php?page=devices/view&id=<?php echo $device['parent_id']; ?>" class="link-primary font-bold">
+                                <?php echo htmlspecialchars($device['parent_name']); ?> (<?php echo htmlspecialchars($device['parent_code']); ?>)
+                            </a>
+                        </span>
+                    </div>
+                    <?php endif; ?>
+
                     <div class="info-item">
                         <span class="info-label"><i class="fas fa-layer-group"></i> Loại / Nhóm</span>
                         <span class="info-value"><?php echo htmlspecialchars($device['loai_thiet_bi']); ?> <span class="text-muted">/ <?php echo htmlspecialchars($device['nhom_thiet_bi']); ?></span></span>
@@ -77,7 +95,7 @@ if (!$device) {
 
                     <div class="info-item">
                         <span class="info-label"><i class="fas fa-building"></i> Dự án</span>
-                        <span class="info-value"><a href="#" class="link-primary"><?php echo htmlspecialchars($device['ten_du_an'] ?? 'Chưa phân bổ'); ?></a></span>
+                        <span class="info-value"><a href="index.php?page=projects/view&id=<?php echo $device['project_id']; ?>" class="link-primary"><?php echo htmlspecialchars($device['ten_du_an'] ?? 'Chưa phân bổ'); ?></a></span>
                     </div>
                     
                     <div class="info-item full-width">
@@ -90,8 +108,42 @@ if (!$device) {
             </div>
         </div>
 
+        <!-- Components (Children) Card -->
+        <?php if (!empty($children)): ?>
+        <div class="card children-card mt-20">
+            <div class="card-header-custom">
+                <h3><i class="fas fa-boxes"></i> Linh kiện bên trong (<?php echo count($children); ?>)</h3>
+                <a href="index.php?page=devices/add&project_id=<?php echo $device['project_id']; ?>&parent_id=<?php echo $device['id']; ?>" class="btn btn-sm btn-secondary"><i class="fas fa-plus"></i> Thêm LK</a>
+            </div>
+            <div class="card-body-custom">
+                <div class="table-container" style="border:none; box-shadow:none;">
+                    <table class="content-table">
+                        <thead>
+                            <tr>
+                                <th>Mã TS</th>
+                                <th>Tên linh kiện</th>
+                                <th>Loại</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($children as $child): ?>
+                                <tr>
+                                    <td><a href="index.php?page=devices/view&id=<?php echo $child['id']; ?>" class="font-bold text-primary"><?php echo htmlspecialchars($child['ma_tai_san']); ?></a></td>
+                                    <td><?php echo htmlspecialchars($child['ten_thiet_bi']); ?></td>
+                                    <td><?php echo htmlspecialchars($child['loai_thiet_bi']); ?></td>
+                                    <td><span class="badge"><?php echo htmlspecialchars($child['trang_thai']); ?></span></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Procurement Info Card -->
-        <div class="card procurement-card">
+        <div class="card procurement-card mt-20">
             <div class="card-header-custom">
                 <h3><i class="fas fa-shopping-cart"></i> Thông tin Mua sắm</h3>
             </div>
@@ -139,9 +191,19 @@ if (!$device) {
             </div>
             <div class="card-body-custom">
                 <?php
-                // Fetch maintenance logs
-                $maintenance_stmt = $pdo->prepare("SELECT * FROM maintenance_logs WHERE device_id = ? ORDER BY ngay_su_co DESC");
-                $maintenance_stmt->execute([$device_id]);
+                // Fetch maintenance logs for this device AND its children
+                $child_ids = array_column($children, 'id');
+                $target_ids = array_merge([$device_id], $child_ids);
+                $placeholders = implode(',', array_fill(0, count($target_ids), '?'));
+
+                $maintenance_stmt = $pdo->prepare("
+                    SELECT ml.*, d.ten_thiet_bi as target_name, d.id as target_id 
+                    FROM maintenance_logs ml 
+                    JOIN devices d ON ml.device_id = d.id
+                    WHERE ml.device_id IN ($placeholders) AND ml.deleted_at IS NULL
+                    ORDER BY ml.ngay_su_co DESC, ml.id DESC
+                ");
+                $maintenance_stmt->execute($target_ids);
                 $maintenance_logs = $maintenance_stmt->fetchAll();
                 ?>
 
@@ -158,8 +220,8 @@ if (!$device) {
                                 <div class="timeline-content">
                                     <div class="timeline-header">
                                         <span class="date"><i class="far fa-calendar"></i> <?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></span>
-                                        <?php if($log['chi_phi'] > 0): ?>
-                                            <span class="cost badge status-warning">- <?php echo number_format($log['chi_phi'], 0, ',', '.'); ?> đ</span>
+                                        <?php if($log['target_id'] != $device_id): ?>
+                                            <span class="badge status-info" style="font-size: 0.65rem;">Linh kiện: <?php echo htmlspecialchars($log['target_name']); ?></span>
                                         <?php endif; ?>
                                     </div>
                                     <h4 class="title"><?php echo htmlspecialchars($log['noi_dung']); ?></h4>

@@ -21,6 +21,11 @@ $projects = $projects_stmt->fetchAll();
 $suppliers_stmt = $pdo->query("SELECT id, ten_npp FROM suppliers ORDER BY ten_npp");
 $suppliers = $suppliers_stmt->fetchAll();
 
+// Fetch dynamic settings
+$db_types = $pdo->query("SELECT * FROM settings_device_types ORDER BY group_name, type_name")->fetchAll();
+$db_groups = array_unique(array_column($db_types, 'group_name'));
+$db_statuses = $pdo->query("SELECT * FROM settings_device_statuses ORDER BY id ASC")->fetchAll();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Basic validation
     if (empty($_POST['ma_tai_san'])) {
@@ -34,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $sql = "UPDATE devices SET
                         ma_tai_san = ?, ten_thiet_bi = ?, nhom_thiet_bi = ?, loai_thiet_bi = ?, model = ?, serial = ?,
-                        project_id = ?, supplier_id = ?, ngay_mua = ?, gia_mua = ?, bao_hanh_den = ?, trang_thai = ?, ghi_chu = ?
+                        project_id = ?, parent_id = ?, supplier_id = ?, ngay_mua = ?, gia_mua = ?, bao_hanh_den = ?, trang_thai = ?, ghi_chu = ?
                     WHERE id = ?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
@@ -45,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_POST['model'],
                 $_POST['serial'],
                 $_POST['project_id'] ?: null,
+                $_POST['parent_id'] ?: null,
                 $_POST['supplier_id'] ?: null,
                 $_POST['ngay_mua'] ?: null,
                 $_POST['gia_mua'] ?: null,
@@ -90,17 +96,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="text" id="ten_thiet_bi" name="ten_thiet_bi" value="<?php echo htmlspecialchars($_POST['ten_thiet_bi'] ?? $device['ten_thiet_bi']); ?>" required>
                 </div>
 
+                <div class="form-group">
+                    <label for="parent_id">Thuộc thiết bị (Nếu là linh kiện con)</label>
+                    <select id="parent_id" name="parent_id">
+                        <option value="">-- Tải dữ liệu... --</option>
+                    </select>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group half">
                         <label for="nhom_thiet_bi">Nhóm Thiết bị</label>
                         <select id="nhom_thiet_bi" name="nhom_thiet_bi">
-                            <option value="Văn phòng" <?php echo (($_POST['nhom_thiet_bi'] ?? $device['nhom_thiet_bi']) == 'Văn phòng') ? 'selected' : ''; ?>>Văn phòng</option>
-                            <option value="Bãi xe" <?php echo (($_POST['nhom_thiet_bi'] ?? $device['nhom_thiet_bi']) == 'Bãi xe') ? 'selected' : ''; ?>>Bãi xe</option>
+                            <?php foreach ($db_groups as $group): ?>
+                                <option value="<?php echo htmlspecialchars($group); ?>" <?php echo (($_POST['nhom_thiet_bi'] ?? $device['nhom_thiet_bi']) == $group) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($group); ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group half">
                         <label for="loai_thiet_bi">Loại Thiết bị</label>
-                        <input type="text" id="loai_thiet_bi" name="loai_thiet_bi" value="<?php echo htmlspecialchars($_POST['loai_thiet_bi'] ?? $device['loai_thiet_bi']); ?>" placeholder="PC, UPS...">
+                        <input type="text" id="loai_thiet_bi" name="loai_thiet_bi" list="common_types" value="<?php echo htmlspecialchars($_POST['loai_thiet_bi'] ?? $device['loai_thiet_bi']); ?>" placeholder="Chọn hoặc gõ loại mới...">
+                        <datalist id="common_types">
+                            <?php foreach ($db_types as $type): ?>
+                                <option value="<?php echo htmlspecialchars($type['type_name']); ?>">
+                            <?php endforeach; ?>
+                        </datalist>
                     </div>
                 </div>
 
@@ -133,15 +154,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  <div class="form-group">
                     <label for="trang_thai">Trạng thái</label>
                     <select id="trang_thai" name="trang_thai">
-                        <option value="Đang sử dụng" <?php echo (($_POST['trang_thai'] ?? $device['trang_thai']) == 'Đang sử dụng') ? 'selected' : ''; ?>>Đang sử dụng</option>
-                        <option value="Hỏng" <?php echo (($_POST['trang_thai'] ?? $device['trang_thai']) == 'Hỏng') ? 'selected' : ''; ?>>Hỏng</option>
-                        <option value="Thanh lý" <?php echo (($_POST['trang_thai'] ?? $device['trang_thai']) == 'Thanh lý') ? 'selected' : ''; ?>>Thanh lý</option>
+                        <?php foreach ($db_statuses as $status): ?>
+                            <option value="<?php echo htmlspecialchars($status['status_name']); ?>" <?php echo (($_POST['trang_thai'] ?? $device['trang_thai']) == $status['status_name']) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($status['status_name']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label for="project_id">Dự án</label>
-                    <select id="project_id" name="project_id">
+                    <select id="project_id" name="project_id" onchange="loadParentDevices(this.value)">
                         <option value="">-- Chọn dự án --</option>
                         <?php foreach ($projects as $project): ?>
                             <option value="<?php echo $project['id']; ?>" <?php echo (($_POST['project_id'] ?? $device['project_id']) == $project['id']) ? 'selected' : ''; ?>>
@@ -185,6 +208,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 </form>
+
+<script>
+function loadParentDevices(projectId) {
+    const parentSelect = document.getElementById('parent_id');
+    const currentDeviceId = "<?php echo $device_id; ?>";
+    const selectedParentId = "<?php echo $device['parent_id']; ?>";
+
+    if (!projectId) {
+        parentSelect.innerHTML = '<option value="">-- Chọn dự án trước --</option>';
+        parentSelect.disabled = true;
+        return;
+    }
+
+    parentSelect.innerHTML = '<option value="">Đang tải...</option>';
+    parentSelect.disabled = true;
+
+    fetch(`api/get_devices_by_project.php?project_id=${projectId}`)
+        .then(response => response.json())
+        .then(data => {
+            parentSelect.innerHTML = '<option value="">-- Là thiết bị chính (Không có cha) --</option>';
+            data.forEach(device => {
+                // Không cho phép chọn chính mình làm cha
+                if (device.id != currentDeviceId) {
+                    const selected = (device.id == selectedParentId) ? 'selected' : '';
+                    parentSelect.innerHTML += `<option value="${device.id}" ${selected}>${device.ten_thiet_bi} (${device.ma_tai_san})</option>`;
+                }
+            });
+            parentSelect.disabled = false;
+        })
+        .catch(error => {
+            console.error('Error loading parent devices:', error);
+            parentSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+        });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const projectId = document.getElementById('project_id').value;
+    if (projectId) {
+        loadParentDevices(projectId);
+    }
+});
+</script>
 
 <style>
 /* Layout Styles - Specific to Edit/Add Page */
