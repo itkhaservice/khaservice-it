@@ -29,11 +29,23 @@ if (!$log) {
     exit;
 }
 
+// --- FETCH PREVIOUS MAINTENANCE FOR THE SAME PROJECT ---
+$stmt_prev = $pdo->prepare("
+    SELECT ml.*, u.fullname as nguoi_thuc_hien, d.ten_thiet_bi
+    FROM maintenance_logs ml
+    LEFT JOIN users u ON ml.user_id = u.id
+    LEFT JOIN devices d ON ml.device_id = d.id
+    WHERE ml.project_id = ? AND ml.id < ? AND ml.deleted_at IS NULL
+    ORDER BY ml.id DESC LIMIT 1
+");
+$stmt_prev->execute([$log['project_id'], $log['id']]);
+$prev_log = $stmt_prev->fetch();
+
 // Xử lý logic hiển thị chung cho Web
 $is_custom_device = empty($log['device_id']);
 $web_display_name = $is_custom_device ? ($log['custom_device_name'] ?: "") : $log['ten_thiet_bi'];
 $web_display_code = $is_custom_device ? ($log['work_type'] ?: "Công tác") : $log['ma_tai_san'];
-$print_device_name = $web_display_name; // Dùng cho cả print logic bên dưới
+$print_device_name = $web_display_name; 
 
 $addr_parts = [];
 if(!empty($log['dia_chi_duong'])) $addr_parts[] = $log['dia_chi_duong'];
@@ -109,6 +121,7 @@ function getFileIconInfo($filePath) {
 
     <div class="view-grid-layout maintenance-view">
         <div class="main-content">
+            <!-- CURRENT LOG CARD -->
             <div class="card ticket-card">
                 <div class="ticket-header">
                     <div class="ticket-status">
@@ -122,6 +135,40 @@ function getFileIconInfo($filePath) {
                     <div class="content-block solution"><h4 class="block-title"><i class="fas fa-check-circle"></i> Biện pháp Xử lý</h4><div class="block-content"><?php echo !empty($log['xu_ly']) ? nl2br(htmlspecialchars($log['xu_ly'])) : '<em>Chưa ghi nhận</em>'; ?></div></div>
                 </div>
             </div>
+
+            <!-- PREVIOUS LOG CARD (RE-STYLED) -->
+            <?php if ($prev_log): ?>
+            <div class="previous-log-card-modern">
+                <div class="card-title-row">
+                    <div class="title-main"><i class="fas fa-history"></i> Thông tin công tác lần trước</div>
+                    <a href="index.php?page=maintenance/view&id=<?php echo $prev_log['id']; ?>" class="btn-link-view" title="Xem chi tiết phiếu trước">Phiếu #<?php echo $prev_log['id']; ?> <i class="fas fa-external-link-alt"></i></a>
+                </div>
+                
+                <div class="card-grid-info">
+                    <div class="grid-item">
+                        <span class="g-label">Hỗ trợ lần cuối:</span>
+                        <span class="g-value highlight"><?php echo $prev_log['completion_time'] ? date('d/m/Y', strtotime($prev_log['completion_time'])) : date('d/m/Y', strtotime($prev_log['ngay_su_co'])); ?></span>
+                    </div>
+                    <div class="grid-item">
+                        <span class="g-label">Thực hiện bởi:</span>
+                        <span class="g-value"><?php echo htmlspecialchars($prev_log['nguoi_thuc_hien'] ?: 'N/A'); ?></span>
+                    </div>
+                    <div class="grid-item full">
+                        <span class="g-label">Công việc:</span>
+                        <span class="g-value text-indigo"><?php echo htmlspecialchars($prev_log['work_type']); ?></span>
+                    </div>
+                    <div class="grid-item full">
+                        <span class="g-label">Đối tượng:</span>
+                        <span class="g-value"><?php echo htmlspecialchars($prev_log['ten_thiet_bi'] ?: ($prev_log['custom_device_name'] ?: 'N/A')); ?></span>
+                    </div>
+                </div>
+
+                <div class="last-result-box">
+                    <div class="result-label">Nội dung đã xử lý:</div>
+                    <div class="result-text"><?php echo nl2br(htmlspecialchars($prev_log['xu_ly'] ?: $prev_log['noi_dung'])); ?></div>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <div class="card mt-20 attachment-section">
                 <div class="card-header-custom"><h3><i class="fas fa-paperclip"></i> Tài liệu đính kèm</h3></div>
@@ -183,10 +230,10 @@ function getFileIconInfo($filePath) {
 <script>function togglePrintDebug() { document.body.classList.toggle('debug-print-mode'); }</script>
 
 <style>
-/* WEB STYLES - Chỉ tập trung vào giao diện trình duyệt */
+/* WEB STYLES */
 .maintenance-view { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; align-items: start; }
-.ticket-card, .device-profile-card { padding: 0; overflow: hidden; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-.ticket-header, .profile-header { background: #f8fafc; padding: 15px; border-bottom: 1px solid #e2e8f0; }
+.ticket-card, .device-profile-card { padding: 0; overflow: hidden; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+.ticket-header, .profile-header { background: #f8fafc; padding: 15px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
 .ticket-status { display: flex; align-items: center; gap: 10px; }
 .ticket-status .label { font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
 .ticket-status .value { font-size: 1rem; font-weight: 700; color: #1e293b; }
@@ -195,21 +242,98 @@ function getFileIconInfo($filePath) {
 .content-block { margin-bottom: 20px; padding-left: 15px; border-left: 4px solid #e2e8f0; }
 .block-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 10px; color: #334155; }
 .block-content { font-size: 0.95rem; color: #1e293b; line-height: 1.6; background: #f8fafc; padding: 12px; border-radius: 6px; }
+
+/* MODERN PREVIOUS LOG CARD STYLES */
+.previous-log-card-modern {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 5px solid #6366f1;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 25px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.card-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eef2f6;
+}
+
+.title-main {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.title-main i { color: #6366f1; }
+
+.btn-link-view {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #6366f1;
+    text-decoration: none;
+    background: #eef2ff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    transition: 0.2s;
+}
+.btn-link-view:hover { background: #6366f1; color: #fff; }
+
+.card-grid-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 20px;
+    margin-bottom: 15px;
+}
+
+.grid-item { display: flex; flex-direction: column; gap: 2px; }
+.grid-item.full { grid-column: 1 / -1; }
+
+.g-label { font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+.g-value { font-size: 0.9rem; color: #1e293b; font-weight: 600; }
+.g-value.highlight { color: #1e293b; font-weight: 700; }
+.text-indigo { color: #4f46e5; }
+
+.last-result-box {
+    background: #fff;
+    border: 1px solid #f1f5f9;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.result-label { font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 5px; }
+.result-text { font-size: 0.85rem; color: #475569; line-height: 1.5; font-style: italic; }
+
+@media (max-width: 600px) {
+    .card-grid-info { grid-template-columns: 1fr; }
+    .previous-log-card-modern { padding: 15px; }
+}
+
+/* detail-row override for side and previous card */
+.detail-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; flex-wrap: wrap; gap: 5px; }
+.d-label { color: #64748b; font-weight: 500; min-width: 120px; }
+.d-value { font-weight: 600; color: #1e293b; text-align: right; flex: 1; }
+
+.mini-block { font-size: 0.9rem; }
+.mini-label { font-weight: 700; color: #64748b; margin-right: 5px; }
+.block-content-mini { font-size: 0.85rem; color: #475569; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #f1f5f9; margin-top: 5px; line-height: 1.5; }
+
+/* Responsive tweaks for previous-log-card */
+@media (max-width: 600px) {
+    .detail-row { flex-direction: column; align-items: flex-start; }
+    .d-value { text-align: left; padding-left: 10px; border-left: 2px solid #e2e8f0; width: 100%; }
+}
+
 .device-icon-large { font-size: 2rem; color: var(--primary-color); margin-bottom: 10px; text-align: center; }
 .profile-title { text-align: center; }
-.detail-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem; }
-.d-value { font-weight: 600; }
-
-/* ATTACHMENTS UI */
-.upload-zone { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 15px; }
-.upload-form { display: flex; gap: 10px; align-items: center; }
-.files-grid-simple { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; margin-top: 20px; }
-.file-item-card { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
-.file-thumb { height: 80px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.file-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.icon-file { font-size: 2rem; color: #94a3b8; }
-.file-meta { padding: 8px; display: flex; justify-content: space-between; align-items: center; background: #fff; }
-.file-meta .name { font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; }
 
 @media (max-width: 992px) {
     .maintenance-view { grid-template-columns: 1fr; }
@@ -220,6 +344,5 @@ function getFileIconInfo($filePath) {
 </style>
 
 <?php 
-// ĐƯA PHẦN IN ẤN VÀO TỆP RIÊNG ĐỂ KHÔNG BAO GIỜ THAY ĐỔI
 include 'print_template.inc.php'; 
 ?>

@@ -30,21 +30,21 @@ if (!empty($log['usage_time_manual'])) {
 $last_support_date = '';
 $last_support_work = '';
 $last_support_performer = '';
-$stmt_last = null;
-$sql_last = "SELECT ml.ngay_su_co, ml.work_type, u.fullname FROM maintenance_logs ml LEFT JOIN users u ON ml.user_id = u.id WHERE ";
-if (!$is_custom_device) {
-    $sql_last .= "ml.device_id = ? AND ml.id < ? ORDER BY ml.ngay_su_co DESC LIMIT 1";
-    $stmt_last = $pdo->prepare($sql_last);
-    $stmt_last->execute([$log['device_id'], $log['id']]);
-} elseif (!empty($log['project_id'])) {
-    $sql_last .= "ml.project_id = ? AND ml.id < ? ORDER BY ml.ngay_su_co DESC LIMIT 1";
-    $stmt_last = $pdo->prepare($sql_last);
+
+// Ưu tiên lấy phiếu trước đó của cùng một dự án để khớp với Web View
+if (!empty($log['project_id'])) {
+    $stmt_last = $pdo->prepare("
+        SELECT ml.ngay_su_co, ml.completion_time, ml.work_type, u.fullname 
+        FROM maintenance_logs ml 
+        LEFT JOIN users u ON ml.user_id = u.id 
+        WHERE ml.project_id = ? AND ml.id < ? AND ml.deleted_at IS NULL 
+        ORDER BY ml.id DESC LIMIT 1
+    ");
     $stmt_last->execute([$log['project_id'], $log['id']]);
-}
-if ($stmt_last) {
     $last_log = $stmt_last->fetch();
+    
     if ($last_log) {
-        $last_support_date = date('d/m/Y', strtotime($last_log['ngay_su_co']));
+        $last_support_date = $last_log['completion_time'] ? date('d/m/Y', strtotime($last_log['completion_time'])) : date('d/m/Y', strtotime($last_log['ngay_su_co']));
         $last_support_work = $last_log['work_type'];
         $last_support_performer = $last_log['fullname'];
     }
