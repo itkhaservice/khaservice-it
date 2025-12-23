@@ -100,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="parent_id">Thuộc thiết bị (Nếu là linh kiện con)</label>
                     <div class="searchable-select-container">
                         <input type="text" id="parent_search" class="search-input" placeholder="Chọn dự án trước..." disabled autocomplete="off">
+                        <button type="button" class="btn-clear" onclick="clearSearch('parent')" title="Xóa chọn"><i class="fas fa-times"></i></button>
                         <input type="hidden" name="parent_id" id="parent_id" value="<?php echo htmlspecialchars($device['parent_id'] ?? ''); ?>">
                         <div id="parent_dropdown" class="searchable-dropdown"></div>
                     </div>
@@ -177,6 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 }
                             }
                         ?>" autocomplete="off">
+                        <button type="button" class="btn-clear" onclick="clearSearch('project')" title="Xóa chọn"><i class="fas fa-times"></i></button>
                         <input type="hidden" name="project_id" id="project_id" value="<?php echo htmlspecialchars($device['project_id'] ?? ''); ?>">
                         <div id="project_dropdown" class="searchable-dropdown"></div>
                     </div>
@@ -308,7 +310,7 @@ function renderDropdown(filter, data, dropdown, onSelect) {
         dropdown.innerHTML = '<div class="no-results">Không tìm thấy kết quả</div>';
     } else {
         dropdown.innerHTML = filtered.map(item => `
-            <div class="dropdown-item">
+            <div class="dropdown-item" data-id="${item.id}">
                 <span class="item-title">${item.ten_du_an || item.ten_thiet_bi}</span>
                 ${item.ma_tai_san ? `<span class="item-sub">${item.ma_tai_san}</span>` : ''}
             </div>
@@ -359,6 +361,26 @@ function loadParentDevices(projectId) {
                 if (p) parentSearch.value = `${p.ten_thiet_bi} (${p.ma_tai_san})`;
             }
         });
+}
+
+function clearSearch(type) {
+    const searchInput = document.getElementById(type + '_search');
+    const idInput = document.getElementById(type + '_id');
+    const dropdown = document.getElementById(type + '_dropdown');
+    
+    searchInput.value = '';
+    idInput.value = '';
+    dropdown.style.display = 'none';
+    
+    if (type === 'project') {
+        const parentSearch = document.getElementById('parent_search');
+        const parentIdInput = document.getElementById('parent_id');
+        parentSearch.value = '';
+        parentIdInput.value = '';
+        parentSearch.disabled = true;
+        parentSearch.placeholder = 'Chọn dự án trước...';
+        localParents = [];
+    }
 }
 </script>
 
@@ -421,6 +443,29 @@ function loadParentDevices(projectId) {
 .search-input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; transition: all 0.2s; }
 .search-input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); outline: none; }
 .search-input:disabled { background-color: #f1f5f9; cursor: not-allowed; opacity: 0.7; }
+
+/* Clear Button Inside Search */
+.btn-clear {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 5px;
+    display: none;
+    transition: color 0.2s;
+}
+.searchable-select-container:hover .btn-clear,
+.search-input:focus + .btn-clear {
+    display: block;
+}
+.btn-clear:hover {
+    color: #ef4444;
+}
+
 .searchable-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 5px; max-height: 250px; overflow-y: auto; z-index: 1000; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: none; }
 .dropdown-item { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f1f5f9; text-align: left; transition: all 0.2s; }
 .dropdown-item:last-child { border-bottom: none; }

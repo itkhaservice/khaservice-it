@@ -133,6 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label>Nhân viên phụ trách <span class="required">*</span></label>
                         <div class="searchable-select-container">
                             <input type="text" id="staff_search" class="search-input" placeholder="Gõ tên nhân viên..." required value="<?php foreach($staff_list as $s) { if($s['id'] == $log['user_id']) { echo htmlspecialchars($s['fullname'] ?: $s['username']); break; } } ?>" autocomplete="off">
+                            <button type="button" class="btn-clear" onclick="clearSearch('staff')" title="Xóa chọn"><i class="fas fa-times"></i></button>
                             <input type="hidden" name="assigned_user_id" id="assigned_user_id" value="<?php echo $log['user_id']; ?>">
                             <div id="staff_dropdown" class="searchable-dropdown"></div>
                         </div>
@@ -150,6 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label>Dự án <span class="required">*</span></label>
                     <div class="searchable-select-container">
                         <input type="text" id="project_search" class="search-input" placeholder="Gõ tên hoặc mã dự án..." required value="<?php foreach($projects as $p) { if($p['id'] == $current_project_id) { echo htmlspecialchars($p['ten_du_an']); break; } } ?>" autocomplete="off">
+                        <button type="button" class="btn-clear" onclick="clearSearch('project')" title="Xóa chọn"><i class="fas fa-times"></i></button>
                         <input type="hidden" name="project_id" id="project_id" value="<?php echo $current_project_id; ?>">
                         <div id="project_dropdown" class="searchable-dropdown"></div>
                     </div>
@@ -166,6 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label>Thiết bị</label>
                         <div class="searchable-select-container">
                             <input type="text" id="device_search" class="search-input" placeholder="Gõ tên hoặc mã tài sản..." autocomplete="off" value="<?php if (!empty($log['device_id'])) echo htmlspecialchars($log['ten_thiet_bi'] . ' (' . $log['ma_tai_san'] . ')'); ?>">
+                            <button type="button" class="btn-clear" onclick="clearSearch('device')" title="Xóa chọn"><i class="fas fa-times"></i></button>
                             <input type="hidden" id="device_id" name="device_id" value="<?php echo $log['device_id']; ?>">
                             <div id="device_dropdown" class="searchable-dropdown"></div>
                         </div>
@@ -207,6 +210,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 .searchable-select-container { position: relative; width: 100%; }
 .search-input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; }
 .search-input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); outline: none; }
+
+/* Clear Button Inside Search */
+.btn-clear {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 5px;
+    display: none;
+    transition: color 0.2s;
+    z-index: 5;
+}
+.searchable-select-container:hover .btn-clear,
+.search-input:focus + .btn-clear {
+    display: block;
+}
+.btn-clear:hover {
+    color: #ef4444;
+}
+
 .searchable-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 5px; max-height: 250px; overflow-y: auto; z-index: 1000; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: none; }
 .dropdown-item { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f1f5f9; text-align: left; }
 .dropdown-item:hover, .dropdown-item.active { background: #f8fafc; color: var(--primary-color); }
@@ -214,6 +241,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 .dropdown-item .item-sub { display: block; font-size: 0.75rem; color: #94a3b8; }
 .no-results { padding: 15px; text-align: center; color: #94a3b8; font-style: italic; font-size: 0.9rem; }
 @media (max-width: 768px) {
+    .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+    .header-actions { width: 100%; display: flex; gap: 10px; }
+    .header-actions .btn { flex: 1; justify-content: center; }
     .fast-time-container { flex-direction: row; align-items: center; } 
     .fast-time-group { padding: 2px 4px; }
     .btn-now { width: auto; margin-top: 0; min-width: 50px; }
@@ -321,7 +351,7 @@ function loadDevices(projectId) {
 
 function renderDropdown(filter, data, dropdown, onSelect, field1 = 'ten_du_an', field2 = 'ma_tai_san') {
     const filtered = data.filter(item => {
-        const title = (item[field1] || item['ten_thiet_bi'] || '').toLowerCase();
+        const title = (item[field1] || item['ten_thiet_bi'] || item['fullname'] || '').toLowerCase();
         const sub = (item[field2] || '').toLowerCase();
         return title.includes(filter) || sub.includes(filter);
     });
@@ -336,6 +366,24 @@ function renderDropdown(filter, data, dropdown, onSelect, field1 = 'ten_du_an', 
         dropdown.querySelectorAll('.dropdown-item').forEach((div, idx) => { div.onclick = () => onSelect(filtered[idx]); });
     }
     dropdown.style.display = 'block'; activeIndex = -1;
+}
+
+function clearSearch(type) {
+    const searchInput = document.getElementById(type + '_search');
+    const idInput = document.getElementById(type + '_id');
+    const dropdown = document.getElementById(type + '_dropdown');
+    
+    searchInput.value = '';
+    idInput.value = '';
+    if(dropdown) dropdown.style.display = 'none';
+    
+    if (type === 'project') {
+        const ds = document.getElementById('device_search');
+        const di = document.getElementById('device_id');
+        if(ds) { ds.value = ''; ds.disabled = true; ds.placeholder = 'Chọn dự án trước...'; }
+        if(di) di.value = '';
+        localDevices = [];
+    }
 }
 
 function toggleTargetMode(mode) {

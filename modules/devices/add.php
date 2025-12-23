@@ -74,7 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card-body-custom">
                 <div class="form-group">
                     <label for="ma_tai_san">Mã Tài sản <span class="required">*</span></label>
-                    <input type="text" id="ma_tai_san" name="ma_tai_san" value="<?php echo htmlspecialchars($_POST['ma_tai_san'] ?? ''); ?>" required class="input-highlight" placeholder="VD: KHAS-DA01-PC-001">
+                    <div class="input-group-append">
+                        <input type="text" id="ma_tai_san" name="ma_tai_san" value="<?php echo htmlspecialchars($_POST['ma_tai_san'] ?? ''); ?>" required class="input-highlight" placeholder="Sẽ tự động tạo khi chọn Dự án & Loại...">
+                        <button type="button" class="btn-refresh" onclick="generateAssetCode()" title="Tạo lại mã"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                    <small class="text-muted">Tự động sinh theo quy tắc: KHAS-[Mã DA]-[Mã Loại]-[STT]</small>
                 </div>
                 
                 <div class="form-group">
@@ -86,6 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="parent_id">Thuộc thiết bị (Nếu là linh kiện con)</label>
                     <div class="searchable-select-container">
                         <input type="text" id="parent_search" class="search-input" placeholder="Chọn dự án trước..." disabled autocomplete="off">
+                        <button type="button" class="btn-clear" onclick="clearSearch('parent')" title="Xóa chọn"><i class="fas fa-times"></i></button>
                         <input type="hidden" name="parent_id" id="parent_id">
                         <div id="parent_dropdown" class="searchable-dropdown"></div>
                     </div>
@@ -95,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-row">
                     <div class="form-group half">
                         <label for="nhom_thiet_bi">Nhóm Thiết bị</label>
-                        <select id="nhom_thiet_bi" name="nhom_thiet_bi">
+                        <select id="nhom_thiet_bi" name="nhom_thiet_bi" onchange="generateAssetCode()">
                             <?php foreach ($db_groups as $group): ?>
                                 <option value="<?php echo htmlspecialchars($group); ?>" <?php echo (($_POST['nhom_thiet_bi'] ?? '') == $group) ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($group); ?>
@@ -105,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <div class="form-group half">
                         <label for="loai_thiet_bi">Loại Thiết bị</label>
-                        <input type="text" id="loai_thiet_bi" name="loai_thiet_bi" list="common_types" value="<?php echo htmlspecialchars($_POST['loai_thiet_bi'] ?? ''); ?>" placeholder="Chọn hoặc gõ loại mới...">
+                        <input type="text" id="loai_thiet_bi" name="loai_thiet_bi" list="common_types" value="<?php echo htmlspecialchars($_POST['loai_thiet_bi'] ?? ''); ?>" placeholder="Chọn hoặc gõ loại mới..." onchange="generateAssetCode()">
                         <datalist id="common_types">
                             <?php foreach ($db_types as $type): ?>
                                 <option value="<?php echo htmlspecialchars($type['type_name']); ?>">
@@ -155,6 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="project_id">Dự án</label>
                     <div class="searchable-select-container">
                         <input type="text" id="project_search" class="search-input" placeholder="Gõ tên hoặc mã dự án..." value="<?php echo htmlspecialchars($_POST['project_name'] ?? ''); ?>" autocomplete="off">
+                        <button type="button" class="btn-clear" onclick="clearSearch('project')" title="Xóa chọn"><i class="fas fa-times"></i></button>
                         <input type="hidden" name="project_id" id="project_id" value="<?php echo htmlspecialchars($_POST['project_id'] ?? ''); ?>">
                         <div id="project_dropdown" class="searchable-dropdown"></div>
                     </div>
@@ -307,6 +313,9 @@ function selectProject(id, name) {
     document.getElementById('parent_search').value = '';
     document.getElementById('parent_id').value = '';
     loadParentDevices(id);
+    
+    // Trigger generate code
+    generateAssetCode();
 }
 
 function selectParent(id, name, code) {
@@ -329,6 +338,54 @@ function loadParentDevices(projectId) {
             parentSearch.placeholder = 'Gõ tên hoặc mã thiết bị cha...';
             if (!parentIdInput.value) parentSearch.value = '';
         });
+}
+
+function clearSearch(type) {
+    const searchInput = document.getElementById(type + '_search');
+    const idInput = document.getElementById(type + '_id');
+    const dropdown = document.getElementById(type + '_dropdown');
+    
+    searchInput.value = '';
+    idInput.value = '';
+    dropdown.style.display = 'none';
+    
+    if (type === 'project') {
+        const parentSearch = document.getElementById('parent_search');
+        const parentIdInput = document.getElementById('parent_id');
+        parentSearch.value = '';
+        parentIdInput.value = '';
+        parentSearch.disabled = true;
+        parentSearch.placeholder = 'Chọn dự án trước...';
+        localParents = [];
+    }
+    
+    generateAssetCode(); // Re-generate code if needed
+}
+
+// === NEW FUNCTION: GENERATE ASSET CODE ===
+function generateAssetCode() {
+    const projectId = document.getElementById('project_id').value;
+    const groupName = document.getElementById('nhom_thiet_bi').value;
+    const typeName = document.getElementById('loai_thiet_bi').value;
+    const maTaiSanInput = document.getElementById('ma_tai_san');
+
+    // Chỉ sinh mã nếu cả Dự án, Nhóm và Loại đã được chọn/nhập
+    if (projectId && groupName && typeName) {
+        maTaiSanInput.classList.add('loading');
+        
+        fetch(`api/generate_asset_code.php?project_id=${projectId}&group_name=${encodeURIComponent(groupName)}&type_name=${encodeURIComponent(typeName)}`)
+            .then(response => response.json())
+            .then(data => {
+                maTaiSanInput.classList.remove('loading');
+                if (data.code) {
+                    maTaiSanInput.value = data.code;
+                }
+            })
+            .catch(err => {
+                maTaiSanInput.classList.remove('loading');
+                console.error("Error generating code:", err);
+            });
+    }
 }
 </script>
 
@@ -381,6 +438,27 @@ function loadParentDevices(projectId) {
     font-weight: 600;
 }
 
+.input-highlight.loading {
+    background-image: url('assets/loading-spinner.gif'); /* Hoặc dùng css spinner */
+    background-position: right 10px center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+}
+
+/* INPUT GROUP APPEND FOR REFRESH BUTTON */
+.input-group-append {
+    display: flex;
+    gap: 5px;
+}
+.input-group-append input { flex: 1; }
+.btn-refresh {
+    width: 40px; border: 1px solid #cbd5e1; border-radius: 8px;
+    background: #f1f5f9; color: #64748b; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+}
+.btn-refresh:hover { background: #e2e8f0; color: var(--primary-color); }
+
+
 /* RESPONSIVE BREAKPOINTS */
 @media (max-width: 992px) {
     .edit-layout { grid-template-columns: 1fr; }
@@ -391,6 +469,29 @@ function loadParentDevices(projectId) {
 .search-input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; transition: all 0.2s; }
 .search-input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); outline: none; }
 .search-input:disabled { background-color: #f1f5f9; cursor: not-allowed; opacity: 0.7; }
+
+/* Clear Button Inside Search */
+.btn-clear {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 5px;
+    display: none;
+    transition: color 0.2s;
+}
+.searchable-select-container:hover .btn-clear,
+.search-input:focus + .btn-clear {
+    display: block;
+}
+.btn-clear:hover {
+    color: #ef4444;
+}
+
 .searchable-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 5px; max-height: 250px; overflow-y: auto; z-index: 1000; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: none; }
 .dropdown-item { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f1f5f9; text-align: left; transition: all 0.2s; }
 .dropdown-item:last-child { border-bottom: none; }

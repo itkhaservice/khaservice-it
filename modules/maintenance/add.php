@@ -179,6 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 }
                             }
                         ?>" autocomplete="off">
+                        <button type="button" class="btn-clear" onclick="clearSearch('project')" title="Xóa chọn"><i class="fas fa-times"></i></button>
                         <input type="hidden" name="project_id" id="project_id" value="<?php echo $preselected_project_id; ?>">
                         <div id="project_dropdown" class="searchable-dropdown"></div>
                     </div>
@@ -195,6 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label>Thiết bị</label>
                         <div class="searchable-select-container">
                             <input type="text" id="device_search" class="search-input" placeholder="Gõ tên hoặc mã tài sản..." <?php echo !$preselected_device_id ? 'disabled' : ''; ?> value="<?php echo $preselected_device_data ? htmlspecialchars($preselected_device_data['ten_thiet_bi'] . ' (' . $preselected_device_data['ma_tai_san'] . ')') : ''; ?>" autocomplete="off">
+                            <button type="button" class="btn-clear" onclick="clearSearch('device')" title="Xóa chọn"><i class="fas fa-times"></i></button>
                             <input type="hidden" id="device_id" name="device_id" value="<?php echo $preselected_device_id; ?>">
                             <div id="device_dropdown" class="searchable-dropdown"></div>
                         </div>
@@ -250,6 +252,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 .searchable-select-container { position: relative; width: 100%; }
 .search-input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; }
 .search-input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); outline: none; }
+
+/* Clear Button Inside Search */
+.btn-clear {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 5px;
+    display: none;
+    transition: color 0.2s;
+    z-index: 5;
+}
+.searchable-select-container:hover .btn-clear,
+.search-input:focus + .btn-clear {
+    display: block;
+}
+.btn-clear:hover {
+    color: #ef4444;
+}
+
 .searchable-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 5px; max-height: 250px; overflow-y: auto; z-index: 1000; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: none; }
 .dropdown-item { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f1f5f9; text-align: left; transition: all 0.2s; }
 .dropdown-item:last-child { border-bottom: none; }
@@ -334,7 +360,7 @@ function renderProjectDropdown(filter = '') {
     if (filtered.length === 0) {
         dropdown.innerHTML = '<div class="no-results">Không tìm thấy dự án</div>';
     } else {
-        dropdown.innerHTML = filtered.map(p => `<div class="dropdown-item" onclick="selectProject(${p.id}, '${p.ten_du_an.replace(/'/g, "\'")}')"><span class="item-title">${p.ten_du_an}</span></div>`).join('');
+        dropdown.innerHTML = filtered.map(p => `<div class="dropdown-item" onclick="selectProject(${p.id}, '${p.ten_du_an.replace(/'/g, "'")}')"><span class="item-title">${p.ten_du_an}</span></div>`).join('');
     }
     dropdown.style.display = 'block';
     activeIndex = -1;
@@ -368,7 +394,7 @@ function renderDropdown(filter = '') {
     if (filtered.length === 0) {
         dropdown.innerHTML = '<div class="no-results">Không tìm thấy thiết bị nào</div>';
     } else {
-        dropdown.innerHTML = filtered.map((d, index) => `<div class="dropdown-item" onclick="selectDevice(${d.id}, '${d.ten_thiet_bi.replace(/'/g, "\'")}', '${d.ma_tai_san}')"><span class="item-title">${d.ten_thiet_bi}</span><span class="item-sub">${d.ma_tai_san}</span></div>`).join('');
+        dropdown.innerHTML = filtered.map((d, index) => `<div class="dropdown-item" onclick="selectDevice(${d.id}, '${d.ten_thiet_bi.replace(/'/g, "'")}', '${d.ma_tai_san}')"><span class="item-title">${d.ten_thiet_bi}</span><span class="item-sub">${d.ma_tai_san}</span></div>`).join('');
     }
     dropdown.style.display = 'block';
     activeIndex = -1;
@@ -381,6 +407,34 @@ function selectDevice(id, name, code) {
     if(hiddenInput) hiddenInput.value = id;
     document.getElementById('device_dropdown').style.display = 'none';
     loadComponents(id);
+}
+
+function clearSearch(type) {
+    const searchInput = document.getElementById(type + '_search');
+    const idInput = document.getElementById(type + '_id');
+    const dropdown = document.getElementById(type + '_dropdown');
+    
+    searchInput.value = '';
+    idInput.value = '';
+    if(dropdown) dropdown.style.display = 'none';
+    
+    if (type === 'project') {
+        const deviceSearch = document.getElementById('device_search');
+        const deviceIdInput = document.getElementById('device_id');
+        const compGroup = document.getElementById('component-group');
+        
+        if(deviceSearch) {
+            deviceSearch.value = '';
+            deviceSearch.disabled = true;
+            deviceSearch.placeholder = 'Chọn dự án trước...';
+        }
+        if(deviceIdInput) deviceIdInput.value = '';
+        if(compGroup) compGroup.style.display = 'none';
+        localDevices = [];
+    } else if (type === 'device') {
+        const compGroup = document.getElementById('component-group');
+        if(compGroup) compGroup.style.display = 'none';
+    }
 }
 
 function loadComponents(deviceId) {
