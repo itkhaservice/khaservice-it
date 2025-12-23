@@ -181,7 +181,8 @@ $all_columns = [
         <span class="selected-count-label">Đã chọn <strong id="selected-count">0</strong> mục</span>
         <div class="action-buttons">
             <button type="button" class="btn btn-secondary btn-sm" id="clear-selection-btn"><i class="fas fa-times"></i> Bỏ chọn</button>
-            <button type="submit" name="export_selected" class="btn btn-secondary btn-sm"><i class="fas fa-file-export"></i> Xuất CSV</button>
+            <input type="hidden" name="visible_columns" id="visible_columns_input">
+            <button type="submit" name="export_selected" class="btn btn-secondary btn-sm" onclick="prepareExport()"><i class="fas fa-file-export"></i> Xuất Excel</button>
             <?php if(isAdmin()): ?>
                 <button type="button" class="btn btn-danger btn-sm" id="delete-selected-btn" data-action="index.php?page=devices/delete_multiple"><i class="fas fa-trash-alt"></i> Xóa đã chọn</button>
             <?php endif; ?>
@@ -250,19 +251,22 @@ $all_columns = [
     </div>
 </form>
 
-<div class="pagination-container">
+<div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
     <div class="rows-per-page">
-        <form action="index.php" method="GET" class="rows-per-page-form">
+        <form action="index.php" method="GET" class="rows-per-page-form" style="display: flex; align-items: center; gap: 8px;">
             <input type="hidden" name="page" value="devices/list">
-            <label>Hiển thị</label>
-            <select name="limit" onchange="this.form.submit()" class="form-select-sm">
+            <?php foreach ($_GET as $key => $value): if(!in_array($key, ['limit','page','p'])) { ?>
+                <input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>">
+            <?php } endforeach; ?>
+            <label style="font-size: 0.85rem; color: #64748b;">Hiển thị</label>
+            <select name="limit" onchange="this.form.submit()" class="form-select-sm" style="width: auto;">
                 <?php foreach([5,10,25,50,100] as $lim): ?>
                     <option value="<?php echo $lim; ?>" <?php echo $rows_per_page == $lim ? 'selected' : ''; ?>><?php echo $lim; ?></option>
                 <?php endforeach; ?>
             </select>
         </form>
     </div>
-    <div class="pagination-links">
+    <div class="pagination-links" style="display: flex; gap: 5px; margin-left: auto;">
         <?php $q = $_GET; unset($q['p']); $base = 'index.php?' . http_build_query($q); ?>
         <a href="<?php echo $base . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-left"></i></a>
         <?php for ($i = max(1, $current_page - 2); $i <= min($total_pages, $current_page + 2); $i++): ?>
@@ -328,9 +332,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectAll = document.getElementById('select-all');
     const rowCbs = document.querySelectorAll('.row-checkbox');
     const batch = document.getElementById('batch-actions');
+    const count = document.getElementById('selected-count');
+    const clearBtn = document.getElementById('clear-selection-btn');
+
+    function updateBatch() { 
+        const n = document.querySelectorAll('.row-checkbox:checked').length; 
+        if(batch) batch.style.display = n > 0 ? 'flex' : 'none'; 
+        if(count) count.textContent = n; 
+    }
+
     if(selectAll) selectAll.addEventListener('change', () => { rowCbs.forEach(cb => cb.checked = selectAll.checked); updateBatch(); });
     rowCbs.forEach(cb => cb.addEventListener('change', updateBatch));
-    function updateBatch() { const n = document.querySelectorAll('.row-checkbox:checked').length; batch.style.display = n > 0 ? 'flex' : 'none'; document.getElementById('selected-count').textContent = n; }
+    
+    if(clearBtn) clearBtn.addEventListener('click', () => { 
+        if(selectAll) selectAll.checked = false; 
+        rowCbs.forEach(cb => cb.checked = false); 
+        updateBatch(); 
+    });
 });
 
 function renderProjectDropdown(filter = '') {
@@ -341,6 +359,17 @@ function renderProjectDropdown(filter = '') {
     dropdown.innerHTML = html; dropdown.style.display = 'block'; activeIndex = -1;
 }
 function selectProject(id, name) { document.getElementById('project_search').value = name; document.getElementById('filter_project').value = id; document.getElementById('project_dropdown').style.display = 'none'; document.getElementById('btn-clear-project').style.display = name ? 'block' : 'none'; }
+
+function prepareExport() {
+    const activeColumns = [];
+    document.querySelectorAll('.col-checkbox:checked').forEach(cb => {
+        activeColumns.push({
+            key: cb.dataset.target,
+            label: cb.parentElement.textContent.trim()
+        });
+    });
+    document.getElementById('visible_columns_input').value = JSON.stringify(activeColumns);
+}
 </script>
 
 <style>

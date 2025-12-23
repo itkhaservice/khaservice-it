@@ -1,4 +1,5 @@
 <?php
+// modules/services/list.php
 $rows_per_page = (isset($_GET['limit']) && is_numeric($_GET['limit'])) ? (int)$_GET['limit'] : 10;
 $current_page  = (isset($_GET['p']) && is_numeric($_GET['p'])) ? (int)$_GET['p'] : 1;
 if ($current_page < 1) $current_page = 1;
@@ -13,7 +14,6 @@ if ($filter_keyword !== '') {
     $where_clauses[] = "(s.ten_dich_vu LIKE :kw OR s.loai_dich_vu LIKE :kw OR p.ten_du_an LIKE :kw)";
     $bind_params[':kw'] = '%' . $filter_keyword . '%';
 }
-
 if ($filter_project !== '' && is_numeric($filter_project)) {
     $where_clauses[] = "s.project_id = :project_id";
     $bind_params[':project_id'] = (int)$filter_project;
@@ -28,17 +28,7 @@ $total_rows  = (int)$count_stmt->fetchColumn();
 $total_pages = max(1, ceil($total_rows / $rows_per_page));
 $offset = ($current_page - 1) * $rows_per_page;
 
-$data_sql = "
-    SELECT s.*, p.ten_du_an, sup.ten_npp 
-    FROM services s 
-    LEFT JOIN projects p ON s.project_id = p.id 
-    LEFT JOIN suppliers sup ON s.supplier_id = sup.id
-    $where_sql 
-    ORDER BY s.ngay_het_han ASC 
-    LIMIT :limit OFFSET :offset
-";
-$stmt = $pdo->prepare($data_sql);
-foreach ($bind_params as $k => $v) $bind_params_list[$k] = $v; // Temporary store
+$stmt = $pdo->prepare("SELECT s.*, p.ten_du_an, sup.ten_npp FROM services s LEFT JOIN projects p ON s.project_id = p.id LEFT JOIN suppliers sup ON s.supplier_id = sup.id $where_sql ORDER BY s.ngay_het_han ASC LIMIT :limit OFFSET :offset");
 foreach ($bind_params as $k => $v) $stmt->bindValue($k, $v);
 $stmt->bindValue(':limit',  $rows_per_page, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
@@ -46,10 +36,18 @@ $stmt->execute();
 $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $projects_list = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du_an")->fetchAll(PDO::FETCH_ASSOC);
+
+$all_columns = [
+    'ten_dich_vu'   => ['label' => 'Tên Dịch vụ', 'default' => true],
+    'ten_du_an'     => ['label' => 'Dự án', 'default' => true],
+    'ngay_het_han'  => ['label' => 'Ngày hết hạn', 'default' => true],
+    'ngay_nhan_de_nghi' => ['label' => 'Ngày nhận đề nghị', 'default' => false],
+    'trang_thai'    => ['label' => 'Trạng thái', 'default' => true],
+];
 ?>
 
 <div class="page-header">
-    <h2><i class="fas fa-cloud"></i> Quản lý Dịch vụ & Gia hạn</h2>
+    <h2><i class="fas fa-cloud"></i> Quản lý Dịch vụ</h2>
     <?php if(isIT()): ?><a href="index.php?page=services/add" class="btn btn-primary"><i class="fas fa-plus"></i> Thêm dịch vụ</a><?php endif; ?>
 </div>
 
@@ -59,27 +57,30 @@ $projects_list = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du
         <div class="filter-group">
             <label>Dự án</label>
             <div class="searchable-select-container">
-                <input type="text" id="project_search" class="search-input" placeholder="Tất cả dự án..." value="<?php 
-                    if ($filter_project) {
-                        foreach($projects_list as $p) {
-                            if($p['id'] == $filter_project) {
-                                echo htmlspecialchars($p['ten_du_an']);
-                                break;
-                            }
-                        }
-                    }
-                ?>" autocomplete="off">
+                <input type="text" id="project_search" class="search-input" placeholder="Tất cả dự án..." value="<?php if ($filter_project) { foreach($projects_list as $p) { if($p['id'] == $filter_project) { echo htmlspecialchars($p['ten_du_an']); break; } } } ?>" autocomplete="off">
+                <button type="button" class="btn-clear-inline" id="btn-clear-project" style="<?php echo $filter_project ? 'display:block' : 'display:none'; ?>"><i class="fas fa-times"></i></button>
                 <input type="hidden" name="filter_project" id="filter_project" value="<?php echo htmlspecialchars($filter_project); ?>">
                 <div id="project_dropdown" class="searchable-dropdown"></div>
             </div>
         </div>
-        <div class="filter-group">
+        <div class="filter-group" style="flex: 2;">
             <label>Tìm kiếm</label>
-            <input type="text" name="filter_keyword" placeholder="Tên dịch vụ, nhà cung cấp..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
+            <input type="text" name="filter_keyword" placeholder="Tên dịch vụ, loại..." value="<?php echo htmlspecialchars($filter_keyword); ?>" class="form-control-sm">
         </div>
         <div class="filter-actions" style="margin-left: auto;">
-            <button type="submit" class="btn btn-primary">Lọc</button>
-            <a href="index.php?page=services/list" class="btn btn-secondary"><i class="fas fa-undo"></i></a>
+            <button type="submit" class="btn btn-primary btn-sm">Lọc</button>
+            <a href="index.php?page=services/list" class="btn btn-secondary btn-sm"><i class="fas fa-undo"></i></a>
+            <div class="column-selector-container">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleColumnMenu()"><i class="fas fa-columns"></i> Cột</button>
+                <div id="columnMenu" class="dropdown-menu">
+                    <div class="dropdown-header">Hiển thị cột</div>
+                    <div class="column-list">
+                        <?php foreach ($all_columns as $k => $c): ?>
+                            <label class="column-item"><input type="checkbox" class="col-checkbox" data-target="<?php echo $k; ?>" <?php echo $c['default'] ? 'checked' : ''; ?>> <?php echo htmlspecialchars($c['label']); ?></label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
         </div>
     </form>
 </div>
@@ -89,6 +90,8 @@ $projects_list = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du
         <span class="selected-count-label">Đã chọn <strong id="selected-count">0</strong> mục</span>
         <div class="action-buttons">
             <button type="button" class="btn btn-secondary btn-sm" id="clear-selection-btn"><i class="fas fa-times"></i> Bỏ chọn</button>
+            <input type="hidden" name="visible_columns" id="visible_columns_input">
+            <button type="submit" name="export_selected" class="btn btn-secondary btn-sm" onclick="prepareExport()">Xuất Excel</button>
             <?php if(isIT()): ?>
                 <button type="button" class="btn btn-danger btn-sm" id="delete-selected-btn" data-action="index.php?page=services/delete_multiple">Xóa đã chọn</button>
             <?php endif; ?>
@@ -100,213 +103,133 @@ $projects_list = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du
             <thead>
                 <tr>
                     <th width="40"><input type="checkbox" id="select-all"></th>
-                    <th>Tên Dịch vụ</th>
-                    <th>Dự án</th>
-                    <th>Ngày hết hạn</th>
-                    <th>Còn lại</th>
-                    <th>Đề nghị TT</th>
-                    <th>Trạng thái</th>
+                    <?php foreach ($all_columns as $k => $c): ?>
+                        <th data-col="<?php echo $k; ?>"><?php echo htmlspecialchars($c['label']); ?></th>
+                    <?php endforeach; ?>
                     <th width="100" class="text-center">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
-                <?php if (empty($services)): ?>
-                    <tr><td colspan="8" class="empty-state">Chưa có dịch vụ nào</td></tr>
-                <?php else: ?>
-                    <?php foreach ($services as $s): 
-                        $today = new DateTime();
-                        $expiry = new DateTime($s['ngay_het_han']);
-                        $diff = $today->diff($expiry);
-                        $days_left = (int)$diff->format("%r%a");
-                        
-                        $status_class = "text-success";
-                        if ($days_left <= 0) $status_class = "text-danger font-bold";
-                        elseif ($days_left <= 30) $status_class = "text-warning font-bold";
-                    ?>
-                        <tr>
-                            <td><input type="checkbox" name="ids[]" value="<?php echo $s['id']; ?>" class="row-checkbox"></td>
-                            <td>
-                                <div class="font-bold"><?php echo htmlspecialchars($s['ten_dich_vu']); ?></div>
-                                <small class="text-muted"><?php echo htmlspecialchars($s['loai_dich_vu']); ?> - <?php echo htmlspecialchars($s['ten_npp'] ?? 'N/A'); ?></small>
-                            </td>
-                            <td><?php echo htmlspecialchars($s['ten_du_an'] ?: "Dùng chung"); ?></td>
-                            <td class="<?php echo $status_class; ?>"><?php echo date('d/m/Y', strtotime($s['ngay_het_han'])); ?></td>
-                            <td class="<?php echo $status_class; ?>">
-                                <?php 
-                                    if($days_left < 0) echo "Quá hạn " . abs($days_left) . " ngày";
-                                    elseif($days_left == 0) echo "Hết hạn hôm nay";
-                                    else echo $days_left . " ngày";
-                                ?>
-                            </td>
-                            <td>
-                                <?php if($s['ngay_nhan_de_nghi']): ?>
-                                    <span class="text-info"><i class="fas fa-envelope-open-text"></i> <?php echo date('d/m/Y', strtotime($s['ngay_nhan_de_nghi'])); ?></span>
-                                <?php else: ?>
-                                    <span class="text-muted">Chưa nhận</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php 
-                                    $trang_thai = $s['trang_thai'];
-                                    $badge_class = "status-info";
-                                    if($trang_thai === 'Chờ thanh toán') $badge_class = "status-warning";
-                                    if($trang_thai === 'Đang hoạt động') $badge_class = "status-active";
-                                ?>
-                                <span class="badge <?php echo $badge_class; ?>"><?php echo htmlspecialchars($trang_thai); ?></span>
-                            </td>
-                            <td class="actions text-center">
-                                <a href="index.php?page=services/view&id=<?php echo $s['id']; ?>" class="btn-icon" title="Chi tiết"><i class="fas fa-eye"></i></a>
-                                <?php if(isIT()): ?>
-                                    <a href="index.php?page=services/edit&id=<?php echo $s['id']; ?>" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
-                                    <a href="index.php?page=services/delete&id=<?php echo $s['id']; ?>" data-url="index.php?page=services/delete&id=<?php echo $s['id']; ?>&confirm_delete=1" class="btn-icon delete-btn" title="Xóa"><i class="fas fa-trash-alt"></i></a>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+                <?php foreach ($services as $s): ?>
+                    <tr>
+                        <td><input type="checkbox" name="ids[]" value="<?php echo $s['id']; ?>" class="row-checkbox"></td>
+                        <td data-col="ten_dich_vu">
+                            <div class="font-bold"><?php echo htmlspecialchars($s['ten_dich_vu']); ?></div>
+                            <small class="text-muted"><?php echo htmlspecialchars($s['loai_dich_vu']); ?> - <?php echo htmlspecialchars($s['ten_npp'] ?? 'N/A'); ?></small>
+                        </td>
+                        <td data-col="ten_du_an"><?php echo htmlspecialchars($s['ten_du_an'] ?: "Dùng chung"); ?></td>
+                        <td data-col="ngay_het_han"><?php echo date('d/m/Y', strtotime($s['ngay_het_han'])); ?></td>
+                        <td data-col="ngay_nhan_de_nghi"><?php echo $s['ngay_nhan_de_nghi'] ? date('d/m/Y', strtotime($s['ngay_nhan_de_nghi'])) : 'Chưa nhận'; ?></td>
+                        <td data-col="trang_thai"><span class="badge"><?php echo htmlspecialchars($s['trang_thai']); ?></span></td>
+                        <td class="actions text-center">
+                            <a href="index.php?page=services/view&id=<?php echo $s['id']; ?>" class="btn-icon"><i class="fas fa-eye"></i></a>
+                            <?php if(isIT()): ?>
+                                <a href="index.php?page=services/edit&id=<?php echo $s['id']; ?>" class="btn-icon"><i class="fas fa-edit"></i></a>
+                                <a href="index.php?page=services/delete&id=<?php echo $s['id']; ?>" class="btn-icon delete-btn"><i class="fas fa-trash-alt"></i></a>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
             </tbody>
         </table>
     </div>
 </form>
 
-<div class="pagination-container">
-    <!-- Keep existing pagination code -->
+<div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-top: 20px;">
+    <div class="rows-per-page">
+        <form action="index.php" method="GET" class="rows-per-page-form" style="display: flex; align-items: center; gap: 8px;">
+            <input type="hidden" name="page" value="services/list">
+            <?php foreach ($_GET as $key => $value): if(!in_array($key, ['limit','page','p'])) { ?><input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>"><?php } endforeach; ?>
+            <label style="font-size: 0.85rem; color: #64748b;">Hiển thị</label>
+            <select name="limit" onchange="this.form.submit()" class="form-select-sm" style="width: auto;">
+                <?php foreach([10,25,50,100] as $lim): ?><option value="<?php echo $lim; ?>" <?php echo $rows_per_page == $lim ? 'selected' : ''; ?>><?php echo $lim; ?></option><?php endforeach; ?>
+            </select>
+        </form>
+    </div>
+    <div class="pagination-links" style="display: flex; gap: 5px; margin-left: auto;">
+        <?php $q = $_GET; unset($q['p']); $base = 'index.php?' . http_build_query($q); ?>
+        <a href="<?php echo $base . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-left"></i></a>
+        <?php for ($i = max(1, $current_page - 2); $i <= min($total_pages, $current_page + 2); $i++): ?><a href="<?php echo $base . '&p=' . $i; ?>" class="page-link <?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a><?php endfor; ?>
+        <a href="<?php echo $base . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-right"></i></a>
+    </div>
 </div>
 
 <script>
-let localProjects = <?php echo json_encode($projects_list); ?>;
-let activeIndex = -1;
+function toggleColumnMenu() { const m = document.getElementById('columnMenu'); if(m) m.classList.toggle('show'); }
+const colCbs = document.querySelectorAll('.col-checkbox');
+function updateCols() {
+    const s = {};
+    colCbs.forEach(cb => {
+        const t = cb.dataset.target; s[t] = cb.checked;
+        document.querySelectorAll(`[data-col="${t}"]`).forEach(el => el.style.display = cb.checked ? '' : 'none');
+    });
+    localStorage.setItem('serviceColumns', JSON.stringify(s));
+}
+colCbs.forEach(cb => cb.addEventListener('change', updateCols));
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Searchable Select Logic
-    const projectSearch = document.getElementById('project_search');
-    const projectDropdown = document.getElementById('project_dropdown');
-    const projectIdInput = document.getElementById('filter_project');
-
-    if (projectSearch) {
-        projectSearch.addEventListener('input', function() {
-            renderProjectDropdown(this.value.toLowerCase().trim());
-        });
-        projectSearch.addEventListener('focus', function() {
-            renderProjectDropdown(this.value.toLowerCase().trim());
-        });
-        projectSearch.addEventListener('keydown', function(e) {
-            const items = projectDropdown.querySelectorAll('.dropdown-item');
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                activeIndex = Math.min(activeIndex + 1, items.length - 1);
-                updateActiveItem(items);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                activeIndex = Math.max(activeIndex - 1, -1);
-                updateActiveItem(items);
-            } else if (e.key === 'Enter') {
-                if (activeIndex > -1 && items[activeIndex]) {
-                    e.preventDefault();
-                    items[activeIndex].click();
-                }
-            }
-        });
-    }
-
-    document.addEventListener('click', function(e) {
-        if (projectSearch && !projectSearch.contains(e.target) && !projectDropdown.contains(e.target)) {
-            projectDropdown.style.display = 'none';
-        }
-    });
+    const saved = JSON.parse(localStorage.getItem('serviceColumns'));
+    if(saved) colCbs.forEach(cb => { if(saved.hasOwnProperty(cb.dataset.target)) cb.checked = saved[cb.dataset.target]; });
+    updateCols();
 
     const selectAll = document.getElementById('select-all');
-    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
-    const batchActions = document.getElementById('batch-actions');
-    const selectedCountDisplay = document.getElementById('selected-count');
+    const rowCbs = document.querySelectorAll('.row-checkbox');
+    const batch = document.getElementById('batch-actions');
     const clearBtn = document.getElementById('clear-selection-btn');
 
-    function updateBatchUI() {
-        const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
-        const totalCount = rowCheckboxes.length;
-        
-        if (batchActions) {
-            batchActions.style.display = (checkedCount > 0) ? 'flex' : 'none';
-        }
-        
-        if (selectedCountDisplay) {
-            selectedCountDisplay.textContent = checkedCount;
-        }
-
-        if (selectAll) {
-            selectAll.checked = (totalCount > 0 && checkedCount === totalCount);
-            selectAll.indeterminate = (checkedCount > 0 && checkedCount < totalCount);
-        }
+    function updateBatch() {
+        const n = document.querySelectorAll('.row-checkbox:checked').length;
+        if(batch) batch.style.display = n > 0 ? 'flex' : 'none';
+        if(document.getElementById('selected-count')) document.getElementById('selected-count').textContent = n;
     }
+    if(selectAll) selectAll.addEventListener('change', () => { rowCbs.forEach(cb => cb.checked = selectAll.checked); updateBatch(); });
+    rowCbs.forEach(cb => cb.addEventListener('change', updateBatch));
+    if(clearBtn) clearBtn.addEventListener('click', () => { if(selectAll) selectAll.checked = false; rowCbs.forEach(cb => cb.checked = false); updateBatch(); });
 
-    rowCheckboxes.forEach(cb => {
-        cb.addEventListener('change', updateBatchUI);
+    // Project Search
+    const ps = document.getElementById('project_search');
+    const pd = document.getElementById('project_dropdown');
+    const pi = document.getElementById('filter_project');
+    const cl = document.getElementById('btn-clear-project');
+    if (ps) {
+        ps.addEventListener('input', function() { renderProjectDropdown(this.value.toLowerCase().trim()); cl.style.display = this.value.length > 0 ? 'block' : 'none'; });
+        ps.addEventListener('focus', function() { renderProjectDropdown(this.value.toLowerCase().trim()); });
+    }
+    if (cl) cl.addEventListener('click', () => { ps.value = ''; pi.value = ''; cl.style.display = 'none'; pd.style.display = 'none'; });
+    document.addEventListener('click', (e) => {
+        if (ps && !ps.contains(e.target) && !pd.contains(e.target)) pd.style.display = 'none';
+        if (!e.target.closest('.column-selector-container')) { const m = document.getElementById('columnMenu'); if(m) m.classList.remove('show'); }
     });
-
-    if (selectAll) {
-        selectAll.addEventListener('change', function() {
-            const isChecked = this.checked;
-            rowCheckboxes.forEach(cb => cb.checked = isChecked);
-            updateBatchUI();
-        });
-    }
-
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            if (selectAll) selectAll.checked = false;
-            rowCheckboxes.forEach(cb => cb.checked = false);
-            updateBatchUI();
-        });
-    }
 });
 
 function renderProjectDropdown(filter = '') {
     const dropdown = document.getElementById('project_dropdown');
     const filtered = localProjects.filter(p => p.ten_du_an.toLowerCase().includes(filter));
-
     let html = '<div class="dropdown-item" onclick="selectProject(\'\', \'\')">-- Tất cả dự án --</div>';
-    if (filtered.length === 0) {
-        html += '<div class="no-results">Không tìm thấy dự án</div>';
-    } else {
-        html += filtered.map(p => `
-            <div class="dropdown-item" onclick="selectProject(${p.id}, '${p.ten_du_an.replace(/'/g, "\\'")}')">
-                <span class="item-title">${p.ten_du_an}</span>
-            </div>
-        `).join('');
-    }
-    dropdown.innerHTML = html;
-    dropdown.style.display = 'block';
-    activeIndex = -1;
+    html += filtered.map(p => `<div class="dropdown-item" onclick="selectProject(${p.id}, '${p.ten_du_an.replace(/'/g, "\'")}')"><span class="item-title">${p.ten_du_an}</span></div>`).join('');
+    dropdown.innerHTML = html; dropdown.style.display = 'block';
 }
+function selectProject(id, name) { document.getElementById('project_search').value = name; document.getElementById('filter_project').value = id; document.getElementById('project_dropdown').style.display = 'none'; if(document.getElementById('btn-clear-project')) document.getElementById('btn-clear-project').style.display = name ? 'block' : 'none'; }
 
-function selectProject(id, name) {
-    document.getElementById('project_search').value = name;
-    document.getElementById('filter_project').value = id;
-    document.getElementById('project_dropdown').style.display = 'none';
-}
-
-function updateActiveItem(items) {
-    items.forEach((item, index) => {
-        item.classList.toggle('active', index === activeIndex);
-        if (index === activeIndex) item.scrollIntoView({ block: 'nearest' });
+function prepareExport() {
+    const activeColumns = [];
+    document.querySelectorAll('.col-checkbox:checked').forEach(cb => {
+        activeColumns.push({ key: cb.dataset.target, label: cb.parentElement.textContent.trim() });
     });
+    document.getElementById('visible_columns_input').value = JSON.stringify(activeColumns);
 }
 </script>
 
 <style>
-/* Searchable Select */
 .searchable-select-container { position: relative; width: 100%; min-width: 200px; }
-.search-input { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
-.searchable-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 5px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: none; }
+.search-input { width: 100%; padding: 8px 30px 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+.searchable-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 5px; max-height: 250px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: none; }
 .dropdown-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; text-align: left; }
-.dropdown-item:hover, .dropdown-item.active { background: #f8fafc; color: var(--primary-color); }
-.no-results { padding: 10px; text-align: center; color: #94a3b8; font-size: 0.85rem; }
-
-/* Responsive Filter */
+.dropdown-item:hover { background: #f8fafc; color: var(--primary-color); }
+.btn-clear-inline { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px; z-index: 5; }
 @media (max-width: 768px) {
     .filter-form { flex-direction: column; align-items: stretch; gap: 15px; }
     .filter-group { width: 100%; }
-    .searchable-select-container { min-width: 100%; }
     .filter-actions { margin-left: 0 !important; width: 100%; display: flex; gap: 10px; }
     .filter-actions .btn { flex: 1; justify-content: center; }
 }

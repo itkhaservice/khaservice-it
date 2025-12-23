@@ -1,4 +1,5 @@
 <?php
+// modules/suppliers/list.php
 $rows_per_page = (isset($_GET['limit']) && is_numeric($_GET['limit'])) ? (int)$_GET['limit'] : 5;
 $current_page  = (isset($_GET['p']) && is_numeric($_GET['p'])) ? (int)$_GET['p'] : 1;
 if ($current_page < 1) $current_page = 1;
@@ -10,11 +11,7 @@ $bind_params   = [];
 
 if ($filter_keyword !== '') {
     $where_clauses[] = "(ten_npp LIKE :kw1 OR nguoi_lien_he LIKE :kw2 OR email LIKE :kw3 OR dien_thoai LIKE :kw4 OR ghi_chu LIKE :kw5)";
-    $bind_params[':kw1'] = '%'.$filter_keyword.'%';
-    $bind_params[':kw2'] = '%'.$filter_keyword.'%';
-    $bind_params[':kw3'] = '%'.$filter_keyword.'%';
-    $bind_params[':kw4'] = '%'.$filter_keyword.'%';
-    $bind_params[':kw5'] = '%'.$filter_keyword.'%';
+    $bind_params[':kw1'] = $bind_params[':kw2'] = $bind_params[':kw3'] = $bind_params[':kw4'] = $bind_params[':kw5'] = '%'.$filter_keyword.'%';
 }
 
 $where_sql = !empty($where_clauses) ? ' WHERE ' . implode(' AND ', $where_clauses) : '';
@@ -53,13 +50,13 @@ $all_columns = [
         <input type="hidden" name="page" value="suppliers/list">
         <div class="filter-group" style="flex: 2;">
             <label>Tìm kiếm</label>
-            <input type="text" name="filter_keyword" placeholder="Tên, liên hệ, email, ghi chú..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
+            <input type="text" name="filter_keyword" placeholder="Tên, liên hệ, email..." value="<?php echo htmlspecialchars($filter_keyword); ?>" class="form-control-sm">
         </div>
-        <div class="filter-actions">
-            <button type="submit" class="btn btn-primary">Lọc</button>
-            <a href="index.php?page=suppliers/list" class="btn btn-secondary"><i class="fas fa-undo"></i></a>
+        <div class="filter-actions" style="margin-left: auto;">
+            <button type="submit" class="btn btn-primary btn-sm">Lọc</button>
+            <a href="index.php?page=suppliers/list" class="btn btn-secondary btn-sm"><i class="fas fa-undo"></i></a>
             <div class="column-selector-container">
-                <button type="button" class="btn btn-secondary" onclick="toggleColumnMenu()"><i class="fas fa-columns"></i> Cột</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleColumnMenu()"><i class="fas fa-columns"></i> Cột</button>
                 <div id="columnMenu" class="dropdown-menu">
                     <div class="dropdown-header">Hiển thị cột</div>
                     <div class="column-list">
@@ -73,12 +70,13 @@ $all_columns = [
     </form>
 </div>
 
-<form action="index.php?page=suppliers/delete_multiple" method="POST" id="suppliers-form">
+<form action="index.php?page=suppliers/export" method="POST" id="suppliers-form">
     <div class="batch-actions" id="batch-actions" style="display: none;">
         <span class="selected-count-label">Đã chọn <strong id="selected-count">0</strong> mục</span>
         <div class="action-buttons">
             <button type="button" class="btn btn-secondary btn-sm" id="clear-selection-btn"><i class="fas fa-times"></i> Bỏ chọn</button>
-            <button type="submit" name="export_selected" class="btn btn-secondary btn-sm"><i class="fas fa-file-export"></i> Xuất file</button>
+            <input type="hidden" name="visible_columns" id="visible_columns_input">
+            <button type="submit" name="export_selected" class="btn btn-secondary btn-sm" onclick="prepareExport()"><i class="fas fa-file-export"></i> Xuất Excel</button>
             <?php if(isAdmin()): ?>
                 <button type="button" class="btn btn-danger btn-sm" id="delete-selected-btn" data-action="index.php?page=suppliers/delete_multiple">Xóa đã chọn</button>
             <?php endif; ?>
@@ -97,64 +95,51 @@ $all_columns = [
                 </tr>
             </thead>
             <tbody>
-                <?php if (empty($suppliers_list)): ?>
-                    <tr><td colspan="<?php echo count($all_columns) + 2; ?>" class="empty-state">Không có dữ liệu</td></tr>
-                <?php else: ?>
-                    <?php foreach ($suppliers_list as $s): ?>
-                        <tr>
-                            <td><input type="checkbox" name="ids[]" value="<?php echo $s['id']; ?>" class="row-checkbox"></td>
-                            <td data-col="ten_npp" class="font-bold text-primary"><?php echo htmlspecialchars($s['ten_npp']); ?></td>
-                            <td data-col="nguoi_lien_he"><?php echo htmlspecialchars($s['nguoi_lien_he']); ?></td>
-                            <td data-col="dien_thoai"><?php echo htmlspecialchars($s['dien_thoai']); ?></td>
-                            <td data-col="email"><?php echo htmlspecialchars($s['email']); ?></td>
-                            <td data-col="ghi_chu" class="text-muted small"><?php echo htmlspecialchars($s['ghi_chu']); ?></td>
+                <?php foreach ($suppliers_list as $s): ?>
+                    <tr>
+                        <td><input type="checkbox" name="ids[]" value="<?php echo $s['id']; ?>" class="row-checkbox"></td>
+                        <td data-col="ten_npp" class="font-bold text-primary"><?php echo htmlspecialchars($s['ten_npp']); ?></td>
+                        <td data-col="nguoi_lien_he"><?php echo htmlspecialchars($s['nguoi_lien_he']); ?></td>
+                        <td data-col="dien_thoai"><?php echo htmlspecialchars($s['dien_thoai']); ?></td>
+                        <td data-col="email"><?php echo htmlspecialchars($s['email']); ?></td>
+                        <td data-col="ghi_chu"><?php echo htmlspecialchars($s['ghi_chu']); ?></td>
                         <td class="actions text-center">
-                            <a href="index.php?page=suppliers/view&id=<?php echo $s['id']; ?>" class="btn-icon" title="Xem chi tiết"><i class="fas fa-eye"></i></a>
+                            <a href="index.php?page=suppliers/view&id=<?php echo $s['id']; ?>" class="btn-icon"><i class="fas fa-eye"></i></a>
                             <?php if(isIT()): ?>
-                                <a href="index.php?page=suppliers/edit&id=<?php echo $s['id']; ?>" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
+                                <a href="index.php?page=suppliers/edit&id=<?php echo $s['id']; ?>" class="btn-icon"><i class="fas fa-edit"></i></a>
                                 <?php if(isAdmin()): ?>
-                                    <a href="index.php?page=suppliers/delete&id=<?php echo $s['id']; ?>" data-url="index.php?page=suppliers/delete&id=<?php echo $s['id']; ?>&confirm_delete=1" class="btn-icon delete-btn" title="Xóa"><i class="fas fa-trash-alt"></i></a>
+                                    <a href="index.php?page=suppliers/delete&id=<?php echo $s['id']; ?>" class="btn-icon delete-btn"><i class="fas fa-trash-alt"></i></a>
                                 <?php endif; ?>
                             <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
-            <?php endif; ?>
-        </tbody>
-    </table>
-</div>
+            </tbody>
+        </table>
+    </div>
 </form>
 
-<div class="pagination-container">
+<div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-top: 20px;">
     <div class="rows-per-page">
-        <form action="index.php" method="GET" class="rows-per-page-form">
+        <form action="index.php" method="GET" class="rows-per-page-form" style="display: flex; align-items: center; gap: 8px;">
             <input type="hidden" name="page" value="suppliers/list">
-            <?php foreach ($_GET as $key => $value): if(!in_array($key, ['limit','page'])) { ?>
-                <input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>">
-            <?php } endforeach; ?>
-            <label>Hiển thị</label>
-            <select name="limit" onchange="this.form.submit()" class="form-select-sm">
-                <?php foreach([5,10,25,50,100] as $lim): ?>
-                    <option value="<?php echo $lim; ?>" <?php echo $rows_per_page == $lim ? 'selected' : ''; ?>><?php echo $lim; ?></option>
-                <?php endforeach; ?>
+            <?php foreach ($_GET as $key => $value): if(!in_array($key, ['limit','page','p'])) { ?><input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>"><?php } endforeach; ?>
+            <label style="font-size: 0.85rem; color: #64748b;">Hiển thị</label>
+            <select name="limit" onchange="this.form.submit()" class="form-select-sm" style="width: auto;">
+                <?php foreach([5,10,25,50,100] as $lim): ?><option value="<?php echo $lim; ?>" <?php echo $rows_per_page == $lim ? 'selected' : ''; ?>><?php echo $lim; ?></option><?php endforeach; ?>
             </select>
-            <span>dòng / trang</span>
         </form>
     </div>
-    <div class="pagination-links">
+    <div class="pagination-links" style="display: flex; gap: 5px; margin-left: auto;">
         <?php $q = $_GET; unset($q['p']); $base = 'index.php?' . http_build_query($q); ?>
-        <a href="<?php echo $base . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>" title="Trang đầu"><i class="fas fa-angle-double-left"></i></a>
-        <a href="<?php echo $base . '&p=' . max(1, $current_page - 1); ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>" title="Trang trước"><i class="fas fa-angle-left"></i></a>
-        <?php for ($i = max(1, $current_page - 2); $i <= min($total_pages, $current_page + 2); $i++): ?>
-            <a href="<?php echo $base . '&p=' . $i; ?>" class="page-link <?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
-        <?php endfor; ?>
-        <a href="<?php echo $base . '&p=' . min($total_pages, $current_page + 1); ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang sau"><i class="fas fa-angle-right"></i></a>
-        <a href="<?php echo $base . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang cuối"><i class="fas fa-angle-double-right"></i></a>
+        <a href="<?php echo $base . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-left"></i></a>
+        <?php for ($i = max(1, $current_page - 2); $i <= min($total_pages, $current_page + 2); $i++): ?><a href="<?php echo $base . '&p=' . $i; ?>" class="page-link <?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a><?php endfor; ?>
+        <a href="<?php echo $base . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-right"></i></a>
     </div>
 </div>
 
 <script>
-function toggleColumnMenu() { document.getElementById('columnMenu').classList.toggle('show'); }
+function toggleColumnMenu() { const m = document.getElementById('columnMenu'); if(m) m.classList.toggle('show'); }
 const colCbs = document.querySelectorAll('.col-checkbox');
 function updateCols() {
     const s = {};
@@ -165,24 +150,36 @@ function updateCols() {
     localStorage.setItem('supplierColumns', JSON.stringify(s));
 }
 colCbs.forEach(cb => cb.addEventListener('change', updateCols));
+
 document.addEventListener('DOMContentLoaded', () => {
     const saved = JSON.parse(localStorage.getItem('supplierColumns'));
     if(saved) colCbs.forEach(cb => { if(saved.hasOwnProperty(cb.dataset.target)) cb.checked = saved[cb.dataset.target]; });
     updateCols();
+
     const selectAll = document.getElementById('select-all');
     const rowCbs = document.querySelectorAll('.row-checkbox');
     const batch = document.getElementById('batch-actions');
-    const count = document.getElementById('selected-count');
     const clearBtn = document.getElementById('clear-selection-btn');
 
     function updateBatch() {
         const n = document.querySelectorAll('.row-checkbox:checked').length;
         if(batch) batch.style.display = n > 0 ? 'flex' : 'none';
-        if(count) count.textContent = n;
+        if(document.getElementById('selected-count')) document.getElementById('selected-count').textContent = n;
     }
     if(selectAll) selectAll.addEventListener('change', () => { rowCbs.forEach(cb => cb.checked = selectAll.checked); updateBatch(); });
     rowCbs.forEach(cb => cb.addEventListener('change', updateBatch));
     if(clearBtn) clearBtn.addEventListener('click', () => { if(selectAll) selectAll.checked = false; rowCbs.forEach(cb => cb.checked = false); updateBatch(); });
-    // Note: The delete-selected-btn is now handled by global main.js
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.column-selector-container')) { const m = document.getElementById('columnMenu'); if(m) m.classList.remove('show'); }
+    });
 });
+
+function prepareExport() {
+    const activeColumns = [];
+    document.querySelectorAll('.col-checkbox:checked').forEach(cb => {
+        activeColumns.push({ key: cb.dataset.target, label: cb.parentElement.textContent.trim() });
+    });
+    document.getElementById('visible_columns_input').value = JSON.stringify(activeColumns);
+}
 </script>

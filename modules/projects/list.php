@@ -1,4 +1,5 @@
 <?php
+// modules/projects/list.php
 $rows_per_page = (isset($_GET['limit']) && is_numeric($_GET['limit'])) ? (int)$_GET['limit'] : 5;
 $current_page  = (isset($_GET['p']) && is_numeric($_GET['p'])) ? (int)$_GET['p'] : 1;
 if ($current_page < 1) $current_page = 1;
@@ -52,7 +53,7 @@ $all_columns = [
         <input type="hidden" name="page" value="projects/list">
         <div class="filter-group">
             <label>Loại Dự án</label>
-            <select name="filter_type">
+            <select name="filter_type" class="form-select-sm">
                 <option value="">-- Tất cả --</option>
                 <?php foreach ($project_types as $type): ?>
                     <option value="<?php echo htmlspecialchars($type); ?>" <?php echo ($filter_type == $type) ? 'selected' : ''; ?>><?php echo htmlspecialchars($type); ?></option>
@@ -61,13 +62,13 @@ $all_columns = [
         </div>
         <div class="filter-group" style="flex: 2;">
             <label>Tìm kiếm</label>
-            <input type="text" name="filter_keyword" placeholder="Mã, tên, địa chỉ..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
+            <input type="text" name="filter_keyword" placeholder="Mã, tên, địa chỉ..." value="<?php echo htmlspecialchars($filter_keyword); ?>" class="form-control-sm">
         </div>
         <div class="filter-actions" style="margin-left: auto;">
-            <button type="submit" class="btn btn-primary">Lọc</button>
-            <a href="index.php?page=projects/list" class="btn btn-secondary"><i class="fas fa-undo"></i></a>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Lọc</button>
+            <a href="index.php?page=projects/list" class="btn btn-secondary btn-sm"><i class="fas fa-undo"></i></a>
             <div class="column-selector-container">
-                <button type="button" class="btn btn-secondary" onclick="toggleColumnMenu()"><i class="fas fa-columns"></i> Cột</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleColumnMenu()"><i class="fas fa-columns"></i> Cột</button>
                 <div id="columnMenu" class="dropdown-menu">
                     <div class="dropdown-header">Hiển thị cột</div>
                     <div class="column-list">
@@ -86,7 +87,8 @@ $all_columns = [
         <span class="selected-count-label">Đã chọn <strong id="selected-count">0</strong> mục</span>
         <div class="action-buttons">
             <button type="button" class="btn btn-secondary btn-sm" id="clear-selection-btn"><i class="fas fa-times"></i> Bỏ chọn</button>
-            <button type="submit" name="export_selected" class="btn btn-secondary btn-sm"><i class="fas fa-file-export"></i> Xuất file</button>
+            <input type="hidden" name="visible_columns" id="visible_columns_input">
+            <button type="submit" name="export_selected" class="btn btn-secondary btn-sm" onclick="prepareExport()"><i class="fas fa-file-export"></i> Xuất Excel</button>
             <?php if(isAdmin()): ?>
                 <button type="button" class="btn btn-danger btn-sm" id="delete-selected-btn" data-action="index.php?page=projects/delete_multiple">Xóa đã chọn</button>
             <?php endif; ?>
@@ -118,11 +120,11 @@ $all_columns = [
                         </td>
                         <td data-col="loai_du_an"><span class="badge status-info"><?php echo htmlspecialchars($p['loai_du_an']); ?></span></td>
                         <td class="actions text-center">
-                            <a href="index.php?page=projects/view&id=<?php echo $p['id']; ?>" class="btn-icon" title="Xem"><i class="fas fa-eye"></i></a>
+                            <a href="index.php?page=projects/view&id=<?php echo $p['id']; ?>" class="btn-icon"><i class="fas fa-eye"></i></a>
                             <?php if(isIT()): ?>
-                                <a href="index.php?page=projects/edit&id=<?php echo $p['id']; ?>" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
-                                <?php if(isAdmin()): // Only Admin can delete projects ?>
-                                    <a href="index.php?page=projects/delete&id=<?php echo $p['id']; ?>" data-url="index.php?page=projects/delete&id=<?php echo $p['id']; ?>&confirm_delete=1" class="btn-icon delete-btn" title="Xóa"><i class="fas fa-trash-alt"></i></a>
+                                <a href="index.php?page=projects/edit&id=<?php echo $p['id']; ?>" class="btn-icon"><i class="fas fa-edit"></i></a>
+                                <?php if(isAdmin()): ?>
+                                    <a href="index.php?page=projects/delete&id=<?php echo $p['id']; ?>" class="btn-icon delete-btn"><i class="fas fa-trash-alt"></i></a>
                                 <?php endif; ?>
                             <?php endif; ?>
                         </td>
@@ -133,36 +135,33 @@ $all_columns = [
     </div>
 </form>
 
-<div class="pagination-container">
+<div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-top: 20px;">
     <div class="rows-per-page">
-        <form action="index.php" method="GET" class="rows-per-page-form">
+        <form action="index.php" method="GET" class="rows-per-page-form" style="display: flex; align-items: center; gap: 8px;">
             <input type="hidden" name="page" value="projects/list">
-            <?php foreach ($_GET as $key => $value): if(!in_array($key, ['limit','page'])) { ?>
+            <?php foreach ($_GET as $key => $value): if(!in_array($key, ['limit','page','p'])) { ?>
                 <input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>">
             <?php } endforeach; ?>
-            <label>Hiển thị</label>
-            <select name="limit" onchange="this.form.submit()" class="form-select-sm">
+            <label style="font-size: 0.85rem; color: #64748b;">Hiển thị</label>
+            <select name="limit" onchange="this.form.submit()" class="form-select-sm" style="width: auto;">
                 <?php foreach([5,10,25,50,100] as $lim): ?>
                     <option value="<?php echo $lim; ?>" <?php echo $rows_per_page == $lim ? 'selected' : ''; ?>><?php echo $lim; ?></option>
                 <?php endforeach; ?>
             </select>
-            <span>dòng / trang</span>
         </form>
     </div>
-    <div class="pagination-links">
+    <div class="pagination-links" style="display: flex; gap: 5px; margin-left: auto;">
         <?php $q = $_GET; unset($q['p']); $base = 'index.php?' . http_build_query($q); ?>
-        <a href="<?php echo $base . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>" title="Trang đầu"><i class="fas fa-angle-double-left"></i></a>
-        <a href="<?php echo $base . '&p=' . max(1, $current_page - 1); ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>" title="Trang trước"><i class="fas fa-angle-left"></i></a>
+        <a href="<?php echo $base . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-left"></i></a>
         <?php for ($i = max(1, $current_page - 2); $i <= min($total_pages, $current_page + 2); $i++): ?>
             <a href="<?php echo $base . '&p=' . $i; ?>" class="page-link <?php echo $i == $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
         <?php endfor; ?>
-        <a href="<?php echo $base . '&p=' . min($total_pages, $current_page + 1); ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang sau"><i class="fas fa-angle-right"></i></a>
-        <a href="<?php echo $base . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>" title="Trang cuối"><i class="fas fa-angle-double-right"></i></a>
+        <a href="<?php echo $base . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-right"></i></a>
     </div>
 </div>
 
 <script>
-function toggleColumnMenu() { document.getElementById('columnMenu').classList.toggle('show'); }
+function toggleColumnMenu() { const m = document.getElementById('columnMenu'); if(m) m.classList.toggle('show'); }
 const colCbs = document.querySelectorAll('.col-checkbox');
 function updateCols() {
     const s = {};
@@ -173,10 +172,12 @@ function updateCols() {
     localStorage.setItem('projectColumns', JSON.stringify(s));
 }
 colCbs.forEach(cb => cb.addEventListener('change', updateCols));
+
 document.addEventListener('DOMContentLoaded', () => {
     const saved = JSON.parse(localStorage.getItem('projectColumns'));
     if(saved) colCbs.forEach(cb => { if(saved.hasOwnProperty(cb.dataset.target)) cb.checked = saved[cb.dataset.target]; });
     updateCols();
+
     const selectAll = document.getElementById('select-all');
     const rowCbs = document.querySelectorAll('.row-checkbox');
     const batch = document.getElementById('batch-actions');
@@ -191,6 +192,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if(selectAll) selectAll.addEventListener('change', () => { rowCbs.forEach(cb => cb.checked = selectAll.checked); updateBatch(); });
     rowCbs.forEach(cb => cb.addEventListener('change', updateBatch));
     if(clearBtn) clearBtn.addEventListener('click', () => { if(selectAll) selectAll.checked = false; rowCbs.forEach(cb => cb.checked = false); updateBatch(); });
-    // Note: The delete-selected-btn is now handled by global main.js
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.column-selector-container')) {
+            const m = document.getElementById('columnMenu'); if(m) m.classList.remove('show');
+        }
+    });
 });
+
+function prepareExport() {
+    const activeColumns = [];
+    document.querySelectorAll('.col-checkbox:checked').forEach(cb => {
+        activeColumns.push({ key: cb.dataset.target, label: cb.parentElement.textContent.trim() });
+    });
+    document.getElementById('visible_columns_input').value = JSON.stringify(activeColumns);
+}
 </script>
