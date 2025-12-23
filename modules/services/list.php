@@ -4,6 +4,7 @@ $current_page  = (isset($_GET['p']) && is_numeric($_GET['p'])) ? (int)$_GET['p']
 if ($current_page < 1) $current_page = 1;
 
 $filter_keyword = trim($_GET['filter_keyword'] ?? '');
+$filter_project = trim($_GET['filter_project'] ?? '');
 
 $where_clauses = ["s.deleted_at IS NULL"];
 $bind_params   = [];
@@ -11,6 +12,11 @@ $bind_params   = [];
 if ($filter_keyword !== '') {
     $where_clauses[] = "(s.ten_dich_vu LIKE :kw OR s.loai_dich_vu LIKE :kw OR p.ten_du_an LIKE :kw)";
     $bind_params[':kw'] = '%' . $filter_keyword . '%';
+}
+
+if ($filter_project !== '' && is_numeric($filter_project)) {
+    $where_clauses[] = "s.project_id = :project_id";
+    $bind_params[':project_id'] = (int)$filter_project;
 }
 
 $where_sql = !empty($where_clauses) ? ' WHERE ' . implode(' AND ', $where_clauses) : '';
@@ -32,11 +38,14 @@ $data_sql = "
     LIMIT :limit OFFSET :offset
 ";
 $stmt = $pdo->prepare($data_sql);
+foreach ($bind_params as $k => $v) $bind_params_list[$k] = $v; // Temporary store
 foreach ($bind_params as $k => $v) $stmt->bindValue($k, $v);
 $stmt->bindValue(':limit',  $rows_per_page, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
 $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$projects_list = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du_an")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <div class="page-header">
@@ -47,9 +56,26 @@ $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <div class="card filter-section">
     <form action="index.php" method="GET" class="filter-form">
         <input type="hidden" name="page" value="services/list">
-        <div class="filter-group" style="flex: 2;">
+        <div class="filter-group">
+            <label>Dự án</label>
+            <div class="searchable-select-container">
+                <input type="text" id="project_search" class="search-input" placeholder="Tất cả dự án..." value="<?php 
+                    if ($filter_project) {
+                        foreach($projects_list as $p) {
+                            if($p['id'] == $filter_project) {
+                                echo htmlspecialchars($p['ten_du_an']);
+                                break;
+                            }
+                        }
+                    }
+                ?>" autocomplete="off">
+                <input type="hidden" name="filter_project" id="filter_project" value="<?php echo htmlspecialchars($filter_project); ?>">
+                <div id="project_dropdown" class="searchable-dropdown"></div>
+            </div>
+        </div>
+        <div class="filter-group">
             <label>Tìm kiếm</label>
-            <input type="text" name="filter_keyword" placeholder="Tên dịch vụ, dự án..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
+            <input type="text" name="filter_keyword" placeholder="Tên dịch vụ, nhà cung cấp..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
         </div>
         <div class="filter-actions" style="margin-left: auto;">
             <button type="submit" class="btn btn-primary">Lọc</button>
@@ -148,7 +174,47 @@ $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </div>
 
 <script>
+let localProjects = <?php echo json_encode($projects_list); ?>;
+let activeIndex = -1;
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Searchable Select Logic
+    const projectSearch = document.getElementById('project_search');
+    const projectDropdown = document.getElementById('project_dropdown');
+    const projectIdInput = document.getElementById('filter_project');
+
+    if (projectSearch) {
+        projectSearch.addEventListener('input', function() {
+            renderProjectDropdown(this.value.toLowerCase().trim());
+        });
+        projectSearch.addEventListener('focus', function() {
+            renderProjectDropdown(this.value.toLowerCase().trim());
+        });
+        projectSearch.addEventListener('keydown', function(e) {
+            const items = projectDropdown.querySelectorAll('.dropdown-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIndex = Math.min(activeIndex + 1, items.length - 1);
+                updateActiveItem(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIndex = Math.max(activeIndex - 1, -1);
+                updateActiveItem(items);
+            } else if (e.key === 'Enter') {
+                if (activeIndex > -1 && items[activeIndex]) {
+                    e.preventDefault();
+                    items[activeIndex].click();
+                }
+            }
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (projectSearch && !projectSearch.contains(e.target) && !projectDropdown.contains(e.target)) {
+            projectDropdown.style.display = 'none';
+        }
+    });
+
     const selectAll = document.getElementById('select-all');
     const rowCheckboxes = document.querySelectorAll('.row-checkbox');
     const batchActions = document.getElementById('batch-actions');
@@ -193,4 +259,55 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+function renderProjectDropdown(filter = '') {
+    const dropdown = document.getElementById('project_dropdown');
+    const filtered = localProjects.filter(p => p.ten_du_an.toLowerCase().includes(filter));
+
+    let html = '<div class="dropdown-item" onclick="selectProject(\'\', \'\')">-- Tất cả dự án --</div>';
+    if (filtered.length === 0) {
+        html += '<div class="no-results">Không tìm thấy dự án</div>';
+    } else {
+        html += filtered.map(p => `
+            <div class="dropdown-item" onclick="selectProject(${p.id}, '${p.ten_du_an.replace(/'/g, "\\'")}')">
+                <span class="item-title">${p.ten_du_an}</span>
+            </div>
+        `).join('');
+    }
+    dropdown.innerHTML = html;
+    dropdown.style.display = 'block';
+    activeIndex = -1;
+}
+
+function selectProject(id, name) {
+    document.getElementById('project_search').value = name;
+    document.getElementById('filter_project').value = id;
+    document.getElementById('project_dropdown').style.display = 'none';
+}
+
+function updateActiveItem(items) {
+    items.forEach((item, index) => {
+        item.classList.toggle('active', index === activeIndex);
+        if (index === activeIndex) item.scrollIntoView({ block: 'nearest' });
+    });
+}
 </script>
+
+<style>
+/* Searchable Select */
+.searchable-select-container { position: relative; width: 100%; min-width: 200px; }
+.search-input { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+.searchable-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 5px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: none; }
+.dropdown-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; text-align: left; }
+.dropdown-item:hover, .dropdown-item.active { background: #f8fafc; color: var(--primary-color); }
+.no-results { padding: 10px; text-align: center; color: #94a3b8; font-size: 0.85rem; }
+
+/* Responsive Filter */
+@media (max-width: 768px) {
+    .filter-form { flex-direction: column; align-items: stretch; gap: 15px; }
+    .filter-group { width: 100%; }
+    .searchable-select-container { min-width: 100%; }
+    .filter-actions { margin-left: 0 !important; width: 100%; display: flex; gap: 10px; }
+    .filter-actions .btn { flex: 1; justify-content: center; }
+}
+</style>

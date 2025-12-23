@@ -50,10 +50,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </select>
                 </div>
                 <div class="form-group"><label>Dự án sử dụng</label>
-                    <select name="project_id">
-                        <option value="">-- Dùng chung --</option>
-                        <?php foreach($projects as $p): ?><option value="<?php echo $p['id']; ?>" <?php echo ($service['project_id'] == $p['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($p['ten_du_an']); ?></option><?php endforeach; ?>
-                    </select>
+                    <div class="searchable-select-container">
+                        <input type="text" id="project_search" class="search-input" placeholder="Gõ tên dự án hoặc để trống nếu dùng chung..." value="<?php 
+                            if ($service['project_id']) {
+                                foreach($projects as $p) {
+                                    if($p['id'] == $service['project_id']) {
+                                        echo htmlspecialchars($p['ten_du_an']);
+                                        break;
+                                    }
+                                }
+                            }
+                        ?>" autocomplete="off">
+                        <input type="hidden" name="project_id" id="project_id" value="<?php echo $service['project_id']; ?>">
+                        <div id="project_dropdown" class="searchable-dropdown"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -70,3 +80,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 </form>
+
+<style>
+/* Layout Styles */
+.edit-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; align-items: start; }
+.left-panel, .right-panel { display: flex; flex-direction: column; gap: 20px; }
+.card-header-custom { padding-bottom: 20px; margin-bottom: 25px; border-bottom: 1px solid #f1f5f9; }
+.card-header-custom h3 { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 12px; }
+.card-header-custom h3 i { color: #fff; background: var(--gradient-primary); padding: 8px; border-radius: 8px; font-size: 1rem; }
+
+/* Searchable Select */
+.searchable-select-container { position: relative; width: 100%; }
+.search-input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; }
+.search-input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); outline: none; }
+.searchable-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 5px; max-height: 250px; overflow-y: auto; z-index: 1000; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: none; }
+.dropdown-item { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f1f5f9; text-align: left; }
+.dropdown-item:hover, .dropdown-item.active { background: #f8fafc; color: var(--primary-color); }
+.item-title { font-weight: 600; font-size: 0.9rem; }
+.no-results { padding: 15px; text-align: center; color: #94a3b8; font-size: 0.9rem; }
+
+@media (max-width: 992px) { .edit-layout { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+let localProjects = <?php echo json_encode($projects); ?>;
+let activeIndex = -1;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('project_search');
+    const dropdown = document.getElementById('project_dropdown');
+    const hiddenInput = document.getElementById('project_id');
+
+    searchInput.addEventListener('input', function() {
+        renderDropdown(this.value.toLowerCase().trim());
+    });
+    searchInput.addEventListener('focus', function() {
+        renderDropdown(this.value.toLowerCase().trim());
+    });
+
+    searchInput.addEventListener('keydown', function(e) {
+        const items = dropdown.querySelectorAll('.dropdown-item');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIndex = Math.min(activeIndex + 1, items.length - 1);
+            updateActiveItem(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIndex = Math.max(activeIndex - 1, -1);
+            updateActiveItem(items);
+        } else if (e.key === 'Enter') {
+            if (activeIndex > -1 && items[activeIndex]) {
+                e.preventDefault();
+                items[activeIndex].click();
+            }
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+});
+
+function renderDropdown(filter) {
+    const dropdown = document.getElementById('project_dropdown');
+    const filtered = localProjects.filter(p => p.ten_du_an.toLowerCase().includes(filter));
+
+    if (filtered.length === 0) {
+        dropdown.innerHTML = '<div class="no-results">Không tìm thấy dự án</div>';
+    } else {
+        dropdown.innerHTML = filtered.map(p => `
+            <div class="dropdown-item" onclick="selectProject(${p.id}, '${p.ten_du_an.replace(/'/g, "\\'")}')">
+                <span class="item-title">${p.ten_du_an}</span>
+            </div>
+        `).join('');
+    }
+    dropdown.style.display = 'block';
+    activeIndex = -1;
+}
+
+function selectProject(id, name) {
+    document.getElementById('project_search').value = name;
+    document.getElementById('project_id').value = id;
+    document.getElementById('project_dropdown').style.display = 'none';
+}
+
+function updateActiveItem(items) {
+    items.forEach((item, index) => {
+        item.classList.toggle('active', index === activeIndex);
+        if (index === activeIndex) item.scrollIntoView({ block: 'nearest' });
+    });
+}
+</script>

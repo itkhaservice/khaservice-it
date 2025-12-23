@@ -98,9 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="form-group">
                     <label for="parent_id">Thuộc thiết bị (Nếu là linh kiện con)</label>
-                    <select id="parent_id" name="parent_id">
-                        <option value="">-- Tải dữ liệu... --</option>
-                    </select>
+                    <div class="searchable-select-container">
+                        <input type="text" id="parent_search" class="search-input" placeholder="Chọn dự án trước..." disabled autocomplete="off">
+                        <input type="hidden" name="parent_id" id="parent_id" value="<?php echo htmlspecialchars($device['parent_id'] ?? ''); ?>">
+                        <div id="parent_dropdown" class="searchable-dropdown"></div>
+                    </div>
                 </div>
 
                 <div class="form-row">
@@ -164,14 +166,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="form-group">
                     <label for="project_id">Dự án</label>
-                    <select id="project_id" name="project_id" onchange="loadParentDevices(this.value)">
-                        <option value="">-- Chọn dự án --</option>
-                        <?php foreach ($projects as $project): ?>
-                            <option value="<?php echo $project['id']; ?>" <?php echo (($_POST['project_id'] ?? $device['project_id']) == $project['id']) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($project['ten_du_an']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                    <div class="searchable-select-container">
+                        <input type="text" id="project_search" class="search-input" placeholder="Gõ tên hoặc mã dự án..." value="<?php 
+                            if ($device['project_id']) {
+                                foreach($projects as $p) {
+                                    if($p['id'] == $device['project_id']) {
+                                        echo htmlspecialchars($p['ten_du_an']);
+                                        break;
+                                    }
+                                }
+                            }
+                        ?>" autocomplete="off">
+                        <input type="hidden" name="project_id" id="project_id" value="<?php echo htmlspecialchars($device['project_id'] ?? ''); ?>">
+                        <div id="project_dropdown" class="searchable-dropdown"></div>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -210,45 +218,148 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </form>
 
 <script>
-function loadParentDevices(projectId) {
-    const parentSelect = document.getElementById('parent_id');
-    const currentDeviceId = "<?php echo $device_id; ?>";
-    const selectedParentId = "<?php echo $device['parent_id']; ?>";
-
-    if (!projectId) {
-        parentSelect.innerHTML = '<option value="">-- Chọn dự án trước --</option>';
-        parentSelect.disabled = true;
-        return;
-    }
-
-    parentSelect.innerHTML = '<option value="">Đang tải...</option>';
-    parentSelect.disabled = true;
-
-    fetch(`api/get_devices_by_project.php?project_id=${projectId}`)
-        .then(response => response.json())
-        .then(data => {
-            parentSelect.innerHTML = '<option value="">-- Là thiết bị chính (Không có cha) --</option>';
-            data.forEach(device => {
-                // Không cho phép chọn chính mình làm cha
-                if (device.id != currentDeviceId) {
-                    const selected = (device.id == selectedParentId) ? 'selected' : '';
-                    parentSelect.innerHTML += `<option value="${device.id}" ${selected}>${device.ten_thiet_bi} (${device.ma_tai_san})</option>`;
-                }
-            });
-            parentSelect.disabled = false;
-        })
-        .catch(error => {
-            console.error('Error loading parent devices:', error);
-            parentSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
-        });
-}
+let localProjects = <?php echo json_encode($projects); ?>;
+let localParents = [];
+let activeIndex = -1;
+const currentDeviceId = "<?php echo $device_id; ?>";
+const initialParentId = "<?php echo $device['parent_id']; ?>";
 
 document.addEventListener('DOMContentLoaded', () => {
-    const projectId = document.getElementById('project_id').value;
-    if (projectId) {
-        loadParentDevices(projectId);
+    const projectSearch = document.getElementById('project_search');
+    const projectDropdown = document.getElementById('project_dropdown');
+    const projectIdInput = document.getElementById('project_id');
+
+    const parentSearch = document.getElementById('parent_search');
+    const parentDropdown = document.getElementById('parent_dropdown');
+    const parentIdInput = document.getElementById('parent_id');
+
+    // Khởi tạo nếu đã có project_id
+    if (projectIdInput.value) {
+        loadParentDevices(projectIdInput.value);
     }
+
+    // Event listeners cho Dự án
+    projectSearch.addEventListener('input', function() {
+        renderDropdown(this.value.toLowerCase().trim(), localProjects, projectDropdown, (item) => {
+            selectProject(item.id, item.ten_du_an);
+        });
+    });
+    projectSearch.addEventListener('focus', function() {
+        renderDropdown(this.value.toLowerCase().trim(), localProjects, projectDropdown, (item) => {
+            selectProject(item.id, item.ten_du_an);
+        });
+    });
+    projectSearch.addEventListener('keydown', (e) => handleKeydown(e, projectDropdown));
+
+    // Event listeners cho Thiết bị cha
+    parentSearch.addEventListener('input', function() {
+        renderDropdown(this.value.toLowerCase().trim(), localParents, parentDropdown, (item) => {
+            selectParent(item.id, item.ten_thiet_bi, item.ma_tai_san);
+        });
+    });
+    parentSearch.addEventListener('focus', function() {
+        if (localParents.length > 0) {
+            renderDropdown(this.value.toLowerCase().trim(), localParents, parentDropdown, (item) => {
+                selectParent(item.id, item.ten_thiet_bi, item.ma_tai_san);
+            });
+        }
+    });
+    parentSearch.addEventListener('keydown', (e) => handleKeydown(e, parentDropdown));
+
+    document.addEventListener('click', function(e) {
+        if (!projectSearch.contains(e.target) && !projectDropdown.contains(e.target)) projectDropdown.style.display = 'none';
+        if (!parentSearch.contains(e.target) && !parentDropdown.contains(e.target)) parentDropdown.style.display = 'none';
+    });
 });
+
+function handleKeydown(e, dropdown) {
+    const items = dropdown.querySelectorAll('.dropdown-item');
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeIndex = Math.min(activeIndex + 1, items.length - 1);
+        updateActiveItem(items);
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeIndex = Math.max(activeIndex - 1, -1);
+        updateActiveItem(items);
+    } else if (e.key === 'Enter') {
+        if (activeIndex > -1 && items[activeIndex]) {
+            e.preventDefault();
+            items[activeIndex].click();
+        }
+    }
+}
+
+function updateActiveItem(items) {
+    items.forEach((item, index) => {
+        item.classList.toggle('active', index === activeIndex);
+        if (index === activeIndex) item.scrollIntoView({ block: 'nearest' });
+    });
+}
+
+function renderDropdown(filter, data, dropdown, onSelect) {
+    const filtered = data.filter(item => {
+        const title = (item.ten_du_an || item.ten_thiet_bi || '').toLowerCase();
+        const sub = (item.ma_tai_san || '').toLowerCase();
+        return title.includes(filter) || sub.includes(filter);
+    });
+
+    if (filtered.length === 0) {
+        dropdown.innerHTML = '<div class="no-results">Không tìm thấy kết quả</div>';
+    } else {
+        dropdown.innerHTML = filtered.map(item => `
+            <div class="dropdown-item">
+                <span class="item-title">${item.ten_du_an || item.ten_thiet_bi}</span>
+                ${item.ma_tai_san ? `<span class="item-sub">${item.ma_tai_san}</span>` : ''}
+            </div>
+        `).join('');
+
+        dropdown.querySelectorAll('.dropdown-item').forEach((div, idx) => {
+            div.onclick = () => onSelect(filtered[idx]);
+        });
+    }
+    dropdown.style.display = 'block';
+    activeIndex = -1;
+}
+
+function selectProject(id, name) {
+    document.getElementById('project_search').value = name;
+    document.getElementById('project_id').value = id;
+    document.getElementById('project_dropdown').style.display = 'none';
+    
+    // Reset và tải parent devices
+    document.getElementById('parent_search').value = '';
+    document.getElementById('parent_id').value = '';
+    loadParentDevices(id);
+}
+
+function selectParent(id, name, code) {
+    document.getElementById('parent_search').value = `${name} (${code})`;
+    document.getElementById('parent_id').value = id;
+    document.getElementById('parent_dropdown').style.display = 'none';
+}
+
+function loadParentDevices(projectId) {
+    const parentSearch = document.getElementById('parent_search');
+    const parentIdInput = document.getElementById('parent_id');
+    
+    parentSearch.disabled = false;
+    parentSearch.placeholder = 'Đang tải...';
+    
+    fetch(`api/get_devices_by_project.php?project_id=${projectId}`)
+        .then(r => r.json())
+        .then(data => {
+            // Loại bỏ chính thiết bị đang sửa khỏi danh sách cha và chỉ lấy thiết bị chính
+            localParents = data.filter(d => d.id != currentDeviceId && !d.parent_id);
+            parentSearch.placeholder = 'Gõ tên hoặc mã thiết bị cha...';
+            
+            // Nếu có initial parent, hiển thị tên nó
+            if (initialParentId && parentIdInput.value == initialParentId) {
+                const p = localParents.find(d => d.id == initialParentId);
+                if (p) parentSearch.value = `${p.ten_thiet_bi} (${p.ma_tai_san})`;
+            }
+        });
+}
 </script>
 
 <style>
@@ -304,6 +415,19 @@ document.addEventListener('DOMContentLoaded', () => {
 @media (max-width: 992px) {
     .edit-layout { grid-template-columns: 1fr; }
 }
+
+/* Searchable Select */
+.searchable-select-container { position: relative; width: 100%; }
+.search-input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; transition: all 0.2s; }
+.search-input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); outline: none; }
+.search-input:disabled { background-color: #f1f5f9; cursor: not-allowed; opacity: 0.7; }
+.searchable-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 5px; max-height: 250px; overflow-y: auto; z-index: 1000; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: none; }
+.dropdown-item { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f1f5f9; text-align: left; transition: all 0.2s; }
+.dropdown-item:last-child { border-bottom: none; }
+.dropdown-item:hover, .dropdown-item.active { background: #f8fafc; color: var(--primary-color); }
+.dropdown-item .item-title { display: block; font-weight: 600; font-size: 0.9rem; }
+.dropdown-item .item-sub { display: block; font-size: 0.75rem; color: #94a3b8; }
+.no-results { padding: 15px; text-align: center; color: #94a3b8; font-style: italic; font-size: 0.9rem; }
 
 @media (max-width: 768px) {
     .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }

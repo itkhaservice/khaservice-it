@@ -16,20 +16,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ids']) && is_array($_
     try {
         $pdo->beginTransaction();
         
-        $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM devices WHERE project_id = ?");
+        $stmt_check_dev = $pdo->prepare("SELECT COUNT(*) FROM devices WHERE project_id = ? AND deleted_at IS NULL");
+        $stmt_check_svc = $pdo->prepare("SELECT COUNT(*) FROM services WHERE project_id = ? AND deleted_at IS NULL");
         $stmt_del = $pdo->prepare("UPDATE projects SET deleted_at = NOW() WHERE id = ?");
         $stmt_name = $pdo->prepare("SELECT ten_du_an FROM projects WHERE id = ?");
 
         foreach ($ids as $id) {
             // Check dependencies
-            $stmt_check->execute([$id]);
-            $count = $stmt_check->fetchColumn();
+            $stmt_check_dev->execute([$id]);
+            $dev_count = $stmt_check_dev->fetchColumn();
 
-            if ($count > 0) {
+            $stmt_check_svc->execute([$id]);
+            $svc_count = $stmt_check_svc->fetchColumn();
+
+            if ($dev_count > 0 || $svc_count > 0) {
                 $skipped_count++;
                 $stmt_name->execute([$id]);
                 $name = $stmt_name->fetchColumn() ?: "ID $id";
-                $skipped_details[] = "$name (còn $count thiết bị)";
+                $reasons = [];
+                if ($dev_count > 0) $reasons[] = "$dev_count thiết bị";
+                if ($svc_count > 0) $reasons[] = "$svc_count dịch vụ";
+                $skipped_details[] = "$name (" . implode(', ', $reasons) . ")";
             } else {
                 $stmt_del->execute([$id]);
                 $deleted_count += $stmt_del->rowCount();

@@ -23,11 +23,16 @@ $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM devices WHERE project_id = ?")
 $stmt_check->execute([$project_id]);
 $device_count = $stmt_check->fetchColumn();
 
-// Handle Confirmation
-if (isset($_POST['confirm_delete'])) {
-    if ($device_count > 0) {
-        set_message('error', "Không thể xóa dự án này vì đang có $device_count thiết bị liên quan. Vui lòng chuyển hoặc xóa thiết bị trước.");
-        header("Location: index.php?page=projects/view&id=$project_id");
+// Check for dependencies (services)
+$stmt_check_svc = $pdo->prepare("SELECT COUNT(*) FROM services WHERE project_id = ?");
+$stmt_check_svc->execute([$project_id]);
+$service_count = $stmt_check_svc->fetchColumn();
+
+// Handle Confirmation (Cả POST và GET từ Modal)
+if (isset($_REQUEST['confirm_delete'])) {
+    if ($device_count > 0 || $service_count > 0) {
+        set_message('error', "Không thể xóa dự án này vì đang có dữ liệu liên quan ($device_count thiết bị, $service_count dịch vụ).");
+        header("Location: index.php?page=projects/list");
         exit;
     }
 
@@ -39,7 +44,7 @@ if (isset($_POST['confirm_delete'])) {
         exit;
     } catch (PDOException $e) {
         set_message('error', 'Lỗi khi xóa: ' . $e->getMessage());
-        header("Location: index.php?page=projects/view&id=$project_id");
+        header("Location: index.php?page=projects/list");
         exit;
     }
 }
@@ -55,14 +60,28 @@ if (isset($_POST['confirm_delete'])) {
             Bạn đang yêu cầu bỏ dự án <strong><?php echo htmlspecialchars($project['ten_du_an']); ?></strong> (<?php echo htmlspecialchars($project['ma_du_an']); ?>) vào thùng rác.
         </p>
         
-        <?php if ($device_count > 0): ?>
+        <?php if ($device_count > 0 || $service_count > 0): ?>
             <div class="delete-alert-box" style="border-left-color: #f59e0b; background: #fffbeb; color: #92400e;">
                 <i class="fas fa-exclamation-circle"></i> 
-                <span><strong>Cảnh báo:</strong> Dự án này đang chứa <strong><?php echo $device_count; ?></strong> thiết bị. Bạn không thể xóa cho đến khi di chuyển hoặc xóa hết thiết bị khỏi dự án.</span>
+                <span>
+                    <strong>Cảnh báo:</strong> Dự án này đang chứa dữ liệu liên quan:
+                    <ul style="margin: 5px 0 0 20px; text-align: left;">
+                        <?php if($device_count > 0) echo "<li><strong>$device_count</strong> thiết bị</li>"; ?>
+                        <?php if($service_count > 0) echo "<li><strong>$service_count</strong> dịch vụ</li>"; ?>
+                    </ul>
+                    Bạn không thể xóa cho đến khi di chuyển hoặc xóa hết dữ liệu khỏi dự án.
+                </span>
             </div>
             <div class="delete-modal-actions">
                 <a href="index.php?page=projects/view&id=<?php echo $project_id; ?>" class="btn btn-secondary">Quay lại</a>
-                <a href="index.php?page=devices/list&filter_project=<?php echo $project_id; ?>" class="btn btn-primary">Xem thiết bị</a>
+                <div style="margin-top: 10px; display: flex; gap: 10px; justify-content: center;">
+                    <?php if($device_count > 0): ?>
+                        <a href="index.php?page=devices/list&filter_project=<?php echo $project_id; ?>" class="btn btn-primary btn-sm">Xem thiết bị</a>
+                    <?php endif; ?>
+                    <?php if($service_count > 0): ?>
+                        <a href="index.php?page=services/list&filter_project=<?php echo $project_id; ?>" class="btn btn-primary btn-sm">Xem dịch vụ</a>
+                    <?php endif; ?>
+                </div>
             </div>
         <?php else: ?>
             <div class="delete-alert-box" style="border-left-color: #f59e0b; background: #fffbeb; color: #92400e;">

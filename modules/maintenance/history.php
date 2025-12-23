@@ -67,12 +67,20 @@ $all_columns = [
         <input type="hidden" name="page" value="maintenance/history">
         <div class="filter-group">
             <label>Dự án</label>
-            <select name="filter_project">
-                <option value="">-- Tất cả --</option>
-                <?php foreach ($projects_list as $p): ?>
-                    <option value="<?php echo $p['id']; ?>" <?php echo ($filter_project == $p['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($p['ten_du_an']); ?></option>
-                <?php endforeach; ?>
-            </select>
+            <div class="searchable-select-container">
+                <input type="text" id="project_search" class="search-input" placeholder="Tất cả dự án..." value="<?php 
+                    if ($filter_project) {
+                        foreach($projects_list as $p) {
+                            if($p['id'] == $filter_project) {
+                                echo htmlspecialchars($p['ten_du_an']);
+                                break;
+                            }
+                        }
+                    }
+                ?>" autocomplete="off">
+                <input type="hidden" name="filter_project" id="filter_project" value="<?php echo htmlspecialchars($filter_project); ?>">
+                <div id="project_dropdown" class="searchable-dropdown"></div>
+            </div>
         </div>
         <div class="filter-group" style="flex: 2;">
             <label>Tìm kiếm</label>
@@ -190,12 +198,14 @@ $all_columns = [
 </div>
 
 <script>
+let localProjects = <?php echo json_encode($projects_list); ?>;
+let activeIndex = -1;
+
 function toggleColumnMenu() { 
     const menu = document.getElementById('columnMenu');
     if(menu) menu.classList.toggle('show'); 
 }
 
-// Column Visibility Logic
 const colCbs = document.querySelectorAll('.col-checkbox');
 function updateCols() {
     const s = {};
@@ -209,9 +219,44 @@ function updateCols() {
 }
 colCbs.forEach(cb => cb.addEventListener('change', updateCols));
 
-// Batch Selection Logic
 document.addEventListener('DOMContentLoaded', () => {
-    // Restore columns
+    // Searchable Select Logic
+    const projectSearch = document.getElementById('project_search');
+    const projectDropdown = document.getElementById('project_dropdown');
+    const projectIdInput = document.getElementById('filter_project');
+
+    if (projectSearch) {
+        projectSearch.addEventListener('input', function() {
+            renderProjectDropdown(this.value.toLowerCase().trim());
+        });
+        projectSearch.addEventListener('focus', function() {
+            renderProjectDropdown(this.value.toLowerCase().trim());
+        });
+        projectSearch.addEventListener('keydown', function(e) {
+            const items = projectDropdown.querySelectorAll('.dropdown-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIndex = Math.min(activeIndex + 1, items.length - 1);
+                updateActiveItem(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIndex = Math.max(activeIndex - 1, -1);
+                updateActiveItem(items);
+            } else if (e.key === 'Enter') {
+                if (activeIndex > -1 && items[activeIndex]) {
+                    e.preventDefault();
+                    items[activeIndex].click();
+                }
+            }
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (projectSearch && !projectSearch.contains(e.target) && !projectDropdown.contains(e.target)) {
+            projectDropdown.style.display = 'none';
+        }
+    });
+
     const saved = JSON.parse(localStorage.getItem('maintenanceColumns'));
     if(saved) {
         colCbs.forEach(cb => { 
@@ -220,7 +265,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateCols();
 
-    // Elements
     const selectAll = document.getElementById('select-all');
     const rowCheckboxes = document.querySelectorAll('.row-checkbox');
     const batchActions = document.getElementById('batch-actions');
@@ -229,45 +273,76 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateBatchUI() {
         const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
-        const totalCount = rowCheckboxes.length;
-        
-        if (batchActions) {
-            batchActions.style.display = (checkedCount > 0) ? 'flex' : 'none';
-        }
-        
-        if (selectedCountDisplay) {
-            selectedCountDisplay.textContent = checkedCount;
-        }
-
+        if (batchActions) batchActions.style.display = (checkedCount > 0) ? 'flex' : 'none';
+        if (selectedCountDisplay) selectedCountDisplay.textContent = checkedCount;
         if (selectAll) {
-            selectAll.checked = (totalCount > 0 && checkedCount === totalCount);
-            selectAll.indeterminate = (checkedCount > 0 && checkedCount < totalCount);
+            selectAll.checked = (rowCheckboxes.length > 0 && checkedCount === rowCheckboxes.length);
+            selectAll.indeterminate = (checkedCount > 0 && checkedCount < rowCheckboxes.length);
         }
     }
 
-    // Individual checkboxes
-    rowCheckboxes.forEach(cb => {
-        cb.addEventListener('change', updateBatchUI);
+    rowCheckboxes.forEach(cb => cb.addEventListener('change', updateBatchUI));
+    if (selectAll) selectAll.addEventListener('change', function() {
+        rowCheckboxes.forEach(cb => cb.checked = this.checked);
+        updateBatchUI();
     });
-
-    // Select All checkbox
-    if (selectAll) {
-        selectAll.addEventListener('change', function() {
-            const isChecked = this.checked;
-            rowCheckboxes.forEach(cb => cb.checked = isChecked);
-            updateBatchUI();
-        });
-    }
-
-    // Clear selection
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            if (selectAll) selectAll.checked = false;
-            rowCheckboxes.forEach(cb => cb.checked = false);
-            updateBatchUI();
-        });
-    }
+    if (clearBtn) clearBtn.addEventListener('click', () => {
+        if (selectAll) selectAll.checked = false;
+        rowCheckboxes.forEach(cb => cb.checked = false);
+        updateBatchUI();
+    });
     
-    updateBatchUI(); // Initial call
+    updateBatchUI();
 });
+
+function renderProjectDropdown(filter = '') {
+    const dropdown = document.getElementById('project_dropdown');
+    const filtered = localProjects.filter(p => p.ten_du_an.toLowerCase().includes(filter));
+
+    let html = '<div class="dropdown-item" onclick="selectProject(\'\', \'\')">-- Tất cả dự án --</div>';
+    if (filtered.length === 0) {
+        html += '<div class="no-results">Không tìm thấy dự án</div>';
+    } else {
+        html += filtered.map(p => `
+            <div class="dropdown-item" onclick="selectProject(${p.id}, '${p.ten_du_an.replace(/'/g, "\\'")}')">
+                <span class="item-title">${p.ten_du_an}</span>
+            </div>
+        `).join('');
+    }
+    dropdown.innerHTML = html;
+    dropdown.style.display = 'block';
+    activeIndex = -1;
+}
+
+function selectProject(id, name) {
+    document.getElementById('project_search').value = name;
+    document.getElementById('filter_project').value = id;
+    document.getElementById('project_dropdown').style.display = 'none';
+}
+
+function updateActiveItem(items) {
+    items.forEach((item, index) => {
+        item.classList.toggle('active', index === activeIndex);
+        if (index === activeIndex) item.scrollIntoView({ block: 'nearest' });
+    });
+}
 </script>
+
+<style>
+/* Searchable Select */
+.searchable-select-container { position: relative; width: 100%; min-width: 200px; }
+.search-input { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+.searchable-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 5px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: none; }
+.dropdown-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; text-align: left; }
+.dropdown-item:hover, .dropdown-item.active { background: #f8fafc; color: var(--primary-color); }
+.no-results { padding: 10px; text-align: center; color: #94a3b8; font-size: 0.85rem; }
+
+/* Responsive Filter */
+@media (max-width: 768px) {
+    .filter-form { flex-direction: column; align-items: stretch; gap: 15px; }
+    .filter-group { width: 100%; }
+    .searchable-select-container { min-width: 100%; }
+    .filter-actions { margin-left: 0 !important; width: 100%; display: flex; gap: 10px; }
+    .filter-actions .btn { flex: 1; justify-content: center; }
+}
+</style>

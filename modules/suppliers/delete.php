@@ -37,8 +37,8 @@ $service_count = $stmt_svc->fetchColumn();
 // Handle Confirmation
 if (isset($_REQUEST['confirm_delete'])) {
     if ($device_count > 0 || $service_count > 0) {
-        set_message('error', "Không thể xóa nhà cung cấp này vì đang có dữ liệu liên quan. Vui lòng kiểm tra lại.");
-        header("Location: index.php?page=suppliers/view&id=$id");
+        set_message('error', "Không thể xóa nhà cung cấp vì còn dữ liệu liên quan ($device_count thiết bị, $service_count dịch vụ).");
+        header("Location: index.php?page=suppliers/list");
         exit;
     }
 
@@ -50,7 +50,7 @@ if (isset($_REQUEST['confirm_delete'])) {
         exit;
     } catch (PDOException $e) {
         set_message('error', 'Lỗi: ' . $e->getMessage());
-        header("Location: index.php?page=suppliers/view&id=$id");
+        header("Location: index.php?page=suppliers/list");
         exit;
     }
 }

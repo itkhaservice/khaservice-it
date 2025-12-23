@@ -133,13 +133,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btn) {
             e.preventDefault();
             e.stopPropagation();
-            let url = btn.getAttribute('data-url') || btn.dataset.url;
-            if (!url) {
-                const href = btn.getAttribute('href');
-                if (href && href !== '#' && href !== 'javascript:void(0);') url = href;
-            }
-            if (url) {
-                showCustomConfirm('Bạn có chắc chắn muốn thực hiện hành động này không?', 'Xác nhận', () => { window.location.href = url; });
+            
+            // Lấy URL từ data-url hoặc href
+            let url = btn.getAttribute('data-url') || btn.dataset.url || btn.getAttribute('href');
+            
+            if (url && url !== '#' && url !== 'javascript:void(0);') {
+                // Đảm bảo URL có tham số confirm_delete=1 để thực thi xóa ngay khi xác nhận ở modal
+                if (!url.includes('confirm_delete=1')) {
+                    url += (url.includes('?') ? '&' : '?') + 'confirm_delete=1';
+                }
+
+                showCustomConfirm('Bạn có chắc chắn muốn chuyển mục này vào thùng rác không? Hành động này có thể khôi phục lại từ Thùng rác.', 'Xác nhận xóa', () => { 
+                    showSpinner();
+                    window.location.href = url; 
+                });
             }
         }
     });

@@ -73,8 +73,18 @@ try {
 </div>
 
 <div class="card">
-    <div class="dashboard-card-header">
+    <div class="dashboard-card-header trash-header-actions">
         <h3><i class="fas <?php echo $icon; ?>"></i> Danh sách <?php echo $title; ?> đã xóa</h3>
+        <?php if (!empty($data)): ?>
+            <div class="bulk-trash-btns">
+                <a href="index.php?page=trash/bulk_action&type=<?php echo $type; ?>&action=restore_all" class="btn-bulk btn-bulk-restore" data-mobile-text="Khôi phục hết">
+                    <i class="fas fa-undo-alt"></i> <span>Khôi phục tất cả</span>
+                </a>
+                <a href="#" data-url="index.php?page=trash/bulk_action&type=<?php echo $type; ?>&action=empty_trash" class="btn-bulk btn-bulk-delete delete-btn" data-mobile-text="Xóa sạch mục">
+                    <i class="fas fa-trash-alt"></i> <span>Dọn sạch mục này</span>
+                </a>
+            </div>
+        <?php endif; ?>
     </div>
 
     <?php if (empty($data)): ?>
@@ -115,3 +125,78 @@ try {
         </div>
     <?php endif; ?>
 </div>
+
+<style>
+.trash-header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding-bottom: 15px;
+}
+.bulk-trash-btns {
+    display: flex;
+    gap: 12px;
+}
+.btn-bulk {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    color: white !important;
+    text-decoration: none !important;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+.btn-bulk i {
+    font-size: 1rem;
+}
+.btn-bulk-restore {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+.btn-bulk-delete {
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+}
+.btn-bulk:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    filter: brightness(1.1);
+    color: white !important;
+}
+.btn-bulk:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+    .trash-header-actions {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .bulk-trash-btns {
+        width: 100%;
+        flex-direction: row;
+    }
+    .btn-bulk {
+        flex: 1;
+        justify-content: center;
+        padding: 12px 10px;
+        font-size: 0.8rem;
+    }
+    .btn-bulk span {
+        display: none;
+    }
+    .btn-bulk::after {
+        content: attr(data-mobile-text);
+    }
+    .trash-tabs .btn {
+        min-width: 120px !important;
+    }
+}
+</style>

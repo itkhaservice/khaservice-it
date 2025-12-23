@@ -18,8 +18,24 @@ if (!$device) {
     exit;
 }
 
+// Check for child devices (components attached to this device)
+$stmt_children = $pdo->prepare("SELECT COUNT(*) FROM devices WHERE parent_id = ? AND deleted_at IS NULL");
+$stmt_children->execute([$device_id]);
+$child_count = $stmt_children->fetchColumn();
+
+// Check for maintenance logs
+$stmt_logs = $pdo->prepare("SELECT COUNT(*) FROM maintenance_logs WHERE device_id = ? AND deleted_at IS NULL");
+$stmt_logs->execute([$device_id]);
+$log_count = $stmt_logs->fetchColumn();
+
 // Check for confirmation (Both POST and GET confirm_delete=1)
-if (isset($_POST['confirm_delete']) || (isset($_GET['confirm_delete']) && $_GET['confirm_delete'] == '1')) {
+if (isset($_REQUEST['confirm_delete'])) {
+    if ($child_count > 0) {
+        set_message('error', "Không thể xóa thiết bị này vì đang có $child_count linh kiện con gắn kèm. Vui lòng gỡ linh kiện trước.");
+        header("Location: index.php?page=devices/list");
+        exit;
+    }
+
     try {
         $stmt_del = $pdo->prepare("UPDATE devices SET deleted_at = NOW() WHERE id = ?");
         $stmt_del->execute([$device_id]);
@@ -43,16 +59,32 @@ if (isset($_POST['confirm_delete']) || (isset($_GET['confirm_delete']) && $_GET[
         </div>
         <h2 class="delete-modal-title">Bỏ vào Thùng rác?</h2>
         <p class="delete-modal-text">Bạn đang yêu cầu bỏ thiết bị <strong><?php echo htmlspecialchars($device['ten_thiet_bi']); ?></strong> (<?php echo htmlspecialchars($device['ma_tai_san']); ?>) vào thùng rác.</p>
-        <div class="delete-alert-box" style="border-left-color: #f59e0b; background: #fffbeb; color: #92400e;">
-            <i class="fas fa-info-circle"></i> 
-            Dữ liệu của thiết bị sẽ tạm thời bị ẩn. Bạn có thể khôi phục lại từ mục Thùng rác.
-        </div>
         
-        <form action="index.php?page=devices/delete&id=<?php echo $device_id; ?>" method="POST" class="delete-actions" style="display:flex; justify-content:center; gap:15px;">
-            <input type="hidden" name="confirm_delete" value="1">
-            <a href="index.php?page=devices/view&id=<?php echo $device_id; ?>" class="btn btn-secondary">Hủy bỏ</a>
-            <button type="submit" class="btn btn-warning" style="background: var(--gradient-warning); color:white; border:none; padding: 0 25px; height:42px;">Xác nhận</button>
-        </form>
+        <?php if ($child_count > 0): ?>
+            <div class="delete-alert-box" style="border-left-color: #ef4444; background: #fef2f2; color: #991b1b; text-align: left;">
+                <i class="fas fa-exclamation-triangle"></i> 
+                <span><strong>Lỗi:</strong> Thiết bị này đang chứa <strong><?php echo $child_count; ?></strong> linh kiện con. Bạn phải gỡ bỏ hoặc xóa các linh kiện này trước khi xóa thiết bị chính.</span>
+            </div>
+            <div class="delete-actions" style="margin-top:20px;">
+                <a href="index.php?page=devices/view&id=<?php echo $device_id; ?>" class="btn btn-secondary">Quay lại</a>
+            </div>
+        <?php else: ?>
+            <div class="delete-alert-box" style="border-left-color: #f59e0b; background: #fffbeb; color: #92400e; text-align: left;">
+                <i class="fas fa-info-circle"></i> 
+                <div>
+                    Dữ liệu của thiết bị sẽ tạm thời bị ẩn. 
+                    <?php if ($log_count > 0): ?>
+                        <br><strong>Lưu ý:</strong> Thiết bị này có <strong><?php echo $log_count; ?></strong> bản ghi bảo trì liên quan cũng sẽ bị tạm ẩn.
+                    <?php endif; ?>
+                </div>
+            </div>
+            
+            <form action="index.php?page=devices/delete&id=<?php echo $device_id; ?>" method="POST" class="delete-actions" style="display:flex; justify-content:center; gap:15px;">
+                <input type="hidden" name="confirm_delete" value="1">
+                <a href="index.php?page=devices/view&id=<?php echo $device_id; ?>" class="btn btn-secondary">Hủy bỏ</a>
+                <button type="submit" class="btn btn-warning" style="background: var(--gradient-warning); color:white; border:none; padding: 0 25px; height:42px;">Xác nhận</button>
+            </form>
+        <?php endif; ?>
     </div>
 </div>
 

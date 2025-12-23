@@ -1,6 +1,17 @@
 /* assets/css/style.css */
 
 /* Define CSS Variables */
+/* Ẩn thanh cuộn cho Chrome, Safari và Opera */
+::-webkit-scrollbar {
+    display: none;
+}
+
+/* Ẩn thanh cuộn cho IE, Edge và Firefox */
+html {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
 :root {
     /* Main Brand Color: rgb(36, 162, 92) */
     --primary-color: #24a25c;

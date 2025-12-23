@@ -1,11 +1,15 @@
 <?php
-// Tự động xác định BASE_URL để không bao giờ mất CSS/JS
-$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+// Tự động xác định BASE_URL một cách chính xác nhất
+$protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'];
-$script = $_SERVER['SCRIPT_NAME']; // /khaservice-it-web/public/index.php hoặc /public/index.php
-$base_dir = str_replace('/public/index.php', '', $script);
-$base_dir = str_replace('/index.php', '', $base_dir);
-$final_base = $protocol . "://" . $host . $base_dir . "/";
+
+// Lấy thư mục hiện tại của script đang chạy (public/index.php)
+$script_name = $_SERVER['SCRIPT_NAME']; // vd: /khaservice-it/public/index.php
+$base_dir = dirname(dirname($script_name)); // Lùi lại 2 cấp từ index.php để ra thư mục gốc dự án
+
+// Chuẩn hóa base_dir để luôn có dấu gạch chéo ở cuối và không bị lặp
+$base_dir = rtrim($base_dir, '/\\') . '/';
+$final_base = $protocol . "://" . $host . $base_dir;
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -13,6 +17,9 @@ $final_base = $protocol . "://" . $host . $base_dir . "/";
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý IT - KHASERVICE</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="<?php echo $final_base; ?>uploads/system/Logo1024x.png">
     
     <!-- FontAwesome 5.15.4 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
