@@ -1,6 +1,6 @@
 <?php
 // modules/suppliers/list.php
-$rows_per_page = (isset($_GET['limit']) && is_numeric($_GET['limit'])) ? (int)$_GET['limit'] : 5;
+$rows_per_page = (isset($_GET['limit']) && is_numeric($_GET['limit'])) ? (int)$_GET['limit'] : 10;
 $current_page  = (isset($_GET['p']) && is_numeric($_GET['p'])) ? (int)$_GET['p'] : 1;
 if ($current_page < 1) $current_page = 1;
 
@@ -45,24 +45,29 @@ $all_columns = [
     <?php if(isIT()): ?><a href="index.php?page=suppliers/add" class="btn btn-primary"><i class="fas fa-plus"></i> Thêm mới</a><?php endif; ?>
 </div>
 
-<div class="card filter-section">
-    <form action="index.php" method="GET" class="filter-form">
+<div class="card filter-section-modern">
+    <form action="index.php" method="GET" class="filter-form-modern">
         <input type="hidden" name="page" value="suppliers/list">
-        <div class="filter-group" style="flex: 2;">
-            <label>Tìm kiếm</label>
-            <input type="text" name="filter_keyword" placeholder="Tên, liên hệ, email..." value="<?php echo htmlspecialchars($filter_keyword); ?>" class="form-control-sm">
-        </div>
-        <div class="filter-actions" style="margin-left: auto;">
-            <button type="submit" class="btn btn-primary btn-sm">Lọc</button>
-            <a href="index.php?page=suppliers/list" class="btn btn-secondary btn-sm"><i class="fas fa-undo"></i></a>
-            <div class="column-selector-container">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleColumnMenu()"><i class="fas fa-columns"></i> Cột</button>
-                <div id="columnMenu" class="dropdown-menu">
-                    <div class="dropdown-header">Hiển thị cột</div>
-                    <div class="column-list">
-                        <?php foreach ($all_columns as $k => $c): ?>
-                            <label class="column-item"><input type="checkbox" class="col-checkbox" data-target="<?php echo $k; ?>" <?php echo $c['default'] ? 'checked' : ''; ?>> <?php echo htmlspecialchars($c['label']); ?></label>
-                        <?php endforeach; ?>
+        <div class="filter-main-grid">
+            <div class="filter-item" style="flex: 2;">
+                <label>Từ khóa Tìm kiếm</label>
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" name="filter_keyword" placeholder="Tên, liên hệ, email..." value="<?php echo htmlspecialchars($filter_keyword); ?>" class="form-control-sm">
+                </div>
+            </div>
+            <div class="filter-item" style="flex: 0 0 auto; flex-direction: row; gap: 8px;">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Lọc</button>
+                <a href="index.php?page=suppliers/list" class="btn btn-secondary btn-sm"><i class="fas fa-undo"></i></a>
+                <div class="column-selector-container">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="toggleColumnMenu()"><i class="fas fa-columns"></i> Cột</button>
+                    <div id="columnMenu" class="dropdown-menu">
+                        <div class="dropdown-header">Hiển thị cột</div>
+                        <div class="column-list">
+                            <?php foreach ($all_columns as $k => $c): ?>
+                                <label class="column-item"><input type="checkbox" class="col-checkbox" data-target="<?php echo $k; ?>" <?php echo $c['default'] ? 'checked' : ''; ?>> <?php echo htmlspecialchars($c['label']); ?></label>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -126,7 +131,7 @@ $all_columns = [
             <?php foreach ($_GET as $key => $value): if(!in_array($key, ['limit','page','p'])) { ?><input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>"><?php } endforeach; ?>
             <label style="font-size: 0.85rem; color: #64748b;">Hiển thị</label>
             <select name="limit" onchange="this.form.submit()" class="form-select-sm" style="width: auto;">
-                <?php foreach([5,10,25,50,100] as $lim): ?><option value="<?php echo $lim; ?>" <?php echo $rows_per_page == $lim ? 'selected' : ''; ?>><?php echo $lim; ?></option><?php endforeach; ?>
+                <?php foreach([10,25,50,100] as $lim): ?><option value="<?php echo $lim; ?>" <?php echo $rows_per_page == $lim ? 'selected' : ''; ?>><?php echo $lim; ?></option><?php endforeach; ?>
             </select>
         </form>
     </div>
@@ -137,6 +142,29 @@ $all_columns = [
         <a href="<?php echo $base . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-right"></i></a>
     </div>
 </div>
+
+<style>
+.filter-section-modern { 
+    padding: 15px; 
+    margin-bottom: 20px; 
+    background: #fff; 
+    border-radius: 12px; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+    border-left: 5px solid var(--primary-color) !important;
+}
+.filter-form-modern { display: flex; flex-direction: column; gap: 12px; }
+.filter-main-grid { display: flex; gap: 12px; align-items: flex-end; }
+.filter-item { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.filter-item label { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+.search-input-wrapper { position: relative; width: 100%; }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.9rem; }
+.search-input-wrapper input { padding-left: 35px !important; width: 100%; }
+.form-control-sm { height: 36px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; font-size: 0.85rem; width: 100%; transition: 0.2s; }
+
+@media (max-width: 768px) {
+    .filter-main-grid { flex-direction: column; align-items: stretch; }
+}
+</style>
 
 <script>
 function toggleColumnMenu() { const m = document.getElementById('columnMenu'); if(m) m.classList.toggle('show'); }

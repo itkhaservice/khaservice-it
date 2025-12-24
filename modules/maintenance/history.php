@@ -65,37 +65,42 @@ $all_columns = [
     <?php if(isIT()): ?><a href="index.php?page=maintenance/add" class="btn btn-primary"><i class="fas fa-plus"></i> Tạo Phiếu</a><?php endif; ?>
 </div>
 
-<div class="card filter-section">
-    <form action="index.php" method="GET" class="filter-form">
+<div class="card filter-section-modern">
+    <form action="index.php" method="GET" class="filter-form-modern">
         <input type="hidden" name="page" value="maintenance/history">
-        <div class="filter-group">
-            <label>Dự án</label>
-            <div class="searchable-select-container">
-                <input type="text" id="project_search" class="search-input" placeholder="Tất cả dự án..." value="<?php 
-                    if ($filter_project) {
-                        foreach($projects_list as $p) { if($p['id'] == $filter_project) { echo htmlspecialchars($p['ten_du_an']); break; } }
-                    }
-                ?>" autocomplete="off">
-                <button type="button" class="btn-clear-inline" id="btn-clear-project" style="<?php echo $filter_project ? 'display:block' : 'display:none'; ?>"><i class="fas fa-times"></i></button>
-                <input type="hidden" name="filter_project" id="filter_project" value="<?php echo htmlspecialchars($filter_project); ?>">
-                <div id="project_dropdown" class="searchable-dropdown"></div>
+        <div class="filter-main-grid">
+            <div class="filter-item">
+                <label>Dự án</label>
+                <div class="searchable-select-container">
+                    <input type="text" id="project_search" class="form-control-sm" placeholder="Tất cả dự án..." value="<?php 
+                        if ($filter_project) {
+                            foreach($projects_list as $p) { if($p['id'] == $filter_project) { echo htmlspecialchars($p['ten_du_an']); break; } }
+                        }
+                    ?>" autocomplete="off">
+                    <button type="button" class="btn-clear-inline" id="btn-clear-project" style="<?php echo $filter_project ? 'display:block' : 'display:none'; ?>"><i class="fas fa-times"></i></button>
+                    <input type="hidden" name="filter_project" id="filter_project" value="<?php echo htmlspecialchars($filter_project); ?>">
+                    <div id="project_dropdown" class="searchable-dropdown"></div>
+                </div>
             </div>
-        </div>
-        <div class="filter-group" style="flex: 2;">
-            <label>Tìm kiếm</label>
-            <input type="text" name="filter_keyword" placeholder="Thiết bị, nội dung, yêu cầu..." value="<?php echo htmlspecialchars($filter_keyword); ?>">
-        </div>
-        <div class="filter-actions" style="margin-left: auto;">
-            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Lọc</button>
-            <a href="index.php?page=maintenance/history" class="btn btn-secondary"><i class="fas fa-undo"></i></a>
-            <div class="column-selector-container">
-                <button type="button" class="btn btn-secondary" onclick="toggleColumnMenu()"><i class="fas fa-columns"></i> Cột</button>
-                <div id="columnMenu" class="dropdown-menu">
-                    <div class="dropdown-header">Hiển thị cột</div>
-                    <div class="column-list">
-                        <?php foreach ($all_columns as $k => $c): ?>
-                            <label class="column-item"><input type="checkbox" class="col-checkbox" data-target="<?php echo $k; ?>" <?php echo $c['default'] ? 'checked' : ''; ?>> <?php echo htmlspecialchars($c['label']); ?></label>
-                        <?php endforeach; ?>
+            <div class="filter-item" style="flex: 2;">
+                <label>Từ khóa</label>
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" name="filter_keyword" placeholder="Thiết bị, nội dung, yêu cầu..." value="<?php echo htmlspecialchars($filter_keyword); ?>" class="form-control-sm">
+                </div>
+            </div>
+            <div class="filter-item" style="flex: 0 0 auto; flex-direction: row; gap: 8px;">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Lọc</button>
+                <a href="index.php?page=maintenance/history" class="btn btn-secondary btn-sm"><i class="fas fa-undo"></i></a>
+                <div class="column-selector-container">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="toggleColumnMenu()"><i class="fas fa-columns"></i> Cột</button>
+                    <div id="columnMenu" class="dropdown-menu">
+                        <div class="dropdown-header">Hiển thị cột</div>
+                        <div class="column-list">
+                            <?php foreach ($all_columns as $k => $c): ?>
+                                <label class="column-item"><input type="checkbox" class="col-checkbox" data-target="<?php echo $k; ?>" <?php echo $c['default'] ? 'checked' : ''; ?>> <?php echo htmlspecialchars($c['label']); ?></label>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -262,6 +267,23 @@ function prepareExport() {
 </script>
 
 <style>
+.filter-section-modern { 
+    padding: 15px; 
+    margin-bottom: 20px; 
+    background: #fff; 
+    border-radius: 12px; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+    border-left: 5px solid var(--primary-color) !important;
+}
+.filter-form-modern { display: flex; flex-direction: column; gap: 12px; }
+.filter-main-grid { display: flex; gap: 12px; align-items: flex-end; }
+.filter-item { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.filter-item label { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+.search-input-wrapper { position: relative; width: 100%; }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.9rem; }
+.search-input-wrapper input { padding-left: 35px !important; width: 100%; }
+.form-control-sm { height: 36px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; font-size: 0.85rem; width: 100%; transition: 0.2s; }
+
 .searchable-select-container { position: relative; width: 100%; min-width: 200px; }
 .search-input { width: 100%; padding: 8px 30px 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
 .searchable-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 5px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: none; }

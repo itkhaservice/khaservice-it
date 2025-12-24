@@ -40,6 +40,7 @@ if (($page ?? 'home') === 'home') {
                 ml.ngay_su_co, 
                 ml.noi_dung, 
                 ml.created_at, 
+                ml.custom_device_name,
                 d.ma_tai_san, 
                 d.ten_thiet_bi 
             FROM maintenance_logs ml
@@ -216,12 +217,16 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
                 <?php else: ?>
                     <ul class="feed-list">
                         <?php foreach ($recent_activities as $activity): ?>
+                            <?php 
+                                $deviceName = !empty($activity['ten_thiet_bi']) ? $activity['ten_thiet_bi'] : ($activity['custom_device_name'] ?? 'Thiết bị không xác định');
+                                $deviceCode = !empty($activity['ma_tai_san']) ? " (" . $activity['ma_tai_san'] . ")" : "";
+                            ?>
                             <li class="feed-item">
                                 <div class="feed-icon">
                                     <i class="fas fa-wrench"></i>
                                 </div>
                                 <div class="feed-content">
-                                    <h4><?= htmlspecialchars($activity['ten_thiet_bi']) ?> (<?= htmlspecialchars($activity['ma_tai_san']) ?>)</h4>
+                                    <h4><?= htmlspecialchars($deviceName . $deviceCode) ?></h4>
                                     <p><?= htmlspecialchars($activity['noi_dung']) ?></p>
                                     <span class="feed-time"><i class="far fa-clock"></i> <?= date('H:i d/m/Y', strtotime($activity['created_at'])) ?></span>
                                 </div>

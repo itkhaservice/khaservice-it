@@ -47,9 +47,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Close menu when clicking a link
+        // Close menu when clicking a link (EXCEPT dropdown toggles)
         mobileMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
+            link.addEventListener('click', (e) => {
+                // Nếu link này dùng để mở dropdown thì không đóng menu
+                if (link.getAttribute('onclick') && link.getAttribute('onclick').includes('toggleDropdown')) {
+                    return; 
+                }
+
                 hamburgerButton.classList.remove('active');
                 mobileMenu.classList.remove('active');
                 document.body.style.overflow = '';

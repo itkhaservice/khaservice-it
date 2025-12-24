@@ -49,8 +49,6 @@ $final_base = $protocol . "://" . $host . $base_dir;
             </div>
         </div>
 
-        <div class="header-center"></div>
-        
         <nav class="main-nav" id="mobile-menu">
             <div class="mobile-nav-header">
                 <span class="brand">MENU</span>
@@ -61,12 +59,19 @@ $final_base = $protocol . "://" . $host . $base_dir;
                 <li><a href="index.php?page=maintenance/history"><i class="fas fa-tools"></i> Công tác</a></li>
                 <li><a href="index.php?page=services/list"><i class="fas fa-cloud"></i> Dịch vụ</a></li>
                 <li><a href="index.php?page=projects/list"><i class="fas fa-building"></i> Dự án</a></li>
-                <li><a href="index.php?page=suppliers/list"><i class="fas fa-truck"></i> Nhà cung cấp</a></li>
-                <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
-                    <li><a href="index.php?page=users/list"><i class="fas fa-users"></i> Người dùng</a></li>
-                    <li><a href="index.php?page=settings/system"><i class="fas fa-cogs"></i> Cài đặt</a></li>
-                <?php endif; ?>
-                <li><a href="index.php?page=trash/list" class="trash-link"><i class="fas fa-trash-alt"></i> Thùng rác</a></li>
+                
+                <li class="dropdown">
+                    <a href="javascript:void(0)" onclick="toggleDropdown(this)"><i class="fas fa-ellipsis-h"></i> Khác <i class="fas fa-caret-down"></i></a>
+                    <div class="dropdown-content">
+                        <a href="index.php?page=car_systems/list"><i class="fas fa-car-battery"></i> Hệ thống xe</a>
+                        <a href="index.php?page=suppliers/list"><i class="fas fa-truck"></i> Nhà cung cấp</a>
+                        <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+                            <a href="index.php?page=users/list"><i class="fas fa-users"></i> Người dùng</a>
+                            <a href="index.php?page=settings/system"><i class="fas fa-cogs"></i> Cài đặt</a>
+                        <?php endif; ?>
+                        <a href="index.php?page=trash/list" class="trash-link"><i class="fas fa-trash-alt"></i> Thùng rác</a>
+                    </div>
+                </li>
             </ul>
         </nav>
 
@@ -79,5 +84,32 @@ $final_base = $protocol . "://" . $host . $base_dir;
             <a href="logout.php" class="logout-link" title="Thoát"><i class="fas fa-sign-out-alt"></i></a>
         </div>
     </header>
+    
+    <script>
+        // Universal Dropdown Toggle (Desktop & Mobile)
+        function toggleDropdown(element) {
+            // Ngăn chặn sự kiện click lan ra ngoài (để không kích hoạt document click ngay lập tức)
+            event.stopPropagation();
+            
+            // Tìm thẻ cha li.dropdown
+            const dropdownLi = element.closest('.dropdown');
+            
+            // Toggle class active
+            dropdownLi.classList.toggle('active');
+        }
+
+        // Close dropdown when clicking outside (Desktop only)
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth > 1100) {
+                const dropdowns = document.querySelectorAll('.dropdown');
+                dropdowns.forEach(function(dropdown) {
+                    // Nếu click không nằm trong dropdown này thì đóng nó lại
+                    if (!dropdown.contains(event.target)) {
+                        dropdown.classList.remove('active');
+                    }
+                });
+            }
+        });
+    </script>
     <main class="main-content">
         <div class="container">

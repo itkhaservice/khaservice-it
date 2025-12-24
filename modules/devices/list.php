@@ -374,7 +374,14 @@ function prepareExport() {
 
 <style>
 /* CSS CẢI TIẾN */
-.filter-section-modern { padding: 15px; margin-bottom: 20px; background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+.filter-section-modern { 
+    padding: 15px; 
+    margin-bottom: 20px; 
+    background: #fff; 
+    border-radius: 12px; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+    border-left: 5px solid var(--primary-color) !important;
+}
 .filter-form-modern { display: flex; flex-direction: column; gap: 12px; }
 .filter-main-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
 .filter-item { display: flex; flex-direction: column; gap: 4px; }
