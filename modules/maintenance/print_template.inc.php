@@ -1,7 +1,7 @@
 <?php
 /**
  * Tệp này chứa logic và giao diện in ấn cố định cho Phiếu Công Tác.
- * Thiết kế: Nâng cỡ chữ lên 13pt chuẩn văn bản, tối ưu hiển thị rõ nét.
+ * Thiết kế: Trở về cỡ chữ 11pt gọn gàng, giữ nguyên các cải tiến bố cục.
  */
 
 // --- 1. LOGIC XỬ LÝ DỮ LIỆU ---
@@ -66,11 +66,11 @@ function renderValue($val, $dots, $isBold = false) {
         <div class="print-header-section">
             <table class="p-header-table" style="width: 100%; border-collapse: collapse;">       
                 <tr>
-                    <td style="padding-left: 0; width: 220px; vertical-align: top; text-align: center;">
-                        <img src="../uploads/system/logo.png" alt="Logo" style="width: 200px; display: block; margin-bottom: 5px;">
-                        <div class="p-ticket-no-clean" style="width: 200px;">Số: <i><?php echo str_pad($log['id'], 2, '0', STR_PAD_LEFT); ?>/CT-P.IT<?php echo date('m', strtotime($log['created_at'])); ?>/<?php echo date('y', strtotime($log['created_at'])); ?></i></div>
+                    <td style="padding-left: 0; width: 190px; vertical-align: top; text-align: center;">
+                        <img src="../uploads/system/logo.png" alt="Logo" style="width: 190px; display: block; margin-bottom: 5px;">
+                        <div class="p-ticket-no-clean" style="width: 190px;">Số: <i><?php echo str_pad($log['id'], 2, '0', STR_PAD_LEFT); ?>/CT-P.IT<?php echo date('m', strtotime($log['created_at'])); ?>/<?php echo date('y', strtotime($log['created_at'])); ?></i></div>
                     </td>
-                    <td style="text-align: right; vertical-align: bottom; padding-bottom: 8px;">
+                    <td style="text-align: right; vertical-align: bottom; padding-bottom: 5px;">
                         <div class="p-date"><?php echo htmlspecialchars($display_city); ?>, ngày <?php echo $p_d; ?> tháng <?php echo $p_m; ?> năm <?php echo $p_y; ?></div>
                     </td>
                 </tr>
@@ -82,9 +82,9 @@ function renderValue($val, $dots, $isBold = false) {
         <!-- TABLE 1: THÔNG TIN CHUNG -->
         <table class="data-table">
             <colgroup>
-                <col style="width: 150px;">
+                <col style="width: 130px;">
                 <col style="width: auto;">
-                <col style="width: 140px;">
+                <col style="width: 130px;">
                 <col style="width: 25%;">
             </colgroup>
             <tr>
@@ -118,9 +118,9 @@ function renderValue($val, $dots, $isBold = false) {
         <!-- TABLE 2: THÔNG TIN THIẾT BỊ -->
         <table class="data-table">
             <colgroup>
-                <col style="width: 150px;">
+                <col style="width: 130px;">
                 <col style="width: auto;">
-                <col style="width: 140px;">
+                <col style="width: 130px;">
                 <col style="width: 25%;">
             </colgroup>
             <tr>
@@ -136,9 +136,9 @@ function renderValue($val, $dots, $isBold = false) {
         <!-- TABLE 3: THÔNG TIN THỜI GIAN -->
         <table class="data-table">
             <colgroup>
-                <col style="width: 150px;">
+                <col style="width: 130px;">
                 <col style="width: auto;">
-                <col style="width: 140px;">
+                <col style="width: 130px;">
                 <col style="width: 25%;">
             </colgroup>
             <tr>
@@ -166,11 +166,11 @@ function renderValue($val, $dots, $isBold = false) {
         <!-- CONTENT SECTION -->
         <div class="content-box">
             <div class="box-header">I. YÊU CẦU CỦA DỰ ÁN</div>
-            <div class="box-body" style="min-height: 80px;">
+            <div class="box-body" style="min-height: 70px;">
                 <?php if (!empty($log['noi_dung'])): ?>
                     <?php echo nl2br(htmlspecialchars($log['noi_dung'])); ?>
                 <?php else: ?>
-                    <div style="line-height: 35px;" class="dot-placeholder"><?php echo $dots; ?><br><?php echo $dots; ?></div>
+                    <div style="line-height: 30px;" class="dot-placeholder"><?php echo $dots; ?><br><?php echo $dots; ?></div>
                 <?php endif; ?>
             </div>
         </div>
@@ -190,7 +190,7 @@ function renderValue($val, $dots, $isBold = false) {
                         <?php if (!empty($hu_hong)): ?>
                             <?php echo nl2br(htmlspecialchars($hu_hong)); ?>
                         <?php else: ?>
-                            <div style="line-height: 30px;" class="dot-placeholder"><?php echo $dots; ?><br><?php echo $dots; ?></div>
+                            <div style="line-height: 25px;" class="dot-placeholder"><?php echo $dots; ?><br><?php echo $dots; ?></div>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -203,7 +203,7 @@ function renderValue($val, $dots, $isBold = false) {
                         <?php if (!empty($xu_ly)): ?>
                             <?php echo nl2br(htmlspecialchars($xu_ly)); ?>
                         <?php else: ?>
-                            <div style="line-height: 30px;" class="dot-placeholder"><?php echo $dots; ?><br><?php echo $dots; ?><br><?php echo $dots; ?><br><?php echo $dots; ?></div>
+                            <div style="line-height: 25px;" class="dot-placeholder"><?php echo $dots; ?><br><?php echo $dots; ?><br><?php echo $dots; ?><br><?php echo $dots; ?></div>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -243,25 +243,22 @@ function renderValue($val, $dots, $isBold = false) {
     @page { size: A4; margin: 10mm 15mm; }
     
     html, body { margin: 0; padding: 0; background: #fff !important; }
-    body { font-family: "Times New Roman", Times, serif; color: #000; font-size: 13pt; line-height: 1.4; } /* Nâng lên 13pt */
-    
+    body { font-family: "Times New Roman", Times, serif; color: #000; font-size: 11pt; line-height: 1.3; }
     .web-view, .main-header, .main-footer, footer, .header-actions, .message-container { display: none !important; } 
     .print-only { display: block !important; width: 100%; height: 100%; }
     .a4-page-wrapper { min-height: 95vh; display: flex; flex-direction: column; }
 
     .text-upper { text-transform: uppercase; }
     .spacer-5 { height: 5px; }
-    .spacer-10 { height: 12px; }
-    .spacer-15 { height: 18px; }
-    .spacer-20 { height: 25px; }
+    .spacer-10 { height: 10px; }
+    .spacer-15 { height: 15px; }
+    .spacer-20 { height: 20px; }
 
-    /* Header */
     .p-header-table { width: 100%; border-bottom: 2px solid #000; margin-bottom: 5px; }
-    .p-ticket-no-clean { font-size: 14pt; font-weight: normal; margin-top: 5px; }
+    .p-ticket-no-clean { font-size: 13pt; font-weight: normal; margin-top: 5px; }
     .p-date { font-size: 13pt; font-style: italic; }
-    .p-title { text-align: center; font-size: 26pt; font-weight: bold; margin: 15px 0 12px 0; text-transform: uppercase; }
+    .p-title { text-align: center; font-size: 24pt; font-weight: bold; margin: 15px 0 10px 0; text-transform: uppercase; }
 
-    /* Data Table */
     .data-table { 
         width: 100%; 
         border-collapse: collapse; 
@@ -270,9 +267,9 @@ function renderValue($val, $dots, $isBold = false) {
     }
     .data-table td { 
         border: 1px solid #000; 
-        padding: 7px 15px 7px 10px; 
+        padding: 6px 15px 6px 8px; 
         vertical-align: top;
-        height: 1.5em; 
+        height: 1.6em; 
     }
     
     .dot-placeholder {
@@ -286,6 +283,7 @@ function renderValue($val, $dots, $isBold = false) {
     
     .data-table td.allow-wrap {
         white-space: normal !important;
+        overflow: hidden;
     }
     .data-table td.allow-wrap .dot-placeholder {
         white-space: normal !important;
@@ -299,32 +297,29 @@ function renderValue($val, $dots, $isBold = false) {
         background-color: #f5f5f5 !important; 
         -webkit-print-color-adjust: exact; 
         white-space: nowrap;
-        width: 150px;
-        font-size: 13pt;
+        width: 130px;
     }
 
-    /* Content Box */
     .content-box { border: 1.5px solid #000; display: flex; flex-direction: column; }
-    .flex-grow { flex-grow: 1; min-height: 200px; }
+    .flex-grow { flex-grow: 1; min-height: 180px; }
     
     .box-header { 
         background-color: #e0e0e0 !important; 
         -webkit-print-color-adjust: exact; 
         border-bottom: 1px solid #000; 
-        padding: 8px 12px; 
+        padding: 6px 10px; 
         font-weight: bold; 
-        font-size: 13pt;
+        font-size: 11pt;
         text-transform: uppercase;
     }
-    .box-body { padding: 12px; font-size: 13pt; }
+    .box-body { padding: 10px; }
     
-    .sub-section { margin-bottom: 8px; }
-    .sub-label { font-weight: bold; margin-bottom: 4px; }
-    .sub-divider { border-top: 1px dashed #ccc; margin: 10px 0; }
+    .sub-section { margin-bottom: 5px; }
+    .sub-label { font-weight: bold; margin-bottom: 2px; }
+    .sub-divider { border-top: 1px dashed #ccc; margin: 6px 0; }
 
-    /* Signatures */
-    .sig-table { width: 100%; text-align: center; margin-top: auto; font-size: 13pt; }
+    .sig-table { width: 100%; text-align: center; margin-top: auto; }
     .sig-table td { width: 50%; vertical-align: top; }
-    .sig-space-row td { height: 90px; }
+    .sig-space-row td { height: 80px; }
 }
 </style>
