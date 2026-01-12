@@ -1,19 +1,20 @@
 <?php
 /**
  * Tệp này chứa logic và giao diện in ấn cố định cho Phiếu Công Tác.
- * Thiết kế chuẩn A4: Header cố định -> Content co giãn -> Signatures đáy trang.
+ * Thiết kế: Nâng cỡ chữ lên 13pt chuẩn văn bản, tối ưu hiển thị rõ nét.
  */
 
-// 1. Logic xử lý dữ liệu
+// --- 1. LOGIC XỬ LÝ DỮ LIỆU ---
 $is_custom_device = empty($log['device_id']);
 $print_device_name = $is_custom_device ? ($log['custom_device_name'] ?: "") : $log['ten_thiet_bi'];
 
-// Xử lý ngày in trên đầu phiếu
+// Ngày tháng
 $print_doc_date = !empty($log['ngay_lap_phieu']) ? $log['ngay_lap_phieu'] : $log['created_at'];
 $p_d = date('d', strtotime($print_doc_date));
 $p_m = date('m', strtotime($print_doc_date));
 $p_y = date('Y', strtotime($print_doc_date));
 
+// Thời gian sử dụng
 $print_usage_time = "";
 if (!empty($log['usage_time_manual'])) {
     $print_usage_time = $log['usage_time_manual'];
@@ -27,11 +28,11 @@ if (!empty($log['usage_time_manual'])) {
     } catch (Exception $e) { $print_usage_time = ""; }
 }
 
+// Thông tin hỗ trợ lần trước
 $last_support_date = '';
 $last_support_work = '';
 $last_support_performer = '';
 
-// Ưu tiên lấy phiếu trước đó của cùng một dự án để khớp với Web View
 if (!empty($log['project_id'])) {
     $stmt_last = $pdo->prepare("
         SELECT ml.ngay_su_co, ml.completion_time, ml.work_type, u.fullname 
@@ -49,100 +50,189 @@ if (!empty($log['project_id'])) {
         $last_support_performer = $last_log['fullname'];
     }
 }
+
+// --- ĐỊNH NGHĨA DẤU CHẤM ---
+$dots = '................................................................................................................................................................................................................................................................';
+
+function renderValue($val, $dots, $isBold = false) {
+    if (empty($val)) return '<span class="dot-placeholder">' . $dots . '</span>';
+    return $isBold ? '<b>' . htmlspecialchars($val) . '</b>' : htmlspecialchars($val);
+}
 ?>
 
 <div class="print-only">
     <div class="a4-page-wrapper">
-        <!-- PHẦN CỐ ĐỊNH: HEADER & INFO -->
+        <!-- HEADER -->
         <div class="print-header-section">
             <table class="p-header-table" style="width: 100%; border-collapse: collapse;">       
                 <tr>
-                    <td style="padding-left: 0; width: 190px; vertical-align: top; text-align: center;">
-                        <img src="../uploads/system/logo.png" alt="Logo" style="width: 190px; display: block; margin-bottom: 5px;">
-                        <div class="p-ticket-no-clean" style="width: 190px;">Số: <i><?php echo str_pad($log['id'], 2, '0', STR_PAD_LEFT); ?>/CT-P.IT<?php echo date('m', strtotime($log['created_at'])); ?>/<?php echo date('y', strtotime($log['created_at'])); ?></i></div>
+                    <td style="padding-left: 0; width: 220px; vertical-align: top; text-align: center;">
+                        <img src="../uploads/system/logo.png" alt="Logo" style="width: 200px; display: block; margin-bottom: 5px;">
+                        <div class="p-ticket-no-clean" style="width: 200px;">Số: <i><?php echo str_pad($log['id'], 2, '0', STR_PAD_LEFT); ?>/CT-P.IT<?php echo date('m', strtotime($log['created_at'])); ?>/<?php echo date('y', strtotime($log['created_at'])); ?></i></div>
                     </td>
-                    <td style="text-align: right; vertical-align: bottom; padding-bottom: 5px;">
+                    <td style="text-align: right; vertical-align: bottom; padding-bottom: 8px;">
                         <div class="p-date"><?php echo htmlspecialchars($display_city); ?>, ngày <?php echo $p_d; ?> tháng <?php echo $p_m; ?> năm <?php echo $p_y; ?></div>
                     </td>
                 </tr>
             </table>
 
             <div class="p-title">PHIẾU CÔNG TÁC</div>
-
-            <table class="p-table">
-                <colgroup><col style="width: 18%;"><col style="width: 32%;"><col style="width: 18%;"><col style="width: 32%;"></colgroup>
-                <tr>
-                    <td class="pt-label">Dự Án:</td>
-                    <td class="p-line-single"><?php echo htmlspecialchars($display_project_name); ?></td> 
-                    <td class="pt-label">Bộ phận:</td>
-                    <td class="p-line-single">IT / Kỹ thuật</td>
-                </tr>
-                <tr>
-                    <td class="pt-label-top">Địa chỉ:</td>
-                    <td class="p-line-double"><?php echo htmlspecialchars($display_address); ?></td>      
-                    <td class="pt-label-top">Người đại diện:</td>
-                    <td class="p-line-double" style="text-transform: uppercase;"><?php echo htmlspecialchars($log['nguoi_thuc_hien'] ?: $current_user_name); ?></td>
-                </tr>
-                <tr>
-                    <td class="pt-label">Đại diện:</td>
-                    <td class="p-line-single"><?php echo htmlspecialchars($log['client_name'] ?? ''); ?></td>
-                    <td class="pt-label-top" rowspan="2">Công việc:</td>
-                    <td class="p-line-double" rowspan="2" style="height: 60px;"><?php echo htmlspecialchars($log['work_type'] ?? 'Bảo trì / Sửa chữa'); ?></td>
-                </tr>
-                <tr>
-                    <td class="pt-label">Điện thoại:</td>
-                    <td class="p-line-single"><?php echo htmlspecialchars($log['client_phone'] ?? ''); ?></td>
-                </tr>
-                <tr><td colspan="4" style="padding: 10px 0;"><div style="border-top: 2px solid #000;"></div></td></tr>
-                <tr>
-                    <td class="pt-label">Thiết bị:</td>
-                    <td class="p-line-single"><strong><?php echo htmlspecialchars($print_device_name); ?></strong></td>
-                    <td class="pt-label">TG sử dụng:</td>
-                    <td class="p-line-single"><?php echo $print_usage_time; ?></td>
-                </tr>
-                <tr>
-                    <td class="pt-label">TG yêu cầu:</td>
-                    <td class="p-line-single"><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></td>
-                    <td class="pt-label">Hỗ trợ lần cuối:</td>
-                    <td class="p-line-single"><?php echo $last_support_date ?: ''; ?></td>
-                </tr>
-                <tr>
-                    <td class="pt-label">TG có mặt:</td>
-                    <td class="p-line-single"><?php echo $log['arrival_time'] ? date('H:i d/m/Y', strtotime($log['arrival_time'])) : ''; ?></td>
-                    <td class="pt-label">Công việc:</td>
-                    <td class="p-line-single"><?php echo !empty($last_support_work) ? htmlspecialchars($last_support_work) : ''; ?></td>
-                </tr>
-                <tr>
-                    <td class="pt-label">TG hoàn thành:</td>
-                    <td class="p-line-single"><?php echo $log['completion_time'] ? date('H:i d/m/Y', strtotime($log['completion_time'])) : ''; ?></td>
-                    <td class="pt-label">Người thực hiện:</td>
-                    <td class="p-line-single" style="text-transform: uppercase;"><?php echo !empty($last_support_performer) ? htmlspecialchars($last_support_performer) : ''; ?></td>
-                </tr>
-            </table>
         </div>
 
-        <!-- PHẦN CO GIÃN: NỘI DUNG I & II -->
-        <div class="print-content-section">
-            <div class="p-box box-req">
-                <div class="pb-title">I. YÊU CẦU CỦA DỰ ÁN</div>
-                <div class="pb-content lined-paper"><?php echo nl2br(htmlspecialchars($log['noi_dung'] ?? '')); ?></div>
+        <!-- TABLE 1: THÔNG TIN CHUNG -->
+        <table class="data-table">
+            <colgroup>
+                <col style="width: 150px;">
+                <col style="width: auto;">
+                <col style="width: 140px;">
+                <col style="width: 25%;">
+            </colgroup>
+            <tr>
+                <td class="label-cell no-border-bottom">Dự Án:</td>
+                <td class="value-cell no-border-bottom"><?php echo renderValue($display_project_name, $dots, true); ?></td>
+                <td class="label-cell no-border-bottom">Bộ phận:</td>
+                <td class="value-cell no-border-bottom">IT / Kỹ thuật</td>
+            </tr>
+            <tr>
+                <td class="label-cell no-border-top no-border-bottom">Địa chỉ:</td>
+                <td class="value-cell no-border-top no-border-bottom allow-wrap" style="height: 3.2em; vertical-align: top;">
+                    <?php echo !empty($display_address) ? htmlspecialchars($display_address) : '<span class="dot-placeholder">' . $dots . '<br>' . $dots . '</span>'; ?>
+                </td>
+                <td class="label-cell no-border-top no-border-bottom">Người đại diện:</td>
+                <td class="value-cell text-upper no-border-top no-border-bottom"><b><?php echo htmlspecialchars($log['nguoi_thuc_hien'] ?: $current_user_name); ?></b></td>
+            </tr>
+            <tr>
+                <td class="label-cell no-border-top no-border-bottom">Đại diện:</td>
+                <td class="value-cell no-border-top no-border-bottom"><?php echo renderValue($log['client_name'], $dots); ?></td>
+                <td class="label-cell no-border-top" rowspan="2" style="vertical-align: middle;">Công việc:</td>
+                <td class="value-cell no-border-top" rowspan="2" style="vertical-align: middle;"><?php echo renderValue($log['work_type'], $dots); ?></td>
+            </tr>
+            <tr>
+                <td class="label-cell no-border-top">Chức vụ:</td>
+                <td class="value-cell no-border-top"><?php echo renderValue($log['client_phone'], $dots); ?></td>
+            </tr>
+        </table>
+
+        <div class="spacer-10"></div>
+
+        <!-- TABLE 2: THÔNG TIN THIẾT BỊ -->
+        <table class="data-table">
+            <colgroup>
+                <col style="width: 150px;">
+                <col style="width: auto;">
+                <col style="width: 140px;">
+                <col style="width: 25%;">
+            </colgroup>
+            <tr>
+                <td class="label-cell">Thiết bị:</td>
+                <td class="value-cell"><?php echo renderValue($print_device_name, $dots, true); ?></td>
+                <td class="label-cell">TG sử dụng:</td>
+                <td class="value-cell"><?php echo renderValue($print_usage_time, $dots); ?></td>
+            </tr>
+        </table>
+
+        <div class="spacer-5"></div>
+
+        <!-- TABLE 3: THÔNG TIN THỜI GIAN -->
+        <table class="data-table">
+            <colgroup>
+                <col style="width: 150px;">
+                <col style="width: auto;">
+                <col style="width: 140px;">
+                <col style="width: 25%;">
+            </colgroup>
+            <tr>
+                <td class="label-cell no-border-bottom">TG yêu cầu:</td>
+                <td class="value-cell no-border-bottom"><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></td>
+                <td class="label-cell no-border-bottom">Hỗ trợ lần cuối:</td>
+                <td class="value-cell no-border-bottom"><?php echo renderValue($last_support_date, $dots); ?></td>
+            </tr>
+            <tr>
+                <td class="label-cell no-border-top no-border-bottom">TG có mặt:</td>
+                <td class="value-cell no-border-top no-border-bottom"><?php echo $log['arrival_time'] ? date('H:i d/m/Y', strtotime($log['arrival_time'])) : renderValue('', $dots); ?></td>
+                <td class="label-cell no-border-top no-border-bottom">Công việc:</td>
+                <td class="value-cell no-border-top no-border-bottom"><?php echo renderValue($last_support_work, $dots); ?></td>
+            </tr>
+            <tr>
+                <td class="label-cell no-border-top">TG hoàn thành:</td>
+                <td class="value-cell no-border-top"><?php echo $log['completion_time'] ? date('H:i d/m/Y', strtotime($log['completion_time'])) : renderValue('', $dots); ?></td>
+                <td class="label-cell no-border-top">Người thực hiện:</td>
+                <td class="value-cell no-border-top text-upper"><?php echo renderValue($last_support_performer, $dots); ?></td>
+            </tr>
+        </table>
+
+        <div class="spacer-15"></div>
+
+        <!-- CONTENT SECTION -->
+        <div class="content-box">
+            <div class="box-header">I. YÊU CẦU CỦA DỰ ÁN</div>
+            <div class="box-body" style="min-height: 80px;">
+                <?php if (!empty($log['noi_dung'])): ?>
+                    <?php echo nl2br(htmlspecialchars($log['noi_dung'])); ?>
+                <?php else: ?>
+                    <div style="line-height: 35px;" class="dot-placeholder"><?php echo $dots; ?><br><?php echo $dots; ?></div>
+                <?php endif; ?>
             </div>
-            <div class="p-box box-res">
-                <div class="pb-title">II. CÔNG VIỆC THỰC HIỆN / KẾT QUẢ</div>
-                <div class="pb-content lined-paper"><?php
+        </div>
+
+        <div class="spacer-15"></div>
+
+        <div class="content-box flex-grow">
+            <div class="box-header">II. CÔNG VIỆC THỰC HIỆN / KẾT QUẢ</div>
+            <div class="box-body">
+                <?php
                     $hu_hong = trim($log['hu_hong'] ?? '');
                     $xu_ly = trim($log['xu_ly'] ?? '');
-                    if(!empty($hu_hong)) echo "<strong>- Tình trạng:</strong> " . nl2br(htmlspecialchars($hu_hong)) . "<br><br>";
-                    if(!empty($xu_ly)) echo "<strong>- Xử lý:</strong> " . nl2br(htmlspecialchars($xu_ly));
-                ?></div>
+                ?>
+                <div class="sub-section">
+                    <div class="sub-label">- Tình trạng / Kiểm tra:</div>
+                    <div class="sub-text">
+                        <?php if (!empty($hu_hong)): ?>
+                            <?php echo nl2br(htmlspecialchars($hu_hong)); ?>
+                        <?php else: ?>
+                            <div style="line-height: 30px;" class="dot-placeholder"><?php echo $dots; ?><br><?php echo $dots; ?></div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                
+                <div class="sub-divider"></div>
+
+                <div class="sub-section">
+                    <div class="sub-label">- Xử lý / Kết quả:</div>
+                    <div class="sub-text">
+                        <?php if (!empty($xu_ly)): ?>
+                            <?php echo nl2br(htmlspecialchars($xu_ly)); ?>
+                        <?php else: ?>
+                            <div style="line-height: 30px;" class="dot-placeholder"><?php echo $dots; ?><br><?php echo $dots; ?><br><?php echo $dots; ?><br><?php echo $dots; ?></div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- PHẦN CỐ ĐỊNH: CHỮ KÝ (LUÔN Ở ĐÁY) -->
-        <div class="print-footer-section">
-            <div class="p-sig"><strong>ĐẠI DIỆN BAN QUẢN LÝ</strong><br><span>(Ký, ghi rõ họ tên)</span><div class="sig-space"></div></div>
-            <div class="p-sig"><strong>NGƯỜI LẬP PHIẾU</strong><br><span>(Ký, ghi rõ họ tên)</span><div class="sig-space"></div></div>
-        </div>
+        <div class="spacer-20"></div>
+
+        <!-- FOOTER SIGNATURES -->
+        <table class="sig-table">
+            <tr>
+                <td>
+                    <strong>ĐẠI DIỆN DỰ ÁN</strong><br>
+                    <span>(Ký, ghi rõ họ tên)</span>
+                </td>
+                <td>
+                    <strong>NGƯỜI THỰC HIỆN</strong><br>
+                    <span>(Ký, ghi rõ họ tên)</span>
+                </td>
+            </tr>
+            <tr class="sig-space-row">
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="text-upper"><b><?php echo htmlspecialchars($log['client_name'] ?? ''); ?></b></td>
+                <td class="text-upper"><b><?php echo htmlspecialchars($log['nguoi_thuc_hien'] ?: $current_user_name); ?></b></td>
+            </tr>
+        </table>
     </div>
 </div>
 
@@ -150,71 +240,91 @@ if (!empty($log['project_id'])) {
 .print-only { display: none; }
 
 @media print {
-    @page { size: A4; margin: 10mm; }
-    html, body { height: 100%; margin: 0; padding: 0; }
-    body { background: #fff !important; font-family: "Times New Roman", Times, serif; color: #000; }
+    @page { size: A4; margin: 10mm 15mm; }
     
-    .web-view, .main-header, .main-footer, .page-header, .header-actions, .message-container, footer { display: none !important; } 
+    html, body { margin: 0; padding: 0; background: #fff !important; }
+    body { font-family: "Times New Roman", Times, serif; color: #000; font-size: 13pt; line-height: 1.4; } /* Nâng lên 13pt */
     
-    .print-only { display: block !important; width: 100%; min-height: 277mm; box-sizing: border-box; position: relative; }
-    
-    .a4-page-wrapper { 
-        min-height: 277mm; 
-        display: flex; 
-        flex-direction: column; 
-        padding: 5mm; 
-        box-sizing: border-box;
-    }
+    .web-view, .main-header, .main-footer, footer, .header-actions, .message-container { display: none !important; } 
+    .print-only { display: block !important; width: 100%; height: 100%; }
+    .a4-page-wrapper { min-height: 95vh; display: flex; flex-direction: column; }
 
-    .print-header-section { flex-shrink: 0; }
-    .print-content-section { flex-grow: 1; display: flex; flex-direction: column; gap: 15px; margin: 15px 0; }
-    .print-footer-section { 
-        flex-shrink: 0; 
-        display: flex; 
-        justify-content: space-between; 
-        margin-top: auto; 
-        padding-top: 20px;
-        page-break-inside: avoid; 
-    }
+    .text-upper { text-transform: uppercase; }
+    .spacer-5 { height: 5px; }
+    .spacer-10 { height: 12px; }
+    .spacer-15 { height: 18px; }
+    .spacer-20 { height: 25px; }
 
+    /* Header */
     .p-header-table { width: 100%; border-bottom: 2px solid #000; margin-bottom: 5px; }
-    .p-ticket-no-clean { font-size: 13pt; font-weight: normal; }
+    .p-ticket-no-clean { font-size: 14pt; font-weight: normal; margin-top: 5px; }
     .p-date { font-size: 13pt; font-style: italic; }
-    .p-title { text-align: center; font-size: 24pt; font-weight: bold; margin: 10px 0; text-transform: uppercase; }
-    
-    .p-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    .pt-label { font-weight: bold; height: 30px; line-height: 30px; font-size: 13pt; }
-    .pt-label-top { font-weight: bold; vertical-align: top; line-height: 30px; font-size: 13pt; }
-    .p-line-single { background-image: repeating-linear-gradient(transparent, transparent 29px, #000 30px); line-height: 30px; font-size: 13pt; overflow: hidden; }
-    .p-line-double { background-image: repeating-linear-gradient(transparent, transparent 29px, #000 30px); line-height: 30px; font-size: 13pt; height: 60px; vertical-align: top; }
+    .p-title { text-align: center; font-size: 26pt; font-weight: bold; margin: 15px 0 12px 0; text-transform: uppercase; }
 
-    .p-box { border: 1.5pt solid #000; display: flex; flex-direction: column; page-break-inside: auto; }
-    .box-req { flex-grow: 0; min-height: 120px; margin-bottom: 10px; }
-    .box-res { flex-grow: 1; min-height: 200px; }
-    .pb-title { font-weight: bold; background: #e0e0e0 !important; padding: 5px 10px; border-bottom: 1.5pt solid #000; -webkit-print-color-adjust: exact; font-size: 13pt; }
-    .pb-content { 
-        padding: 5px 10px; 
-        flex-grow: 1; 
-        background-image: repeating-linear-gradient(transparent, transparent 29px, #ccc 30px); 
-        line-height: 30px; 
-        font-size: 13pt; 
-        word-wrap: break-word;
-        white-space: normal;
+    /* Data Table */
+    .data-table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        border: 1.5px solid #000; 
+        table-layout: fixed; 
+    }
+    .data-table td { 
+        border: 1px solid #000; 
+        padding: 7px 15px 7px 10px; 
+        vertical-align: top;
+        height: 1.5em; 
     }
     
-    .p-sig { text-align: center; width: 45%; font-size: 13pt; }
-    .sig-space { height: 3cm; }
-}
+    .dot-placeholder {
+        color: #555;
+        font-weight: normal !important;
+        letter-spacing: 1px;
+        overflow: hidden;
+        display: block;
+        white-space: nowrap;
+    }
+    
+    .data-table td.allow-wrap {
+        white-space: normal !important;
+    }
+    .data-table td.allow-wrap .dot-placeholder {
+        white-space: normal !important;
+    }
+    
+    .no-border-bottom { border-bottom: none !important; }
+    .no-border-top { border-top: none !important; }
 
-/* DEBUG MODE */
-body.debug-print-mode { 
-    background: #555 !important; 
-    padding: 40px 0 !important; 
-    overflow: auto; 
-    -ms-overflow-style: none; 
-    scrollbar-width: none; 
-}
-body.debug-print-mode::-webkit-scrollbar { 
-    display: none; 
+    .label-cell { 
+        font-weight: bold; 
+        background-color: #f5f5f5 !important; 
+        -webkit-print-color-adjust: exact; 
+        white-space: nowrap;
+        width: 150px;
+        font-size: 13pt;
+    }
+
+    /* Content Box */
+    .content-box { border: 1.5px solid #000; display: flex; flex-direction: column; }
+    .flex-grow { flex-grow: 1; min-height: 200px; }
+    
+    .box-header { 
+        background-color: #e0e0e0 !important; 
+        -webkit-print-color-adjust: exact; 
+        border-bottom: 1px solid #000; 
+        padding: 8px 12px; 
+        font-weight: bold; 
+        font-size: 13pt;
+        text-transform: uppercase;
+    }
+    .box-body { padding: 12px; font-size: 13pt; }
+    
+    .sub-section { margin-bottom: 8px; }
+    .sub-label { font-weight: bold; margin-bottom: 4px; }
+    .sub-divider { border-top: 1px dashed #ccc; margin: 10px 0; }
+
+    /* Signatures */
+    .sig-table { width: 100%; text-align: center; margin-top: auto; font-size: 13pt; }
+    .sig-table td { width: 50%; vertical-align: top; }
+    .sig-space-row td { height: 90px; }
 }
 </style>

@@ -2,13 +2,21 @@
 // modules/maintenance/edit.php
 
 $id = $_GET['id'] ?? null;
-if (!$id) { header("Location: index.php?page=maintenance/history"); exit; }
+if (!$id) { echo "<script>window.location.href = 'index.php?page=maintenance/history';</script>"; exit; }
 
-$stmt = $pdo->prepare("SELECT * FROM maintenance_logs WHERE id = ?");
+$stmt = $pdo->prepare("
+    SELECT ml.*, 
+           d.ten_thiet_bi, d.ma_tai_san, 
+           u.fullname as nguoi_thuc_hien 
+    FROM maintenance_logs ml
+    LEFT JOIN devices d ON ml.device_id = d.id
+    LEFT JOIN users u ON ml.user_id = u.id
+    WHERE ml.id = ?
+");
 $stmt->execute([$id]);
 $log = $stmt->fetch();
 
-if (!$log) { header("Location: index.php?page=maintenance/history"); exit; }
+if (!$log) { echo "<script>window.location.href = 'index.php?page=maintenance/history';</script>"; exit; }
 
 $projects = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du_an")->fetchAll();
 $current_project_id = $log['project_id'];
@@ -54,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_POST['work_type'] ?: 'Bảo trì / Sửa chữa', $assigned_user_id, $id
         ]);
         set_message('success', 'Cập nhật phiếu thành công!');
-        header("Location: index.php?page=maintenance/view&id=" . $id);
+        echo "<script>window.location.href = 'index.php?page=maintenance/view&id=" . $id . "';</script>";
         exit;
     } catch (PDOException $e) { set_message('error', 'Lỗi: ' . $e->getMessage()); }
 }
@@ -181,7 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card mt-20">
                 <div class="dashboard-card-header"><h3><i class="fas fa-id-card"></i> Khách hàng</h3></div>
                 <div class="form-group"><label>Người liên hệ</label><div class="clearable-input-wrapper"><input type="text" name="client_name" value="<?php echo htmlspecialchars($log['client_name']); ?>"><i class="fas fa-times-circle clear-input"></i></div></div>
-                <div class="form-group"><label>Số điện thoại</label><div class="clearable-input-wrapper"><input type="text" name="client_phone" value="<?php echo htmlspecialchars($log['client_phone']); ?>"><i class="fas fa-times-circle clear-input"></i></div></div>
+                <div class="form-group"><label>Chức vụ</label><div class="clearable-input-wrapper"><input type="text" name="client_phone" value="<?php echo htmlspecialchars($log['client_phone']); ?>"><i class="fas fa-times-circle clear-input"></i></div></div>
             </div>
         </div>
     </div>

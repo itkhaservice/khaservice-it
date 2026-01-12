@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $stmt = $pdo->prepare("INSERT INTO maintenance_logs 
                 (user_id, project_id, device_id, custom_device_name, usage_time_manual, ngay_su_co, ngay_lap_phieu, noi_dung, hu_hong, xu_ly, chi_phi, client_name, client_phone, arrival_time, completion_time, work_type) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $_SESSION['user_id'], 
                 $_POST['project_id'],
@@ -49,7 +49,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_POST['noi_dung'] ?: null, 
                 $_POST['hu_hong'],
                 $_POST['xu_ly'],
-                $_POST['chi_phi'] ?: 0,
                 $_POST['client_name'],
                 $_POST['client_phone'],
                 $arrival_time,
@@ -57,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_POST['work_type'] ?: 'Bảo trì / Sửa chữa'
             ]);
             set_message('success', 'Đã tạo phiếu công tác thành công!');
-            header("Location: index.php?page=maintenance/history");
+            echo "<script>window.location.href = 'index.php?page=maintenance/history';</script>";
             exit;
         } catch (PDOException $e) {
             set_message('error', 'Lỗi: ' . $e->getMessage());
@@ -213,7 +212,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card mt-20">
                 <div class="dashboard-card-header"><h3><i class="fas fa-id-card"></i> Khách hàng</h3></div>
                 <div class="form-group"><label>Người liên hệ</label><div class="clearable-input-wrapper"><input type="text" name="client_name" placeholder="Tên khách hàng..."><i class="fas fa-times-circle clear-input"></i></div></div>
-                <div class="form-group"><label>Số điện thoại</label><div class="clearable-input-wrapper"><input type="text" name="client_phone" placeholder="SĐT..."><i class="fas fa-times-circle clear-input"></i></div></div>
+                <div class="form-group"><label>Chức vụ</label><div class="clearable-input-wrapper"><input type="text" name="client_phone" placeholder="Chức vụ..."><i class="fas fa-times-circle clear-input"></i></div></div>
             </div>
         </div>
     </div>

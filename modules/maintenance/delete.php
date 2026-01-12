@@ -1,7 +1,7 @@
 <?php
 if (!isset($_GET['id'])) {
     set_message('error', 'Không có ID phiếu bảo trì.');
-    header("Location: index.php?page=maintenance/history");
+    echo "<script>window.location.href = 'index.php?page=maintenance/history';</script>";
     exit;
 }
 
@@ -10,7 +10,7 @@ $id = $_GET['id'];
 // Check permissions
 if ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'it') {
     set_message('error', 'Bạn không có quyền thực hiện thao tác này.');
-    header("Location: index.php?page=maintenance/history");
+    echo "<script>window.location.href = 'index.php?page=maintenance/history';</script>";
     exit;
 }
 
@@ -26,7 +26,7 @@ $log = $stmt->fetch();
 
 if (!$log) {
     set_message('error', 'Phiếu bảo trì không tồn tại.');
-    header("Location: index.php?page=maintenance/history");
+    echo "<script>window.location.href = 'index.php?page=maintenance/history';</script>";
     exit;
 }
 
@@ -42,11 +42,11 @@ if (isset($_REQUEST['confirm_delete'])) {
         $stmt_del = $pdo->prepare("UPDATE maintenance_logs SET deleted_at = NOW() WHERE id = ?");
         $stmt_del->execute([$id]);
         set_message('success', 'Đã chuyển phiếu công tác vào thùng rác!');
-        header("Location: index.php?page=maintenance/history");
+        echo "<script>window.location.href = 'index.php?page=maintenance/history';</script>";
         exit;
     } catch (PDOException $e) {
         set_message('error', 'Lỗi: ' . $e->getMessage());
-        header("Location: index.php?page=maintenance/view&id=$id");
+        echo "<script>window.location.href = 'index.php?page=maintenance/view&id=" . $id . "';</script>";
         exit;
     }
 }
