@@ -131,7 +131,7 @@ $all_columns = [
             </div>
             <div class="filter-item">
                 <label>Nhóm</label>
-                <select name="filter_group" id="filter_group" class="form-select-sm" onchange="updateTypeFilter()">
+                <select name="filter_group" id="filter_group" class="form-select-sm auto-submit-filter" onchange="updateTypeFilter(); this.form.submit()">
                     <option value="">-- Tất cả nhóm --</option>
                     <?php foreach ($groups_list as $g): ?>
                         <option value="<?php echo htmlspecialchars($g); ?>" <?php echo $filter_group === $g ? 'selected' : ''; ?>><?php echo htmlspecialchars($g); ?></option>
@@ -140,11 +140,11 @@ $all_columns = [
             </div>
             <div class="filter-item">
                 <label>Loại</label>
-                <select name="filter_type" id="filter_type" class="form-select-sm"><option value="">-- Tất cả loại --</option></select>
+                <select name="filter_type" id="filter_type" class="form-select-sm auto-submit-filter" onchange="this.form.submit()"><option value="">-- Tất cả loại --</option></select>
             </div>
             <div class="filter-item">
                 <label>Trạng thái</label>
-                <select name="filter_status" class="form-select-sm">
+                <select name="filter_status" class="form-select-sm auto-submit-filter" onchange="this.form.submit()">
                     <option value="">-- Tất cả trạng thái --</option>
                     <?php foreach ($statuses_config as $name => $cls): ?>
                         <option value="<?php echo htmlspecialchars($name); ?>" <?php echo $filter_status === $name ? 'selected' : ''; ?>><?php echo htmlspecialchars($name); ?></option>
@@ -349,6 +349,11 @@ document.addEventListener('DOMContentLoaded', () => {
         rowCbs.forEach(cb => cb.checked = false); 
         updateBatch(); 
     });
+
+    // Auto-highlight active filters
+    document.querySelectorAll('.auto-submit-filter').forEach(select => {
+        if (select.value !== '') select.classList.add('active-filter');
+    });
 });
 
 function renderProjectDropdown(filter = '') {
@@ -393,6 +398,14 @@ function prepareExport() {
 .filter-buttons { display: flex; gap: 8px; }
 .form-control-sm, .form-select-sm { height: 36px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; font-size: 0.85rem; width: 100%; transition: 0.2s; }
 .form-control-sm:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
+
+/* Highlight Active Filter */
+.form-select-sm.active-filter {
+    border: 2px solid var(--primary-color) !important;
+    background-color: #f0fdf4 !important;
+    color: var(--primary-dark-color) !important;
+    font-weight: 600;
+}
 
 /* Link thiết bị cha */
 .parent-link { color: #64748b; text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: 0.2s; }
