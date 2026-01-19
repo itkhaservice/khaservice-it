@@ -3,7 +3,7 @@
 
 if (!isIT()) {
     set_message('error', 'Bạn không có quyền thực hiện thao tác này.');
-    header("Location: index.php");
+    echo "<script>window.location.href = 'index.php';</script>";
     exit;
 }
 
@@ -13,7 +13,7 @@ $allowed_types = ['maintenance', 'devices', 'projects', 'services', 'suppliers',
 
 if (!$id || !in_array($type, $allowed_types)) {
     set_message('error', 'Yêu cầu không hợp lệ.');
-    header("Location: index.php?page=trash/list");
+    echo "<script>window.location.href = 'index.php?page=trash/list';</script>";
     exit;
 }
 
@@ -41,6 +41,4 @@ try {
     set_message('error', 'Lỗi khôi phục: ' . $e->getMessage());
 }
 
-header("Location: index.php?page=trash/list&type=$type");
-exit;
-?>
+    echo "<script>window.location.href = 'index.php?page=trash/list&type=$type';</script>";

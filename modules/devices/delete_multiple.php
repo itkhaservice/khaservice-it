@@ -3,7 +3,7 @@
 
 if (!isAdmin()) {
     set_message('error', 'Bạn không có quyền thực hiện thao tác này.');
-    header("Location: index.php?page=devices/list");
+        echo "<script>window.location.href = 'index.php?page=devices/list';</script>";
     exit;
 }
 
@@ -61,6 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_devices']) &
     set_message('error', 'Yêu cầu không hợp lệ.');
 }
 
-header("Location: index.php?page=devices/list");
+    echo "<script>window.location.href = 'index.php?page=devices/list';</script>";
 exit;
 ?>

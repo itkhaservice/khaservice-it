@@ -5,43 +5,81 @@ $type = $_GET['type'] ?? 'maintenance';
 $allowed_types = ['maintenance', 'devices', 'projects', 'services', 'suppliers', 'users'];
 if (!in_array($type, $allowed_types)) $type = 'maintenance';
 
+// Pagination Config
+$rows_per_page = (isset($_GET['limit']) && is_numeric($_GET['limit'])) ? (int)$_GET['limit'] : 10;
+$current_page  = (isset($_GET['p']) && is_numeric($_GET['p'])) ? (int)$_GET['p'] : 1;
+if ($current_page < 1) $current_page = 1;
+
 $data = [];
 $title = "";
 $icon = "";
+$total_rows = 0;
+$total_pages = 0;
 
 try {
+    // Define base queries based on type
     switch ($type) {
         case 'maintenance':
             $title = "Phiếu Công tác"; $icon = "fa-history";
-            $stmt = $pdo->query("SELECT ml.id, ml.ngay_su_co as label, d.ma_tai_san as sublabel, ml.deleted_at FROM maintenance_logs ml LEFT JOIN devices d ON ml.device_id = d.id WHERE ml.deleted_at IS NOT NULL ORDER BY ml.deleted_at DESC");
-            $data = $stmt->fetchAll();
+            $count_sql = "SELECT COUNT(*) FROM maintenance_logs WHERE deleted_at IS NOT NULL";
+            $data_sql = "SELECT ml.id, ml.ngay_su_co as label, d.ma_tai_san as sublabel, ml.deleted_at 
+                         FROM maintenance_logs ml 
+                         LEFT JOIN devices d ON ml.device_id = d.id 
+                         WHERE ml.deleted_at IS NOT NULL 
+                         ORDER BY ml.deleted_at DESC";
             break;
         case 'devices':
             $title = "Thiết bị"; $icon = "fa-server";
-            $stmt = $pdo->query("SELECT id, ten_thiet_bi as label, ma_tai_san as sublabel, deleted_at FROM devices WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC");
-            $data = $stmt->fetchAll();
+            $count_sql = "SELECT COUNT(*) FROM devices WHERE deleted_at IS NOT NULL";
+            $data_sql = "SELECT id, ten_thiet_bi as label, ma_tai_san as sublabel, deleted_at 
+                         FROM devices 
+                         WHERE deleted_at IS NOT NULL 
+                         ORDER BY deleted_at DESC";
             break;
         case 'projects':
             $title = "Dự án"; $icon = "fa-building";
-            $stmt = $pdo->query("SELECT id, ten_du_an as label, ma_du_an as sublabel, deleted_at FROM projects WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC");
-            $data = $stmt->fetchAll();
+            $count_sql = "SELECT COUNT(*) FROM projects WHERE deleted_at IS NOT NULL";
+            $data_sql = "SELECT id, ten_du_an as label, ma_du_an as sublabel, deleted_at 
+                         FROM projects 
+                         WHERE deleted_at IS NOT NULL 
+                         ORDER BY deleted_at DESC";
             break;
         case 'services':
             $title = "Dịch vụ"; $icon = "fa-cloud";
-            $stmt = $pdo->query("SELECT id, ten_dich_vu as label, loai_dich_vu as sublabel, deleted_at FROM services WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC");
-            $data = $stmt->fetchAll();
+            $count_sql = "SELECT COUNT(*) FROM services WHERE deleted_at IS NOT NULL";
+            $data_sql = "SELECT id, ten_dich_vu as label, loai_dich_vu as sublabel, deleted_at 
+                         FROM services 
+                         WHERE deleted_at IS NOT NULL 
+                         ORDER BY deleted_at DESC";
             break;
         case 'suppliers':
             $title = "Nhà cung cấp"; $icon = "fa-truck";
-            $stmt = $pdo->query("SELECT id, ten_npp as label, nguoi_lien_he as sublabel, deleted_at FROM suppliers WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC");
-            $data = $stmt->fetchAll();
+            $count_sql = "SELECT COUNT(*) FROM suppliers WHERE deleted_at IS NOT NULL";
+            $data_sql = "SELECT id, ten_npp as label, nguoi_lien_he as sublabel, deleted_at 
+                         FROM suppliers 
+                         WHERE deleted_at IS NOT NULL 
+                         ORDER BY deleted_at DESC";
             break;
         case 'users':
             $title = "Người dùng"; $icon = "fa-users";
-            $stmt = $pdo->query("SELECT id, fullname as label, username as sublabel, deleted_at FROM users WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC");
-            $data = $stmt->fetchAll();
+            $count_sql = "SELECT COUNT(*) FROM users WHERE deleted_at IS NOT NULL";
+            $data_sql = "SELECT id, fullname as label, username as sublabel, deleted_at 
+                         FROM users 
+                         WHERE deleted_at IS NOT NULL 
+                         ORDER BY deleted_at DESC";
             break;
     }
+
+    // Execute Count Query
+    $total_rows = $pdo->query($count_sql)->fetchColumn();
+    $total_pages = max(1, ceil($total_rows / $rows_per_page));
+    if ($current_page > $total_pages) $current_page = $total_pages;
+    $offset = ($current_page - 1) * $rows_per_page;
+
+    // Execute Data Query with Limit
+    $data_sql .= " LIMIT $rows_per_page OFFSET $offset";
+    $data = $pdo->query($data_sql)->fetchAll();
+
 } catch (PDOException $e) {
     set_message('error', 'Lỗi tải dữ liệu thùng rác: ' . $e->getMessage());
 }
@@ -93,38 +131,133 @@ try {
             <p>Thùng rác trống.</p>
         </div>
     <?php else: ?>
-        <div class="table-container" style="border:none; box-shadow:none;">
-            <table class="content-table">
-                <thead>
-                    <tr>
-                        <th>Thông tin mục đã xóa</th>
-                        <th>Thời gian xóa</th>
-                        <th width="200" class="text-center">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($data as $item): ?>
+        <form action="index.php?page=trash/bulk_action&type=<?php echo $type; ?>" method="POST" id="trash-bulk-form">
+            <!-- Batch Actions Toolbar -->
+            <div class="batch-actions" id="batch-actions" style="display: none; margin-bottom: 15px;">
+                <span class="selected-count-label">Đã chọn <strong id="selected-count">0</strong> mục</span>
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-secondary btn-sm" id="clear-selection-btn"><i class="fas fa-times"></i> Bỏ chọn</button>
+                    <button type="submit" name="action" value="restore_selected" class="btn btn-primary btn-sm" style="background: var(--gradient-primary);"><i class="fas fa-undo"></i> Khôi phục đã chọn</button>
+                    <button type="button" class="btn btn-danger btn-sm" id="delete-selected-trash-btn"><i class="fas fa-trash-alt"></i> Xóa vĩnh viễn</button>
+                    <input type="hidden" name="bulk_delete_confirm" id="bulk_delete_confirm" value="0">
+                </div>
+            </div>
+
+            <div class="table-container" style="border:none; box-shadow:none;">
+                <table class="content-table">
+                    <thead>
                         <tr>
-                            <td>
-                                <div class="font-bold"><?php echo htmlspecialchars($item['label']); ?></div>
-                                <div class="text-muted small"><?php echo htmlspecialchars($item['sublabel']); ?></div>
-                            </td>
-                            <td><?php echo date('d/m/Y H:i', strtotime($item['deleted_at'])); ?></td>
-                            <td class="actions text-center">
-                                <a href="index.php?page=trash/restore&type=<?php echo $type; ?>&id=<?php echo $item['id']; ?>" class="btn btn-sm btn-secondary" style="color: #166534; border-color: #bbf7d0; background: #f0fdf4;">
-                                    <i class="fas fa-undo"></i> Khôi phục
-                                </a>
-                                <a href="#" data-url="index.php?page=trash/permanent_delete&type=<?php echo $type; ?>&id=<?php echo $item['id']; ?>" class="btn btn-sm btn-danger delete-btn">
-                                    <i class="fas fa-times-circle"></i> Xóa vĩnh viễn
-                                </a>
-                            </td>
+                            <th width="40"><input type="checkbox" id="select-all"></th>
+                            <th>Thông tin mục đã xóa</th>
+                            <th>Thời gian xóa</th>
+                            <th width="200" class="text-center">Thao tác</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($data as $item): ?>
+                            <tr>
+                                <td><input type="checkbox" name="ids[]" value="<?php echo $item['id']; ?>" class="row-checkbox"></td>
+                                <td>
+                                    <div class="font-bold"><?php echo htmlspecialchars($item['label']); ?></div>
+                                    <div class="text-muted small"><?php echo htmlspecialchars($item['sublabel']); ?></div>
+                                </td>
+                                <td><?php echo date('d/m/Y H:i', strtotime($item['deleted_at'])); ?></td>
+                                <td class="actions text-center">
+                                    <a href="index.php?page=trash/restore&type=<?php echo $type; ?>&id=<?php echo $item['id']; ?>" class="btn btn-sm btn-secondary" style="color: #166534; border-color: #bbf7d0; background: #f0fdf4;">
+                                        <i class="fas fa-undo"></i> Khôi phục
+                                    </a>
+                                    <a href="#" data-url="index.php?page=trash/permanent_delete&type=<?php echo $type; ?>&id=<?php echo $item['id']; ?>" class="btn btn-sm btn-danger delete-btn">
+                                        <i class="fas fa-times-circle"></i> Xóa vĩnh viễn
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </form>
+
+        <!-- Pagination Control -->
+        <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-top: 20px;">
+            <div class="rows-per-page">
+                <form action="index.php" method="GET" class="rows-per-page-form" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="hidden" name="page" value="trash/list">
+                    <input type="hidden" name="type" value="<?php echo $type; ?>">
+                    <label style="font-size: 0.85rem; color: #64748b;">Hiển thị</label>
+                    <select name="limit" onchange="this.form.submit()" class="form-select-sm" style="width: auto;">
+                        <?php foreach([5,10,25,50,100] as $lim): 
+                            $selected = ($rows_per_page == $lim) ? 'selected' : '';
+                        ?>
+                            <option value="<?php echo $lim; ?>" <?php echo $selected; ?>><?php echo $lim; ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
+            </div>
+            <div class="pagination-links" style="display: flex; gap: 5px; margin-left: auto;">
+                <?php 
+                    $q = $_GET; unset($q['p']); 
+                    $base = 'index.php?' . http_build_query($q); 
+                ?>
+                <a href="<?php echo $base . '&p=1'; ?>" class="page-link <?php echo $current_page <= 1 ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-left"></i></a>
+                <?php for ($i = max(1, $current_page - 2); $i <= min($total_pages, $current_page + 2); $i++): 
+                    $active = ($i == $current_page) ? 'active' : '';
+                ?>
+                    <a href="<?php echo $base . '&p=' . $i; ?>" class="page-link <?php echo $active; ?>"><?php echo $i; ?></a>
+                <?php endfor; ?>
+                <a href="<?php echo $base . '&p=' . $total_pages; ?>" class="page-link <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>"><i class="fas fa-angle-double-right"></i></a>
+            </div>
         </div>
     <?php endif; ?>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAll = document.getElementById('select-all');
+    const rowCbs = document.querySelectorAll('.row-checkbox');
+    const batchBar = document.getElementById('batch-actions');
+    const countLabel = document.getElementById('selected-count');
+    const clearBtn = document.getElementById('clear-selection-btn');
+    const bulkForm = document.getElementById('trash-bulk-form');
+    const deleteBtn = document.getElementById('delete-selected-trash-btn');
+
+    function updateBatchUI() {
+        const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+        if(batchBar) batchBar.style.display = checkedCount > 0 ? 'flex' : 'none';
+        if(countLabel) countLabel.textContent = checkedCount;
+    }
+
+    if(selectAll) {
+        selectAll.addEventListener('change', () => {
+            rowCbs.forEach(cb => cb.checked = selectAll.checked);
+            updateBatchUI();
+        });
+    }
+
+    rowCbs.forEach(cb => cb.addEventListener('change', updateBatchUI));
+
+    if(clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if(selectAll) selectAll.checked = false;
+            rowCbs.forEach(cb => cb.checked = false);
+            updateBatchUI();
+        });
+    }
+
+    if(deleteBtn) {
+        deleteBtn.addEventListener('click', function() {
+            const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+            showCustomConfirm(`Bạn có chắc chắn muốn xóa VĨNH VIỄN ${checkedCount} mục đã chọn? Hành động này KHÔNG THỂ khôi phục.`, 'Xác nhận xóa vĩnh viễn', () => {
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete_selected';
+                bulkForm.appendChild(actionInput);
+                bulkForm.submit();
+            });
+        });
+    }
+});
+</script>
 
 <style>
 .trash-header-actions {

@@ -1,7 +1,7 @@
 <?php
 if (!isset($_GET['id'])) {
     set_message('error', 'Không có ID thiết bị được cung cấp.');
-    header("Location: index.php?page=devices/list");
+    echo "<script>window.location.href = 'index.php?page=devices/list';</script>";
     exit;
 }
 
@@ -14,7 +14,7 @@ $device = $stmt->fetch();
 
 if (!$device) {
     set_message('error', 'Thiết bị không tồn tại.');
-    header("Location: index.php?page=devices/list");
+    echo "<script>window.location.href = 'index.php?page=devices/list';</script>";
     exit;
 }
 
@@ -32,7 +32,7 @@ $log_count = $stmt_logs->fetchColumn();
 if (isset($_REQUEST['confirm_delete'])) {
     if ($child_count > 0) {
         set_message('error', "Không thể xóa thiết bị này vì đang có $child_count linh kiện con gắn kèm. Vui lòng gỡ linh kiện trước.");
-        header("Location: index.php?page=devices/list");
+        echo "<script>window.location.href = 'index.php?page=devices/list';</script>";
         exit;
     }
 
@@ -41,12 +41,12 @@ if (isset($_REQUEST['confirm_delete'])) {
         $stmt_del->execute([$device_id]);
 
         set_message('success', 'Đã chuyển thiết bị ' . $device['ma_tai_san'] . ' vào thùng rác!');
-        header("Location: index.php?page=devices/list");
+        echo "<script>window.location.href = 'index.php?page=devices/list';</script>";
         exit;
 
     } catch (Exception $e) {
         set_message('error', 'Lỗi: ' . $e->getMessage());
-        header("Location: index.php?page=devices/list");
+        echo "<script>window.location.href = 'index.php?page=devices/list';</script>";
         exit;
     }
 }

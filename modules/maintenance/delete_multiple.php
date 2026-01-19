@@ -3,7 +3,7 @@
 
 if ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'it') {
     set_message('error', 'Bạn không có quyền thực hiện thao tác này.');
-    header("Location: index.php?page=maintenance/history");
+        echo "<script>window.location.href = 'index.php?page=maintenance/history';</script>";
     exit;
 }
 
@@ -37,6 +37,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ids']) && is_array($_
     set_message('error', 'Yêu cầu không hợp lệ.');
 }
 
-header("Location: index.php?page=maintenance/history");
+    echo "<script>window.location.href = 'index.php?page=maintenance/history';</script>";
 exit;
 ?>

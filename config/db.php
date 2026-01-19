@@ -11,7 +11,8 @@ $password = 'wun7QKIEJDM20FH';
 $charset = 'utf8mb4';
 
 // Tự động phát hiện môi trường Localhost (XAMPP)
-if ($_SERVER['SERVER_NAME'] == 'localhost' || $_SERVER['SERVER_NAME'] == '127.0.0.1') {
+$server_name = $_SERVER['SERVER_NAME'] ?? 'localhost';
+if ($server_name == 'localhost' || $server_name == '127.0.0.1') {
     $host = 'localhost';
     $dbname = 'khaservice_it';
     $username = 'root';

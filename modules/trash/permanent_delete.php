@@ -3,19 +3,11 @@
 
 if (!isAdmin()) {
     set_message('error', 'Chỉ Admin mới có quyền xóa vĩnh viễn dữ liệu.');
-    header("Location: index.php?page=trash/list");
-    exit;
-}
-
-$id = $_GET['id'] ?? null;
+    echo "<script>window.location.href = 'index.php?page=trash/list';</script>";
 $type = $_GET['type'] ?? null;
 $allowed_types = ['maintenance', 'devices', 'projects', 'services', 'suppliers', 'users'];
 
-if (!$id || !in_array($type, $allowed_types)) {
-    set_message('error', 'Yêu cầu không hợp lệ.');
-    header("Location: index.php?page=trash/list");
-    exit;
-}
+    echo "<script>window.location.href = 'index.php?page=trash/list';</script>";
 
 $table_map = [
     'maintenance' => 'maintenance_logs',
@@ -67,6 +59,4 @@ try {
     set_message('error', 'Lỗi xóa vĩnh viễn: ' . $e->getMessage());
 }
 
-header("Location: index.php?page=trash/list&type=$type");
-exit;
-?>
+    echo "<script>window.location.href = 'index.php?page=trash/list&type=$type';</script>";

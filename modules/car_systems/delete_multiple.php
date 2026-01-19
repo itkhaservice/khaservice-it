@@ -6,8 +6,7 @@ require_once __DIR__ . '/../../includes/messages.php';
 
 if (!isAdmin()) {
     set_message('error', 'Bạn không có quyền thực hiện hành động này.');
-    header('Location: index.php?page=car_systems/list');
-    exit;
+        echo "<script>window.location.href = 'index.php?page=car_systems/list';</script>";    exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -29,6 +28,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-header('Location: index.php?page=car_systems/list');
-exit;
+    echo "<script>window.location.href = 'index.php?page=car_systems/list';</script>";exit;
 ?>
