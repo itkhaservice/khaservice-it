@@ -24,3 +24,10 @@
             }
         }
     };
+    audioPlayer.init(); // Initialize the audio player when the script loads
+
+    // Expose a global function to play sounds
+    window.playAudio = function(type) {
+        audioPlayer.play(type);
+    };
+})();

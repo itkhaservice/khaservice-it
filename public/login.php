@@ -58,7 +58,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
             }
 
-            header('Location: index.php');
+            // Redirect based on role
+            if ($user['role'] === 'user') {
+                header('Location: user_forms_dashboard.php');
+            } else {
+                header('Location: ../index.php');
+            }
             exit;
 
         } else {
@@ -75,6 +80,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Đăng nhập - KHASERVICE IT</title>
     <link rel="stylesheet" href="../assets/css/style.css"> <!-- Keep general styles -->
     <link rel="stylesheet" href="../assets/css/login.css"> <!-- Specific login styles -->
+    <style>
+        /* Added for Form Feature Promo */
+        .divider {
+            margin: 25px 0;
+            text-align: center;
+            position: relative;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .divider span {
+            background: #fff;
+            padding: 0 10px;
+            position: relative;
+            z-index: 1;
+        }
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e2e8f0;
+            z-index: 0;
+        }
+        .extra-feature-promo {
+            text-align: center;
+        }
+        .extra-feature-promo p {
+            color: #475569;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+        .btn-feature-promo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            color: #1e293b;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: 1px solid #e2e8f0;
+        }
+        .btn-feature-promo:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+        }
+        .btn-feature-promo i {
+            color: var(--primary-color);
+        }
+    </style>
 </head>
 <body>
     <div class="split-login-wrapper">
@@ -119,6 +179,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <button type="submit" class="btn-login">Đăng nhập</button>
                 </form>
+
+                <div class="divider">
+                    <span>HOẶC</span>
+                </div>
+
+                <div class="extra-feature-promo">
+                    <p>Tạo, chia sẻ và phân tích các biểu mẫu một cách dễ dàng.</p>
+                    <a href="form_landing.php" class="btn-feature-promo">
+                        <i class="fas fa-clipboard-list"></i> Tạo Biểu mẫu miễn phí
+                    </a>
+                </div>
             </div>
         </div>
     </div>

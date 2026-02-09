@@ -49,6 +49,7 @@ $final_base = $protocol . "://" . $host . $base_dir;
             </div>
         </div>
 
+        <?php if (isset($_SESSION['role']) && $_SESSION['role'] !== 'user'): // Admin/IT navigation ?>
         <nav class="main-nav" id="mobile-menu">
             <div class="mobile-nav-header">
                 <span class="brand">MENU</span>
@@ -74,6 +75,17 @@ $final_base = $protocol . "://" . $host . $base_dir;
                 </li>
             </ul>
         </nav>
+        <?php elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'user'): // User-specific navigation ?>
+        <nav class="main-nav" id="mobile-menu">
+            <div class="mobile-nav-header">
+                <span class="brand">MENU</span>
+                <button class="close-menu" onclick="document.getElementById('hamburger-menu').click()">&times;</button>
+            </div>
+            <ul>
+                <li><a href="user_forms_dashboard.php?page=forms/list"><i class="fas fa-clipboard-list"></i> Biểu mẫu của tôi</a></li>
+            </ul>
+        </nav>
+        <?php endif; ?>
 
         <div class="user-info">
             <div class="user-meta">

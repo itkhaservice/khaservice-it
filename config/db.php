@@ -33,4 +33,3 @@ try {
     error_log("Lỗi kết nối CSDL: " . $e->getMessage());
     die("Lỗi kết nối đến cơ sở dữ liệu. Vui lòng kiểm tra lại cấu hình hoặc liên hệ quản trị viên.");
 }
-?>

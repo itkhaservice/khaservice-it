@@ -1,5 +1,12 @@
 <?php
 session_start(); // Start session once at the top
+
+// Redirect 'user' roles to their dedicated dashboard
+if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'user') {
+    header('Location: user_forms_dashboard.php');
+    exit;
+}
+
 require_once __DIR__ . '/../includes/remember_me_check.php'; // Check for remember me cookie
 require_once __DIR__ . '/../includes/auth.php'; // Handle authentication
 require_once __DIR__ . '/../config/db.php';

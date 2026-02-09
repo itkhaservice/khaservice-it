@@ -1,0 +1,184 @@
+/* assets/css/form_builder.css */
+
+/* Form Builder Specific Styles */
+.question-block {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    background: #f8fafc;
+    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05);
+}
+.question-block .card-body-custom {
+    padding: 20px;
+}
+.question-header {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+.question-header input[type="text"] {
+    flex: 1;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+.question-header select {
+    min-width: 200px;
+}
+
+/* Options Editor Styles */
+.question-options-container {
+    padding-left: 10px;
+    margin-top: 15px;
+}
+.options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+.option-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.option-item input[type="text"] {
+    flex: 1;
+}
+.drag-handle {
+    cursor: move;
+    color: #cbd5e1;
+}
+.btn-delete-option {
+    background: none;
+    border: none;
+    color: #cbd5e1;
+    cursor: pointer;
+}
+.btn-delete-option:hover {
+    color: #ef4444;
+}
+
+
+.question-footer {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 15px;
+}
+.question-footer span {
+    font-size: 0.9rem;
+    color: #64748b;
+}
+.btn-delete-question {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+.btn-delete-question:hover {
+    color: #ef4444;
+}
+
+/* Toggle Switch CSS */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+}
+input:checked + .slider {
+  background-color: var(--primary-color);
+}
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+.slider.round {
+  border-radius: 34px;
+}
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.edit-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+    align-items: start;
+}
+.left-panel, .right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.card-header-custom {
+    padding-bottom: 20px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.card-header-custom h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-color);
+    display: flex; align-items: center; gap: 12px;
+}
+.card-header-custom h3 i {
+    color: #fff; background: var(--gradient-primary); 
+    padding: 8px; border-radius: 8px; font-size: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(36, 162, 92, 0.3);
+}
+.input-highlight {
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    color: var(--primary-dark-color);
+    font-weight: 600;
+}
+.btn-full-width {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+}
+.form-actions-bottom {
+    grid-column: 1 / -1; /* Span across both columns in grid layout */
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+    margin-top: 20px;
+    text-align: right;
+}
+.form-actions-bottom .btn {
+    min-width: 150px;
+}
+
+@media (max-width: 992px) {
+    .edit-layout { grid-template-columns: 1fr; }
+    .form-actions-bottom { text-align: center; }
+}
