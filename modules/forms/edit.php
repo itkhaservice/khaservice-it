@@ -27,12 +27,13 @@ if ($form['user_id'] !== $user_id) {
 }
 // === END SECURITY CHECK ===
 
-// Fetch all questions and their options
+// Fetch all questions and their options with type
 $sql_questions = "
-    SELECT q.*, GROUP_CONCAT(o.option_text ORDER BY o.option_order ASC SEPARATOR '|||') as options
+    SELECT q.*, 
+           GROUP_CONCAT(CONCAT(o.option_text, ':::', IFNULL(o.option_type, 'choice')) ORDER BY o.option_order ASC SEPARATOR '|||') as options_with_type
     FROM form_questions q
     LEFT JOIN question_options o ON q.id = o.question_id
-    WHERE q.form_id = ?
+    WHERE q.form_id = ? AND q.deleted_at IS NULL
     GROUP BY q.id
     ORDER BY q.question_order ASC
 ";
@@ -49,12 +50,23 @@ $existing_form_data = [
     'theme_color' => $form['theme_color'],
     'thank_you_message' => $form['thank_you_message'] ?? '',
     'questions' => array_map(function($q) {
+        $options = [];
+        if ($q['options_with_type']) {
+            foreach (explode('|||', $q['options_with_type']) as $opt_str) {
+                $parts = explode(':::', $opt_str);
+                $options[] = [
+                    'text' => $parts[0] ?? '',
+                    'type' => $parts[1] ?? 'choice'
+                ];
+            }
+        }
         return [
             'id' => $q['id'],
             'title' => $q['question_text'],
             'type' => $q['question_type'],
             'is_required' => (bool)$q['is_required'],
-            'options' => $q['options'] ? explode('|||', $q['options']) : []
+            'logic_config' => $q['logic_config'],
+            'options' => $options
         ];
     }, $questions_data)
 ];
@@ -64,6 +76,7 @@ $existing_form_data = [
     <h2><i class="fas fa-edit"></i> Chỉnh sửa Biểu mẫu</h2>
     <div class="header-actions">
         <a href="user_forms_dashboard.php?page=forms/list" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+        <button type="submit" form="edit-form" class="btn btn-primary"><i class="fas fa-save"></i> Cập nhật Biểu mẫu</button>
     </div>
 </div>
 
@@ -72,7 +85,7 @@ $existing_form_data = [
     
     <!-- Left Panel: Form Content -->
     <div class="left-panel">
-        <div class="card">
+        <div class="card form-title-card">
             <div class="card-header-custom">
                 <h3><i class="fas fa-file-alt"></i> Nội dung Biểu mẫu</h3>
             </div>
@@ -98,6 +111,9 @@ $existing_form_data = [
             </div>
             <div class="card-body-custom" id="question-container">
                 <p class="text-muted">Đang tải câu hỏi...</p>
+            </div>
+            <div class="card-footer-custom" style="padding: 0 20px 20px 20px;">
+                <button type="button" class="btn btn-outline-primary btn-full-width quick-add-btn"><i class="fas fa-plus-circle"></i> Thêm câu hỏi nhanh</button>
             </div>
         </div>
     </div>
@@ -125,6 +141,16 @@ $existing_form_data = [
                     </select>
                 </div>
                 <div class="form-group">
+                    <label for="expires_at">Ngày hết hạn (tùy chọn)</label>
+                    <input type="datetime-local" id="expires_at" name="expires_at" 
+                           value="<?php echo $form['expires_at'] ? date('Y-m-d\TH:i', strtotime($form['expires_at'])) : ''; ?>">
+                </div>
+                <div class="form-group">
+                    <label for="response_limit">Giới hạn lượt trả lời (tùy chọn)</label>
+                    <input type="number" id="response_limit" name="response_limit" min="1" 
+                           value="<?php echo htmlspecialchars($form['response_limit'] ?? ''); ?>" placeholder="Không giới hạn">
+                </div>
+                <div class="form-group">
                     <label for="theme_color">Màu chủ đạo</label>
                     <input type="color" id="theme_color" name="theme_color" value="<?php echo htmlspecialchars($form['theme_color'] ?? '#108042'); ?>">
                 </div>
@@ -135,10 +161,6 @@ $existing_form_data = [
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="form-actions-bottom">
-        <button type="submit" class="btn btn-primary btn-full-width"><i class="fas fa-save"></i> Cập nhật Biểu mẫu</button>
     </div>
 </form>
 

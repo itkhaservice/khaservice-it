@@ -113,9 +113,18 @@ foreach ($all_answers as $answer) {
                 <?php foreach ($submissions as $sub): ?>
                     <tr>
                         <td class="font-medium"><?php echo date('d/m/Y H:i', strtotime($sub['submitted_at'])); ?></td>
-                        <?php foreach ($questions as $q_id => $q_text): ?>
+                        <?php foreach ($questions as $q_id => $q_text): 
+                            $ans = $sub['answers'][$q_id] ?? '';
+                            ?>
                             <td>
-                                <?php echo htmlspecialchars($sub['answers'][$q_id] ?? ''); ?>
+                                <?php 
+                                if (strpos($ans, 'uploads/forms/') === 0) {
+                                    // Secure link
+                                    echo "<a href='api/download_form_file.php?file=" . urlencode($ans) . "' target='_blank' class='btn-link'><i class='fas fa-paperclip'></i> Xem tệp</a>";
+                                } else {
+                                    echo htmlspecialchars($ans);
+                                }
+                                ?>
                             </td>
                         <?php endforeach; ?>
                     </tr>

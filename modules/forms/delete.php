@@ -31,6 +31,9 @@ try {
     }
 
     // Delete the form
+    require_once __DIR__ . '/../../includes/audit_helper.php';
+    log_action($pdo, 'DELETE_FORM', 'forms', $form_id, "Form ID: " . $form_id);
+
     // ON DELETE CASCADE will handle deleting associated questions, options, submissions, and answers
     $stmt_delete = $pdo->prepare("DELETE FROM forms WHERE id = ?");
     $stmt_delete->execute([$form_id]);

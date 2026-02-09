@@ -63,6 +63,7 @@ $forms = $stmt->fetchAll();
                         <td class="actions text-center">
                             <a href="user_forms_dashboard.php?page=forms/view_results&id=<?php echo $form['id']; ?>" class="btn-icon" title="Xem kết quả"><i class="fas fa-chart-bar"></i></a>
                             <a href="user_forms_dashboard.php?page=forms/edit&id=<?php echo $form['id']; ?>" class="btn-icon" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>
+                            <a href="javascript:void(0)" onclick="duplicateForm(<?php echo $form['id']; ?>)" class="btn-icon" title="Sao chép"><i class="fas fa-copy"></i></a>
                             <a href="<?php echo $final_base; ?>public/form.php?slug=<?php echo $form['slug']; ?>" target="_blank" class="btn-icon" title="Xem link công khai"><i class="fas fa-external-link-alt"></i></a>
                             <a href="user_forms_dashboard.php?page=forms/delete&id=<?php echo $form['id']; ?>" class="btn-icon delete-btn" title="Xóa"><i class="fas fa-trash-alt"></i></a>
                         </td>
@@ -72,6 +73,26 @@ $forms = $stmt->fetchAll();
         </table>
     <?php endif; ?>
 </div>
+
+<script>
+async function duplicateForm(id) {
+    if (!confirm('Bạn có chắc chắn muốn sao chép biểu mẫu này không?')) return;
+    
+    try {
+        const response = await fetch(`public/api/forms_api.php?action=duplicate_form&id=${id}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(result.message);
+            window.location.reload();
+        } else {
+            alert('Lỗi: ' + result.message);
+        }
+    } catch (error) {
+        alert('Đã xảy ra lỗi khi sao chép biểu mẫu.');
+    }
+}
+</script>
 
 <style>
 .empty-state {

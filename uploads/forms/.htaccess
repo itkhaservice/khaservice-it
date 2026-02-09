@@ -1,0 +1,3 @@
+# Cấm truy cập trực tiếp vào các file trong thư mục này
+Order Deny,Allow
+Deny from all

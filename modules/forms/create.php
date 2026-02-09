@@ -9,6 +9,7 @@ ini_set('display_errors', 1);
     <h2><i class="fas fa-plus-circle"></i> Tạo Biểu mẫu mới</h2>
     <div class="header-actions">
         <a href="user_forms_dashboard.php?page=forms/list" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+        <button type="submit" form="create-form" class="btn btn-primary"><i class="fas fa-save"></i> Lưu Biểu mẫu</button>
     </div>
 </div>
 
@@ -16,7 +17,7 @@ ini_set('display_errors', 1);
     
     <!-- Left Panel: Form Content -->
     <div class="left-panel">
-        <div class="card">
+        <div class="card form-title-card">
             <div class="card-header-custom">
                 <h3><i class="fas fa-file-alt"></i> Nội dung Biểu mẫu</h3>
             </div>
@@ -39,6 +40,9 @@ ini_set('display_errors', 1);
             </div>
             <div class="card-body-custom" id="question-container">
                 <p class="text-muted">Chưa có câu hỏi nào. Nhấn "Thêm Câu hỏi" để bắt đầu.</p>
+            </div>
+            <div class="card-footer-custom" style="padding: 0 20px 20px 20px;">
+                <button type="button" class="btn btn-outline-primary btn-full-width quick-add-btn"><i class="fas fa-plus-circle"></i> Thêm câu hỏi nhanh</button>
             </div>
         </div>
     </div>
@@ -66,6 +70,14 @@ ini_set('display_errors', 1);
                     </select>
                 </div>
                 <div class="form-group">
+                    <label for="expires_at">Ngày hết hạn (tùy chọn)</label>
+                    <input type="datetime-local" id="expires_at" name="expires_at">
+                </div>
+                <div class="form-group">
+                    <label for="response_limit">Giới hạn lượt trả lời (tùy chọn)</label>
+                    <input type="number" id="response_limit" name="response_limit" min="1" placeholder="VD: 100">
+                </div>
+                <div class="form-group">
                     <label for="theme_color">Màu chủ đạo</label>
                     <input type="color" id="theme_color" name="theme_color" value="#108042">
                 </div>
@@ -75,10 +87,6 @@ ini_set('display_errors', 1);
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="form-actions-bottom">
-        <button type="submit" class="btn btn-primary btn-full-width"><i class="fas fa-save"></i> Lưu Biểu mẫu</button>
     </div>
 </form>
 
