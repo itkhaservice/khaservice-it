@@ -19,12 +19,16 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'user') {
 // --- END AUTHENTICATION AND AUTHORIZATION CHECK ---
 
 $page = $_GET['page'] ?? 'forms/list'; // Default to forms list for user dashboard
+error_log("DEBUG: Initial page from GET: " . ($_GET['page'] ?? 'N/A'));
 $page = preg_replace('/[^a-zA-Z0-9\/_.-]/', '', $page); // Sanitize
+error_log("DEBUG: Sanitized page: " . $page);
 
 // Ensure only forms module pages are accessible and not the API endpoint
 if (strpos($page, 'forms/') !== 0 || $page === 'forms/api') { // If page doesn't start with 'forms/' OR it's the API
+    error_log("DEBUG: Page forced to forms/list due to condition.");
     $page = 'forms/list'; // Force to forms list
 }
+error_log("DEBUG: Final page to include: " . $page);
 
 $requested_file = __DIR__ . '/../modules/' . $page . '.php';
 $base_path = realpath(__DIR__ . '/../modules');

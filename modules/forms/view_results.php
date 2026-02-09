@@ -66,9 +66,29 @@ foreach ($all_answers as $answer) {
 
 <div class="page-header">
     <h2><i class="fas fa-chart-bar"></i> Kết quả: <?php echo htmlspecialchars($form['title']); ?></h2>
-    <div class="header-actions">
-        <a href="index.php?page=forms/list" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại danh sách</a>
-        <button type="button" class="btn btn-success"><i class="fas fa-file-excel"></i> Xuất Excel</button>
+<div class="header-actions">
+        <a href="user_forms_dashboard.php?page=forms/list" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại danh sách</a>
+        <a href="user_forms_dashboard.php?page=forms/export&id=<?php echo $form_id; ?>" class="btn btn-success"><i class="fas fa-file-excel"></i> Xuất Excel</a>
+    </div>
+</div>
+
+<div class="share-section card">
+    <div class="card-header-custom">
+        <h3><i class="fas fa-share-alt"></i> Chia sẻ Biểu mẫu</h3>
+    </div>
+    <div class="card-body-custom share-content">
+        <div class="share-url-box">
+            <label>Liên kết biểu mẫu:</label>
+            <div class="input-group">
+                <input type="text" readonly value="<?php echo $final_base . 'public/form.php?slug=' . $form['slug']; ?>" id="public-link">
+                <button onclick="copyLink()" class="btn btn-primary"><i class="fas fa-copy"></i> Sao chép</button>
+                <a href="<?php echo $final_base . 'public/form.php?slug=' . $form['slug']; ?>" target="_blank" class="btn btn-secondary"><i class="fas fa-external-link-alt"></i> Mở</a>
+            </div>
+        </div>
+        <div class="qr-box">
+            <canvas id="qr-code"></canvas>
+            <button onclick="downloadQR()" class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i> Tải mã QR</button>
+        </div>
     </div>
 </div>
 
@@ -77,11 +97,7 @@ foreach ($all_answers as $answer) {
         <div class="empty-state">
             <i class="fas fa-poll-h empty-icon"></i>
             <h3>Chưa có lượt trả lời nào</h3>
-            <p>Chia sẻ liên kết biểu mẫu của bạn để bắt đầu thu thập câu trả lời.</p>
-            <div class="share-link-box">
-                <input type="text" readonly value="<?php echo 'http://' . $_SERVER['HTTP_HOST'] . '/khaservice-it/public/form.php?slug=' . $form['slug']; ?>" id="public-link">
-                <button onclick="copyLink()" class="btn btn-primary"><i class="fas fa-copy"></i> Sao chép</button>
-            </div>
+            <p>Sử dụng liên kết ở trên để bắt đầu thu thập câu trả lời.</p>
         </div>
     <?php else: ?>
         <table class="content-table">
@@ -109,36 +125,61 @@ foreach ($all_answers as $answer) {
     <?php endif; ?>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    var qr = new QRious({
+        element: document.getElementById('qr-code'),
+        value: document.getElementById('public-link').value,
+        size: 150,
+        padding: 10
+    });
+});
+
+function downloadQR() {
+    var canvas = document.getElementById('qr-code');
+    var link = document.createElement('a');
+    link.download = 'form-qr-<?php echo $form['slug']; ?>.png';
+    link.href = canvas.toDataURL();
+    link.click();
+}
+
 function copyLink() {
     const linkInput = document.getElementById('public-link');
     linkInput.select();
-    linkInput.setSelectionRange(0, 99999); // For mobile devices
+    linkInput.setSelectionRange(0, 99999);
     document.execCommand('copy');
-    alert('Đã sao chép liên kết!');
+    
+    // UI Feedback
+    const btn = event.target.closest('button');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> Đã chép';
+    btn.classList.replace('btn-primary', 'btn-success');
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.replace('btn-success', 'btn-primary');
+    }, 2000);
 }
 </script>
 
 <style>
+.share-section { margin-bottom: 25px; }
+.share-content { display: flex; gap: 40px; align-items: flex-start; }
+.share-url-box { flex: 1; }
+.share-url-box label { display: block; margin-bottom: 8px; font-weight: 600; color: #64748b; }
+.share-url-box .input-group { display: flex; gap: 10px; }
+.share-url-box input { flex: 1; padding: 12px; border: 1px solid #dddfe2; border-radius: 8px; background: #f8fafc; font-family: monospace; }
+
+.qr-box { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 10px; background: #fff; border: 1px solid #dddfe2; border-radius: 12px; }
+#qr-code { width: 150px; height: 150px; }
+
+.btn-outline-primary { border: 1px solid var(--primary-color); color: var(--primary-color); background: transparent; }
+.btn-outline-primary:hover { background: var(--primary-color); color: #fff; }
+
 .empty-state { text-align: center; padding: 60px 40px; }
 .empty-state .empty-icon { font-size: 4rem; color: #cbd5e1; margin-bottom: 20px; }
 .empty-state h3 { font-size: 1.5rem; font-weight: 600; margin-bottom: 10px; }
 .empty-state p { color: #64748b; margin-bottom: 25px; }
-.share-link-box { display: flex; justify-content: center; }
-.share-link-box input {
-    width: 400px;
-    padding: 10px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px 0 0 8px;
-    background: #f8fafc;
-    color: #334155;
-}
-.share-link-box button {
-    border-radius: 0 8px 8px 0;
-}
-.content-table td {
-    white-space: normal;
-    word-wrap: break-word;
-    max-width: 300px; /* Adjust as needed */
-}
+
+.content-table td { white-space: normal; word-wrap: break-word; max-width: 300px; }
 </style>

@@ -69,6 +69,10 @@ ini_set('display_errors', 1);
                     <label for="theme_color">Màu chủ đạo</label>
                     <input type="color" id="theme_color" name="theme_color" value="#108042">
                 </div>
+                <div class="form-group">
+                    <label for="thank_you_message">Lời cảm ơn sau khi gửi</label>
+                    <textarea id="thank_you_message" name="thank_you_message" rows="2" placeholder="VD: Cảm ơn bạn đã dành thời gian phản hồi!"></textarea>
+                </div>
             </div>
         </div>
     </div>

@@ -38,6 +38,11 @@ function populateForm(data) {
             questionCounter++;
             const questionBlock = createQuestionElement(questionCounter);
             
+            // Store DB ID if it exists
+            if (q_data.id) {
+                questionBlock.setAttribute('data-db-id', q_data.id);
+            }
+            
             // Populate question data
             questionBlock.querySelector(`input[name*="[title]"]`).value = q_data.title;
             questionBlock.querySelector(`select[name*="[type]"]`).value = q_data.type;
@@ -84,12 +89,13 @@ async function handleFormSubmit(event) {
         description: formData.get('form_description'),
         status: formData.get('form_status'),
         theme_color: formData.get('theme_color'),
+        thank_you_message: formData.get('thank_you_message'),
         questions: []
     };
 
     document.querySelectorAll('.question-block').forEach(block => {
-        const questionId = block.dataset.questionId;
         const question = {
+            id: block.getAttribute('data-db-id') || null,
             title: block.querySelector(`input[name*="[title]"]`).value,
             type: block.querySelector(`select[name*="[type]"]`).value,
             is_required: block.querySelector(`input[name*="[required]"]`).checked,

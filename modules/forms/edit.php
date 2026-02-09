@@ -47,8 +47,10 @@ $existing_form_data = [
     'description' => $form['description'],
     'status' => $form['status'],
     'theme_color' => $form['theme_color'],
+    'thank_you_message' => $form['thank_you_message'] ?? '',
     'questions' => array_map(function($q) {
         return [
+            'id' => $q['id'],
             'title' => $q['question_text'],
             'type' => $q['question_type'],
             'is_required' => (bool)$q['is_required'],
@@ -66,7 +68,7 @@ $existing_form_data = [
 </div>
 
 <form action="user_forms_dashboard.php?page=forms/api&action=update_form" method="POST" id="edit-form" class="edit-layout">
-    <input type="hidden" name="form_id" value="<?php echo $form_id; ">
+    <input type="hidden" name="form_id" value="<?php echo $form['id']; ?>">
     
     <!-- Left Panel: Form Content -->
     <div class="left-panel">
@@ -77,12 +79,15 @@ $existing_form_data = [
             <div class="card-body-custom">
                 <div class="form-group">
                     <label for="form_title">Tiêu đề Biểu mẫu <span class="required">*</span></label>
-                    <input type="text" id="form_title" name="form_title" required class="input-highlight" placeholder="VD: Khảo sát mức độ hài lòng" value="<?php echo htmlspecialchars($form['title']); ">
+                    <input type="text" id="form_title" name="form_title" required class="input-highlight" 
+                           placeholder="VD: Khảo sát mức độ hài lòng của nhân viên"
+                           value="<?php echo htmlspecialchars($form['title']); ?>">
                 </div>
                 
                 <div class="form-group">
                     <label for="form_description">Mô tả</label>
-                    <textarea id="form_description" name="form_description" rows="3" placeholder="Thêm mô tả..."><?php echo htmlspecialchars($form['description']); ?></textarea>
+                    <textarea id="form_description" name="form_description" rows="3" 
+                              placeholder="Thêm mô tả chi tiết cho biểu mẫu của bạn..."><?php echo htmlspecialchars($form['description'] ?? ''); ?></textarea>
                 </div>
             </div>
         </div>
@@ -92,7 +97,7 @@ $existing_form_data = [
                 <h3><i class="fas fa-tasks"></i> Các câu hỏi</h3>
             </div>
             <div class="card-body-custom" id="question-container">
-                <!-- Questions will be dynamically populated by JavaScript -->
+                <p class="text-muted">Đang tải câu hỏi...</p>
             </div>
         </div>
     </div>
@@ -115,13 +120,18 @@ $existing_form_data = [
                  <div class="form-group">
                     <label for="form_status">Trạng thái</label>
                     <select id="form_status" name="form_status">
-                        <option value="draft" <?php echo $form['status'] == 'draft' ? 'selected' : ''; ?>>Bản nháp</option>
-                        <option value="published" <?php echo $form['status'] == 'published' ? 'selected' : ''; ?>>Phát hành</option>
+                        <option value="draft" <?php echo ($form['status'] === 'draft') ? 'selected' : ''; ?>>Bản nháp</option>
+                        <option value="published" <?php echo ($form['status'] === 'published') ? 'selected' : ''; ?>>Phát hành</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="theme_color">Màu chủ đạo</label>
-                    <input type="color" id="theme_color" name="theme_color" value="<?php echo htmlspecialchars($form['theme_color']); ?>">
+                    <input type="color" id="theme_color" name="theme_color" value="<?php echo htmlspecialchars($form['theme_color'] ?? '#108042'); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="thank_you_message">Lời cảm ơn sau khi gửi</label>
+                    <textarea id="thank_you_message" name="thank_you_message" rows="2" 
+                              placeholder="VD: Cảm ơn bạn đã dành thời gian phản hồi!"><?php echo htmlspecialchars($form['thank_you_message'] ?? ''); ?></textarea>
                 </div>
             </div>
         </div>
@@ -131,67 +141,7 @@ $existing_form_data = [
         <button type="submit" class="btn btn-primary btn-full-width"><i class="fas fa-save"></i> Cập nhật Biểu mẫu</button>
     </div>
 </form>
-    <input type="hidden" name="form_id" value="<?php echo $form_id; ?>">
-    
-    <!-- Left Panel: Form Content -->
-    <div class="left-panel">
-        <div class="card">
-            <div class="card-header-custom">
-                <h3><i class="fas fa-file-alt"></i> Nội dung Biểu mẫu</h3>
-            </div>
-            <div class="card-body-custom">
-                <div class="form-group">
-                    <label for="form_title">Tiêu đề Biểu mẫu <span class="required">*</span></label>
-                    <input type="text" id="form_title" name="form_title" required class="input-highlight" placeholder="VD: Khảo sát mức độ hài lòng" value="<?php echo htmlspecialchars($form['title']); ?>">
-                </div>
-                
-                <div class="form-group">
-                    <label for="form_description">Mô tả</label>
-                    <textarea id="form_description" name="form_description" rows="3" placeholder="Thêm mô tả..."><?php echo htmlspecialchars($form['description']); ?></textarea>
-                </div>
-            </div>
-        </div>
 
-        <div class="card">
-             <div class="card-header-custom">
-                <h3><i class="fas fa-tasks"></i> Các câu hỏi</h3>
-            </div>
-            <div class="card-body-custom" id="question-container">
-                <!-- Questions will be dynamically populated by JavaScript -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Right Panel: Settings & Controls -->
-    <div class="right-panel">
-        <div class="card">
-            <div class="card-header-custom">
-                <h3><i class="fas fa-tools"></i> Điều khiển</h3>
-            </div>
-            <div class="card-body-custom">
-                <button type="button" id="add-question-btn" class="btn btn-success btn-full-width"><i class="fas fa-plus"></i> Thêm Câu hỏi</button>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-header-custom">
-                <h3><i class="fas fa-cog"></i> Cài đặt</h3>
-            </div>
-            <div class="card-body-custom">
-                 <div class="form-group">
-                    <label for="form_status">Trạng thái</label>
-                    <select id="form_status" name="form_status">
-                        <option value="draft" <?php echo $form['status'] == 'draft' ? 'selected' : ''; ?>>Bản nháp</option>
-                        <option value="published" <?php echo $form['status'] == 'published' ? 'selected' : ''; ?>>Phát hành</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="theme_color">Màu chủ đạo</label>
-                    <input type="color" id="theme_color" name="theme_color" value="<?php echo htmlspecialchars($form['theme_color']); ?>">
-                </div>
-            </div>
-        </div>
-    </div>
-</form>
 
 <script>
     // Pass PHP data to JavaScript

@@ -55,15 +55,15 @@ $forms = $stmt->fetchAll();
                             <?php endif; ?>
                         </td>
                         <td class="text-center">
-                            <a href="index.php?page=forms/view_results&id=<?php echo $form['id']; ?>" class="submission-count">
+                            <a href="user_forms_dashboard.php?page=forms/view_results&id=<?php echo $form['id']; ?>" class="submission-count">
                                 <?php echo $form['submission_count']; ?>
                             </a>
                         </td>
                         <td><?php echo date('d/m/Y H:i', strtotime($form['created_at'])); ?></td>
                         <td class="actions text-center">
-                            <a href="index.php?page=forms/view_results&id=<?php echo $form['id']; ?>" class="btn-icon" title="Xem kết quả"><i class="fas fa-chart-bar"></i></a>
-                            <a href="index.php?page=forms/edit&id=<?php echo $form['id']; ?>" class="btn-icon" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>
-                            <a href="public/form.php?slug=<?php echo $form['slug']; ?>" target="_blank" class="btn-icon" title="Xem link công khai"><i class="fas fa-external-link-alt"></i></a>
+                            <a href="user_forms_dashboard.php?page=forms/view_results&id=<?php echo $form['id']; ?>" class="btn-icon" title="Xem kết quả"><i class="fas fa-chart-bar"></i></a>
+                            <a href="user_forms_dashboard.php?page=forms/edit&id=<?php echo $form['id']; ?>" class="btn-icon" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>
+                            <a href="<?php echo $final_base; ?>public/form.php?slug=<?php echo $form['slug']; ?>" target="_blank" class="btn-icon" title="Xem link công khai"><i class="fas fa-external-link-alt"></i></a>
                             <a href="user_forms_dashboard.php?page=forms/delete&id=<?php echo $form['id']; ?>" class="btn-icon delete-btn" title="Xóa"><i class="fas fa-trash-alt"></i></a>
                         </td>
                     </tr>
