@@ -458,9 +458,10 @@ body {
 
 /* --- MODAL --- */
 .modal {
-    position: fixed !important; top: 0; left: 0; width: 100vw; height: 100vh;
+    position: fixed !important; inset: 0; /* top:0; right:0; bottom:0; left:0 */
     z-index: 999999; background-color: rgba(15, 23, 42, 0.7);
     display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+    /* Use inset instead of 100vw/100vh to avoid layout shifts when scrollbar visibility changes */
 }
 .modal.show { display: flex !important; }
 .modal-content {

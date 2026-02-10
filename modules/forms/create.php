@@ -14,21 +14,20 @@
 </script>
 
 <div class="form-module-container">
-    <div class="form-page-header">
-        <h2><i class="fas fa-plus-circle"></i> Thiết kế biểu mẫu mới</h2>
-        <div class="header-actions">
-            <a href="user_forms_dashboard.php?page=forms/list" class="btn-f btn-f-secondary"><i class="fas fa-times"></i> Hủy bỏ</a>
-            <button type="submit" form="create-form" class="btn-f btn-f-primary"><i class="fas fa-save"></i> Lưu & Xuất bản</button>
-        </div>
-    </div>
-
-    <div class="form-nav-tabs">
-        <button type="button" class="form-tab-btn active" onclick="switchTab(this, 'tab-info')"><i class="fas fa-info-circle"></i> 1. THÔNG TIN CHUNG</button>
-        <button type="button" class="form-tab-btn" onclick="switchTab(this, 'tab-questions')"><i class="fas fa-list-ul"></i> 2. NỘI DUNG CÂU HỎI</button>
-        <button type="button" class="form-tab-btn" onclick="switchTab(this, 'tab-config')"><i class="fas fa-sliders-h"></i> 3. CÀI ĐẶT HỆ THỐNG</button>
-    </div>
-
     <form action="user_forms_dashboard.php?page=forms/api&action=save_form" method="POST" id="create-form">
+        <div class="form-page-header">
+            <h2><i class="fas fa-plus-circle"></i> Thiết kế biểu mẫu mới</h2>
+            <div class="header-actions">
+                <a href="user_forms_dashboard.php?page=forms/list" class="btn-f btn-f-secondary"><i class="fas fa-times"></i> Hủy bỏ</a>
+                <button type="submit" class="btn-f btn-f-primary"><i class="fas fa-save"></i> Lưu & Xuất bản</button>
+            </div>
+        </div>
+
+        <div class="form-nav-tabs">
+            <button type="button" class="form-tab-btn active" onclick="switchTab(this, 'tab-info')"><i class="fas fa-info-circle"></i> 1. THÔNG TIN CHUNG</button>
+            <button type="button" class="form-tab-btn" onclick="switchTab(this, 'tab-questions')"><i class="fas fa-list-ul"></i> 2. NỘI DUNG CÂU HỎI</button>
+            <button type="button" class="form-tab-btn" onclick="switchTab(this, 'tab-config')"><i class="fas fa-sliders-h"></i> 3. CÀI ĐẶT HỆ THỐNG</button>
+        </div>
         
         <!-- TAB 1: THÔNG TIN CHUNG -->
         <div id="tab-info" class="form-tab-content active">

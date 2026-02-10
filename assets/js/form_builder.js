@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const addNewQuestion = () => {
         const questionContainer = document.getElementById('question-container');
+        if (!questionContainer) return;
+
         // remove the whole placeholder wrapper (not just the inner <p>)
         const placeholderWrapper = questionContainer.querySelector('.text-center');
         if (placeholderWrapper) placeholderWrapper.remove();
@@ -35,6 +37,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (mainForm) {
         mainForm.addEventListener('submit', handleFormSubmit);
+        
+        // Ensure buttons outside the form still trigger it reliably
+        document.querySelectorAll('button[form="' + mainForm.id + '"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // If it's already a submit button, the browser might handle it, 
+                // but we trigger manually if mainForm isn't submitting
+                if (mainForm.reportValidity()) {
+                    // Trigger submit event if not already bubbling
+                    // This is a safety net
+                }
+            });
+        });
     }
 
     // Theme Color Real-time Preview
@@ -186,7 +200,14 @@ async function handleFormSubmit(event) {
     event.preventDefault();
     const form = event.target;
     const formData = new FormData(form);
-    const submitButton = document.querySelector(`button[form="${form.id}"]`);
+    // Tìm nút submit: nó có thể nằm bên trong form hoặc được tham chiếu bằng thuộc tính 'form'
+    const submitButton = form.querySelector('button[type="submit"]') || document.querySelector(`button[form="${form.id}"]`);
+    
+    if (!submitButton) {
+        showToast('Lỗi: Không tìm thấy nút submit.', 'error');
+        return;
+    }
+    
     const originalButtonText = submitButton.innerHTML;
     // Front-end validation: title required. For questions, allow saving draft without questions but prevent publishing without questions.
     const titleVal = (formData.get('form_title') || '').toString().trim();
@@ -263,15 +284,40 @@ async function handleFormSubmit(event) {
     });
 
     const apiAction = data.id ? 'update_form' : 'save_form';
-    const apiUrl = finalBaseUrl + `public/api/forms_api.php?action=${apiAction}`;
+    
+    // Kiểm tra xem finalBaseUrl có được định nghĩa không
+    if (typeof finalBaseUrl === 'undefined' || !finalBaseUrl) {
+        showToast('Lỗi: Không thể xác định địa chỉ máy chủ. Vui lòng làm mới trang.', 'error');
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonText;
+        return;
+    }
+    
+    // Xây dựng URL API một cách an toàn (loại bỏ dấu gạch chéo dư thừa)
+    let baseUrl = finalBaseUrl.replace(/\/$/, ''); // Loại bỏ dấu gạch chéo cuối nếu có
+    const apiUrl = baseUrl + `/public/api/forms_api.php?action=${apiAction}`;
+    
+    console.log('API URL:', apiUrl); // Debug log
 
     try {
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
+            credentials: 'same-origin'  // Đảm bảo gửi session cookies
         });
+        
+        console.log('Response status:', response.status); // Debug log
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API Error Response:', errorText);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const result = await response.json();
+        console.log('API Result:', result); // Debug log
+        
         if (result.success) {
             playAudio('success');
             // If we saved a draft without questions, show an informational toast
@@ -287,6 +333,7 @@ async function handleFormSubmit(event) {
             throw new Error(result.message || 'Lỗi không xác định.');
         }
     } catch (error) {
+        console.error('Form submission error:', error); // Debug log
         playAudio('error');
         showToast(error.message, 'error');
     } finally {

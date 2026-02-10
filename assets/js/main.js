@@ -134,14 +134,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (modalTitleDisplay) modalTitleDisplay.textContent = title;
         if (modalMessage) modalMessage.textContent = message;
         confirmCallback = callback;
-        customConfirmModal.classList.add('show');
+        // Prevent layout shift when scrollbar disappears by compensating padding
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        if (scrollbarWidth > 0) document.body.style.paddingRight = scrollbarWidth + 'px';
         document.body.style.overflow = 'hidden';
+        customConfirmModal.classList.add('show');
     };
 
     const hideCustomConfirm = () => {
         if (!customConfirmModal) return;
         customConfirmModal.classList.remove('show');
         document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
         confirmCallback = null;
     };
 
