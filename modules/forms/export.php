@@ -48,8 +48,23 @@ foreach ($results as $row) {
     }
 }
 
+// Helper function to convert to uppercase slug
+function createExportSlug($str) {
+    $str = preg_replace("/(à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ)/", 'a', $str);
+    $str = preg_replace("/(è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ)/", 'e', $str);
+    $str = preg_replace("/(ì|í|ị|ỉ|ĩ)/", 'i', $str);
+    $str = preg_replace("/(ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ)/", 'o', $str);
+    $str = preg_replace("/(ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ)/", 'u', $str);
+    $str = preg_replace("/(ỳ|ý|ỵ|ỷ|ỹ)/", 'y', $str);
+    $str = preg_replace("/(đ)/", 'd', $str);
+    $str = preg_replace("/[^a-zA-Z0-9\s]/", '', $str);
+    $str = preg_replace("/\s+/", '_', trim($str));
+    return strtoupper($str);
+}
+
 // Export Logic
-$filename = "Ket_qua_Form_" . preg_replace('/[^a-zA-Z0-9]/', '_', $form['title']) . "_" . date('Ymd_His') . ".xls";
+$form_slug = createExportSlug($form['title']);
+$filename = "KET_QUA_" . $form_slug . ".xls";
 
 header("Content-Type: application/vnd.ms-excel; charset=utf-8");
 header("Content-Disposition: attachment; filename=$filename");
@@ -57,10 +72,26 @@ header("Pragma: no-cache");
 header("Expires: 0");
 
 echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-echo '<head><meta http-equiv="content-type" content="text/plain; charset=UTF-8"></head><body>';
+echo '<head>
+    <meta http-equiv="content-type" content="text/plain; charset=UTF-8">
+    <!--[if gte mso 9]>
+    <xml>
+        <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+                <x:ExcelWorksheet>
+                    <x:Name>KET_QUA</x:Name>
+                    <x:WorksheetOptions>
+                        <x:DisplayGridlines/>
+                    </x:WorksheetOptions>
+                </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+        </x:ExcelWorkbook>
+    </xml>
+    <![endif]-->
+</head><body>';
 echo '<table border="1">';
 echo '<tr>';
-echo '<th style="background-color: #108042; color: #ffffff;">Thời gian nộp</th>';
+echo '<th style="background-color: #108042; color: #ffffff;">Ngày nộp</th>';
 foreach ($questions as $q_text) {
     echo '<th style="background-color: #108042; color: #ffffff;">' . htmlspecialchars($q_text) . '</th>';
 }
@@ -68,7 +99,7 @@ echo '</tr>';
 
 foreach ($submissions as $sub) {
     echo '<tr>';
-    echo '<td>' . $sub['time'] . '</td>';
+    echo '<td>' . date('d/m/Y H:i', strtotime($sub['time'])) . '</td>';
     foreach ($questions as $qid => $q_text) {
         $answer = $sub['answers'][$qid] ?? '';
         echo '<td>' . htmlspecialchars($answer) . '</td>';

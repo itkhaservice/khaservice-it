@@ -42,6 +42,13 @@ function handle_save_form($pdo) {
         exit;
     }
 
+    // If attempting to publish, require at least one question. Drafts may be saved without questions.
+    if (($data['status'] ?? 'draft') === 'published' && (empty($data['questions']) || !is_array($data['questions']) || count($data['questions']) === 0)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Phải có ít nhất một câu hỏi trước khi công khai biểu mẫu.']);
+        exit;
+    }
+
     // User must be logged in to save a form
     $user_id = $_SESSION['user_id'] ?? null;
     if (!$user_id) {
@@ -104,6 +111,13 @@ function handle_update_form($pdo) {
     if (empty($form_id) || empty($data['title'])) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Thiếu ID hoặc Tiêu đề biểu mẫu.']);
+        exit;
+    }
+
+    // If attempting to publish, require at least one question. Draft updates may omit questions.
+    if (($data['status'] ?? 'draft') === 'published' && (empty($data['questions']) || !is_array($data['questions']) || count($data['questions']) === 0)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Phải có ít nhất một câu hỏi trước khi công khai biểu mẫu.']);
         exit;
     }
 

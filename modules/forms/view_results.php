@@ -1,194 +1,189 @@
 <?php
-// File: modules/forms/view_results.php
-// Hiển thị kết quả thu thập được từ biểu mẫu.
+// modules/forms/view_results.php
+$form_id = (int)$_GET['id'];
+$user_id = $_SESSION['user_id'];
+$stmt = $pdo->prepare("SELECT * FROM forms WHERE id = ? AND user_id = ?");
+$stmt->execute([$form_id, $user_id]);
+$form = $stmt->fetch();
+if (!$form) die("Dữ liệu không tồn tại.");
 
-$form_id = $_GET['id'] ?? null;
-if (!$form_id || !is_numeric($form_id)) {
-    die("ID Biểu mẫu không hợp lệ.");
-}
-$form_id = (int)$form_id;
+$questions = $pdo->query("SELECT id, question_text FROM form_questions WHERE form_id = $form_id ORDER BY question_order ASC")->fetchAll(PDO::FETCH_KEY_PAIR);
+$results = $pdo->query("SELECT s.id, s.submitted_at, a.question_id, a.answer_text FROM form_submissions s JOIN submission_answers a ON s.id = a.submission_id WHERE s.form_id = $form_id ORDER BY s.submitted_at DESC")->fetchAll();
 
-// === SECURITY CHECK ===
-$user_id = $_SESSION['user_id']; // Get current logged-in user ID
-
-$sql_auth = "SELECT * FROM forms WHERE id = :form_id";
-$stmt_auth = $pdo->prepare($sql_auth);
-$stmt_auth->execute([':form_id' => $form_id]);
-$form = $stmt_auth->fetch();
-
-if (!$form) {
-    die("Biểu mẫu không tồn tại.");
-}
-
-// Ownership check: form's user_id must match logged-in user_id
-if ($form['user_id'] !== $user_id) {
-    die("Bạn không có quyền truy cập vào kết quả của biểu mẫu này.");
-}
-// === END SECURITY CHECK ===
-
-
-// Fetch questions for table headers
-$sql_questions = "SELECT id, question_text FROM form_questions WHERE form_id = ? ORDER BY question_order ASC";
-$stmt_questions = $pdo->prepare($sql_questions);
-$stmt_questions->execute([$form_id]);
-$questions = $stmt_questions->fetchAll(PDO::FETCH_KEY_PAIR); // id => question_text
-
-// Fetch all submissions and their answers
-$sql_submissions = "
-    SELECT 
-        s.id as submission_id, 
-        s.submitted_at,
-        a.question_id,
-        a.answer_text
-    FROM form_submissions s
-    JOIN submission_answers a ON s.id = a.submission_id
-    WHERE s.form_id = ?
-    ORDER BY s.submitted_at DESC, a.question_id ASC
-";
-$stmt_submissions = $pdo->prepare($sql_submissions);
-$stmt_submissions->execute([$form_id]);
-$all_answers = $stmt_submissions->fetchAll();
-
-// Process data into a structured array: [submission_id => [ 'submitted_at' => ..., 'answers' => [question_id => answer_text] ]]
 $submissions = [];
-foreach ($all_answers as $answer) {
-    $sub_id = $answer['submission_id'];
-    if (!isset($submissions[$sub_id])) {
-        $submissions[$sub_id] = [
-            'submitted_at' => $answer['submitted_at'],
-            'answers' => []
-        ];
-    }
-    $submissions[$sub_id]['answers'][$answer['question_id']] = $answer['answer_text'];
+foreach ($results as $row) {
+    $sid = $row['id'];
+    if (!isset($submissions[$sid])) $submissions[$sid] = ['time' => $row['submitted_at'], 'answers' => []];
+    $submissions[$sid]['answers'][$row['question_id']] = $row['answer_text'];
 }
-
 ?>
+<link rel="stylesheet" href="<?php echo $final_base; ?>assets/css/form_builder.css?v=<?php echo time(); ?>">
 
-<div class="page-header">
-    <h2><i class="fas fa-chart-bar"></i> Kết quả: <?php echo htmlspecialchars($form['title']); ?></h2>
-<div class="header-actions">
-        <a href="user_forms_dashboard.php?page=forms/list" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại danh sách</a>
-        <a href="user_forms_dashboard.php?page=forms/export&id=<?php echo $form_id; ?>" class="btn btn-success"><i class="fas fa-file-excel"></i> Xuất Excel</a>
+<div class="form-module-container">
+    <div class="form-page-header">
+        <h2><i class="fas fa-chart-pie"></i> Phân tích: <?php echo htmlspecialchars($form['title']); ?></h2>
+        <div class="header-actions">
+            <a href="user_forms_dashboard.php?page=forms/list" class="btn-f btn-f-secondary">Quay lại</a>
+            <button onclick="toggleShare()" class="btn-f btn-f-secondary"><i class="fas fa-share-alt"></i> Chia sẻ</button>
+            <a href="user_forms_dashboard.php?page=forms/export&id=<?php echo $form_id; ?>" class="btn-f btn-f-primary"><i class="fas fa-file-excel"></i> Xuất Excel</a>
+        </div>
     </div>
-</div>
 
-<div class="share-section card">
-    <div class="card-header-custom">
-        <h3><i class="fas fa-share-alt"></i> Chia sẻ Biểu mẫu</h3>
+        <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <div class="kpi-row">
+        <div class="kpi-box">
+            <div class="kpi-label">Lượt phản hồi</div>
+            <div class="kpi-value"><?php echo count($submissions); ?></div>
+        </div>
+        <div class="kpi-box">
+            <div class="kpi-label">Trạng thái</div>
+            <div class="kpi-value" style="font-size: 1rem; color: var(--f-text);"><?php echo $form['status']=='published'?'ĐANG MỞ':'ĐANG ĐÓNG'; ?></div>
+        </div>
+        <div class="kpi-box">
+            <div class="kpi-label">Ngày khởi tạo</div>
+            <div class="kpi-value" style="font-size: 1rem; color: var(--f-text);"><?php echo date('d/m/Y', strtotime($form['created_at'])); ?></div>
+        </div>
     </div>
-    <div class="card-body-custom share-content">
-        <div class="share-url-box">
-            <label>Liên kết biểu mẫu:</label>
-            <div class="input-group">
-                <input type="text" readonly value="<?php echo $final_base . 'public/form.php?slug=' . $form['slug']; ?>" id="public-link">
-                <button onclick="copyLink()" class="btn btn-primary"><i class="fas fa-copy"></i> Sao chép</button>
-                <a href="<?php echo $final_base . 'public/form.php?slug=' . $form['slug']; ?>" target="_blank" class="btn btn-secondary"><i class="fas fa-external-link-alt"></i> Mở</a>
+
+    <div id="share-panel" class="form-card" style="display: none; background: var(--f-primary-light); border-color: #bbf7d0;">
+        <div style="display: flex; gap: 25px; align-items: stretch;">
+            <div id="qrcode-container" style="background: #fff; padding: 0; border-radius: 8px; border: 1px solid var(--f-border); display: flex; justify-content: center; align-items: center; width: 160px; height: 160px; flex-shrink: 0; align-self: center; overflow: hidden;">
+                <canvas id="qr-code" style="width: 100%; height: 100%; display: block;"></canvas>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                <label style="font-size: 0.75rem; font-weight: 800; color: #166534; display: block; margin-bottom: 8px;">ĐƯỜNG DẪN CÔNG KHAI:</label>
+                <input type="text" id="public-link" readonly value="<?php echo $final_base . 'public/form.php?slug=' . $form['slug']; ?>" style="width: 100%; padding: 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 0.85rem; background: #fff; margin-bottom: 12px;">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="copyLink()" class="btn-f btn-f-primary" style="height: 36px; font-size: 0.75rem;"><i class="fas fa-copy"></i> Sao chép Link</button>
+                    <button onclick="copyQRToClipboard()" class="btn-f btn-f-secondary" style="height: 36px; font-size: 0.75rem;"><i class="fas fa-image"></i> Sao chép mã QR</button>
+                    <button onclick="downloadQR()" class="btn-f btn-f-secondary" style="height: 36px; font-size: 0.75rem;"><i class="fas fa-download"></i> Tải mã QR</button>
+                </div>
             </div>
         </div>
-        <div class="qr-box">
-            <canvas id="qr-code"></canvas>
-            <button onclick="downloadQR()" class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i> Tải mã QR</button>
-        </div>
     </div>
-</div>
 
-<div class="card table-container">
-    <?php if (empty($submissions)): ?>
-        <div class="empty-state">
-            <i class="fas fa-poll-h empty-icon"></i>
-            <h3>Chưa có lượt trả lời nào</h3>
-            <p>Sử dụng liên kết ở trên để bắt đầu thu thập câu trả lời.</p>
-        </div>
-    <?php else: ?>
-        <table class="content-table">
-            <thead>
-                <tr>
-                    <th>Ngày nộp</th>
-                    <?php foreach ($questions as $q_text): ?>
-                        <th><?php echo htmlspecialchars($q_text); ?></th>
-                    <?php endforeach; ?>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($submissions as $sub): ?>
+    <div class="form-card" style="padding: 0 !important; overflow: hidden;">
+        <div style="padding: 12px 20px; background: #fff; border-bottom: 1px solid var(--f-border); font-weight: 800; font-size: 0.9rem; color: var(--f-text);">Danh sách phản hồi chi tiết</div>
+        <div style="overflow-x: auto;">
+            <table class="form-table">
+                <thead>
                     <tr>
-                        <td class="font-medium"><?php echo date('d/m/Y H:i', strtotime($sub['submitted_at'])); ?></td>
-                        <?php foreach ($questions as $q_id => $q_text): 
-                            $ans = $sub['answers'][$q_id] ?? '';
-                            ?>
-                            <td>
-                                <?php 
-                                if (strpos($ans, 'uploads/forms/') === 0) {
-                                    // Secure link
-                                    echo "<a href='api/download_form_file.php?file=" . urlencode($ans) . "' target='_blank' class='btn-link'><i class='fas fa-paperclip'></i> Xem tệp</a>";
-                                } else {
-                                    echo htmlspecialchars($ans);
-                                }
-                                ?>
-                            </td>
+                        <th width="160">Thời gian nộp</th>
+                        <?php foreach ($questions as $q_text): ?>
+                            <th><?php echo htmlspecialchars($q_text); ?></th>
                         <?php endforeach; ?>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php endif; ?>
+                </thead>
+                <tbody>
+                    <?php if (empty($submissions)): ?>
+                        <tr><td colspan="<?php echo count($questions)+1; ?>" class="text-center" style="padding: 40px; color: var(--f-text-light);">Chưa có phản hồi nào được ghi nhận.</td></tr>
+                    <?php endif; ?>
+                    <?php foreach ($submissions as $sub): ?>
+                        <tr>
+                            <td style="color: var(--f-text-light); font-weight: 600; font-size: 0.8rem;"><?php echo date('d/m/Y H:i', strtotime($sub['time'])); ?></td>
+                            <?php foreach ($questions as $qid => $q_text): 
+                                $ans = $sub['answers'][$qid] ?? '';
+                                ?>
+                                <td>
+                                    <?php 
+                                    if (strpos($ans, 'uploads/forms/') === 0) {
+                                        echo "<a href='api/download_form_file.php?file=" . urlencode($ans) . "' target='_blank' style='color: var(--f-primary); font-weight: 700; text-decoration: none;'><i class='fas fa-paperclip'></i> Xem tệp</a>";
+                                    } else {
+                                        echo htmlspecialchars($ans);
+                                    }
+                                    ?>
+                                </td>
+                            <?php endforeach; ?>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var qr = new QRious({
-        element: document.getElementById('qr-code'),
-        value: document.getElementById('public-link').value,
-        size: 150,
-        padding: 10
-    });
-});
-
-function downloadQR() {
-    var canvas = document.getElementById('qr-code');
-    var link = document.createElement('a');
-    link.download = 'form-qr-<?php echo $form['slug']; ?>.png';
-    link.href = canvas.toDataURL();
-    link.click();
-}
-
-function copyLink() {
-    const linkInput = document.getElementById('public-link');
-    linkInput.select();
-    linkInput.setSelectionRange(0, 99999);
-    document.execCommand('copy');
-    
-    // UI Feedback
-    const btn = event.target.closest('button');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-check"></i> Đã chép';
-    btn.classList.replace('btn-primary', 'btn-success');
-    setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.classList.replace('btn-success', 'btn-primary');
-    }, 2000);
-}
-</script>
-
 <style>
-.share-section { margin-bottom: 25px; }
-.share-content { display: flex; gap: 40px; align-items: flex-start; }
-.share-url-box { flex: 1; }
-.share-url-box label { display: block; margin-bottom: 8px; font-weight: 600; color: #64748b; }
-.share-url-box .input-group { display: flex; gap: 10px; }
-.share-url-box input { flex: 1; padding: 12px; border: 1px solid #dddfe2; border-radius: 8px; background: #f8fafc; font-family: monospace; }
-
-.qr-box { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 10px; background: #fff; border: 1px solid #dddfe2; border-radius: 12px; }
-#qr-code { width: 150px; height: 150px; }
-
-.btn-outline-primary { border: 1px solid var(--primary-color); color: var(--primary-color); background: transparent; }
-.btn-outline-primary:hover { background: var(--primary-color); color: #fff; }
-
-.empty-state { text-align: center; padding: 60px 40px; }
-.empty-state .empty-icon { font-size: 4rem; color: #cbd5e1; margin-bottom: 20px; }
-.empty-state h3 { font-size: 1.5rem; font-weight: 600; margin-bottom: 10px; }
-.empty-state p { color: #64748b; margin-bottom: 25px; }
-
-.content-table td { white-space: normal; word-wrap: break-word; max-width: 300px; }
+  #toast-container{position:fixed;right:20px;bottom:20px;z-index:99999;display:flex;flex-direction:column;gap:10px;align-items:flex-end;pointer-events:none}
+  .toast-item{min-width:220px;max-width:360px;color:#fff;padding:10px 14px;border-radius:10px;box-shadow:0 8px 24px rgba(2,6,23,0.35);transform:translateY(10px) scale(.98);opacity:0;transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .28s;pointer-events:auto;font-weight:700}
+  .toast-item.show{transform:translateY(0) scale(1);opacity:1}
+  .toast-success{background:linear-gradient(90deg,#059669,#10b981)}
+  .toast-error{background:linear-gradient(90deg,#b91c1c,#ef4444)}
+  .toast-body{font-size:0.95rem}
 </style>
+<script>
+    function toggleShare() {
+        const p = document.getElementById('share-panel');
+        p.style.display = p.style.display === 'none' ? 'block' : 'none';
+        if (p.style.display === 'block') {
+            new QRious({ 
+                element: document.getElementById('qr-code'), 
+                value: document.getElementById('public-link').value, 
+                size: 160, 
+                padding: 10,
+                level: 'H'
+            });
+        }
+    }
+
+    function showToast(message, type='success', timeout=3200){
+        const container = document.getElementById('toast-container');
+        if(!container) return;
+        const el = document.createElement('div');
+        el.className = 'toast-item ' + (type==='error' ? 'toast-error' : 'toast-success');
+        el.innerHTML = '<div class="toast-body">'+message+'</div>';
+        container.appendChild(el);
+        // allow animation
+        requestAnimationFrame(()=> el.classList.add('show'));
+        setTimeout(()=>{
+            el.classList.remove('show');
+            el.addEventListener('transitionend', ()=> el.remove(), {once:true});
+        }, timeout);
+    }
+
+    function copyLink() {
+        const input = document.getElementById('public-link');
+        input.select();
+        try{
+            document.execCommand('copy');
+            showToast('Đã sao chép liên kết vào bộ nhớ tạm!', 'success');
+        }catch(e){
+            showToast('Sao chép thất bại. Vui lòng sao chép thủ công.', 'error');
+        }
+    }
+
+    function copyQRToClipboard() {
+        const canvas = document.getElementById('qr-code');
+        if (!canvas || !canvas.width) {
+            showToast('Vui lòng tạo mã QR trước (bấm Chia sẻ)!', 'error');
+            return;
+        }
+        canvas.toBlob(blob => {
+            if (!navigator.clipboard || typeof ClipboardItem === 'undefined'){
+                showToast('Trình duyệt không hỗ trợ sao chép hình ảnh. Hãy Tải mã QR.', 'error');
+                return;
+            }
+            const item = new ClipboardItem({ 'image/png': blob });
+            navigator.clipboard.write([item]).then(() => {
+                showToast('✓ Đã sao chép mã QR vào bộ nhớ tạm!', 'success');
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                showToast('❌ Sao chép thất bại. Hãy thử Tải mã QR thay thế.', 'error');
+            });
+        }, 'image/png');
+    }
+
+    function downloadQR() {
+        const canvas = document.getElementById('qr-code');
+        if (!canvas || !canvas.width) {
+            showToast('Vui lòng tạo mã QR trước (bấm Chia sẻ)!', 'error');
+            return;
+        }
+        const link = document.createElement('a');
+        link.download = 'form-qr-code.png';
+        link.href = canvas.toDataURL();
+        link.click();
+        showToast('Bắt đầu tải mã QR...', 'success');
+    }
+</script>

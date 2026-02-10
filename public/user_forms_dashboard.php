@@ -34,9 +34,14 @@ $requested_file = __DIR__ . '/../modules/' . $page . '.php';
 $base_path = realpath(__DIR__ . '/../modules');
 $module_path = realpath($requested_file);
 
-// Include the standard header
-include_once __DIR__ . '/../includes/header.php';
-display_messages(); // Display any session messages
+// --- KIỂM TRA NẾU LÀ TRANG EXPORT (KHÔNG HIỂN THỊ GIAO DIỆN) ---
+$is_export = (strpos($page, 'export') !== false);
+
+if (!$is_export) {
+    // Include the standard header
+    include_once __DIR__ . '/../includes/header.php';
+    display_messages(); // Display any session messages
+}
 
 // --- Load Module Content ---
 if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($module_path)) {
@@ -49,6 +54,8 @@ if ($module_path && strpos($module_path, $base_path) === 0 && file_exists($modul
 }
 // --- End Load Module Content ---
 
-// Include the standard footer
-include_once __DIR__ . '/../includes/footer.php';
+if (!$is_export) {
+    // Include the standard footer
+    include_once __DIR__ . '/../includes/footer.php';
+}
 ?>

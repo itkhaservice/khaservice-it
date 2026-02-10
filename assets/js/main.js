@@ -18,6 +18,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     hideSpinner();
 
+    // Global toast utility (used across site)
+    if (!window.showToast) {
+        window.showToast = (message, type = 'success', timeout = 3500) => {
+            let container = document.getElementById('global-toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'global-toast-container';
+                container.style.position = 'fixed';
+                container.style.right = '20px';
+                container.style.bottom = '20px';
+                container.style.zIndex = '99999';
+                container.style.display = 'flex';
+                container.style.flexDirection = 'column';
+                container.style.gap = '10px';
+                document.body.appendChild(container);
+            }
+            const el = document.createElement('div');
+            el.textContent = message;
+            el.style.minWidth = '200px';
+            el.style.maxWidth = '420px';
+            el.style.color = '#fff';
+            el.style.padding = '10px 14px';
+            el.style.borderRadius = '10px';
+            el.style.boxShadow = '0 8px 24px rgba(2,6,23,0.35)';
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(10px)';
+            el.style.transition = 'transform .28s cubic-bezier(.2,.8,.2,1),opacity .28s';
+            el.style.fontWeight = '700';
+            el.style.pointerEvents = 'auto';
+            if (type === 'error') el.style.background = 'linear-gradient(90deg,#b91c1c,#ef4444)';
+            else el.style.background = 'linear-gradient(90deg,#059669,#10b981)';
+            container.appendChild(el);
+            requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; });
+            setTimeout(() => {
+                el.style.opacity = '0'; el.style.transform = 'translateY(10px)';
+                el.addEventListener('transitionend', () => el.remove(), { once: true });
+            }, timeout);
+        };
+    }
+
     document.querySelectorAll('.btn').forEach(button => {
         button.addEventListener('click', () => {
             if (button.type !== 'submit' && !button.form) showSpinner();
@@ -123,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const form = btn.closest('form');
             if (!form) return;
             const checkboxes = form.querySelectorAll('.row-checkbox:checked');
-            if (checkboxes.length === 0) { alert('Vui lòng chọn ít nhất một mục.'); return; }
+            if (checkboxes.length === 0) { window.showToast('Vui lòng chọn ít nhất một mục.', 'error'); return; }
 
             showCustomConfirm(`Bạn có chắc chắn muốn chuyển ${checkboxes.length} mục đã chọn vào thùng rác?`, 'Xác nhận xóa nhiều', () => {
                 const actionUrl = btn.dataset.action;

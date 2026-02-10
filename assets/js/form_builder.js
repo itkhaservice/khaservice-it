@@ -18,8 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const addNewQuestion = () => {
         const questionContainer = document.getElementById('question-container');
-        const placeholder = questionContainer.querySelector('p');
-        if (placeholder) placeholder.remove();
+        // remove the whole placeholder wrapper (not just the inner <p>)
+        const placeholderWrapper = questionContainer.querySelector('.text-center');
+        if (placeholderWrapper) placeholderWrapper.remove();
         
         questionCounter++;
         const newQuestion = createQuestionElement(questionCounter);
@@ -30,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (addQuestionBtn) addQuestionBtn.addEventListener('click', addNewQuestion);
-    if (quickAddBtn) quickAddBtn.addEventListener('click', addNewQuestion);
+    if (quickAddBtn) quickAddBtn.addEventListener('click', duplicatePreviousQuestion);
 
     if (mainForm) {
         mainForm.addEventListener('submit', handleFormSubmit);
@@ -51,11 +52,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function updateThemePreview(color) {
-    document.documentElement.style.setProperty('--primary-color', color);
-    // Force specific elements that might use gradients or complex styles
-    const titleCard = document.querySelector('.form-title-card');
-    if (titleCard) {
-        titleCard.style.borderTop = `10px solid ${color}`;
+    // Apply color ONLY to form builder container, not to global root
+    const formContainer = document.querySelector('.form-module-container');
+    if (formContainer) {
+        formContainer.style.setProperty('--f-primary', color, 'important');
+        // Also update variations
+        formContainer.style.setProperty('--f-primary-dark', `${color}dd`, 'important');
     }
 }
 
@@ -87,8 +89,12 @@ function showToast(message, type = 'success') {
 
 function populateForm(data) {
     const questionContainer = document.getElementById('question-container');
+    if (!questionContainer) return;
+
     if (data.questions && data.questions.length > 0) {
+        // Xóa hoàn toàn placeholder hoặc nội dung cũ
         questionContainer.innerHTML = ''; 
+        
         data.questions.forEach(q_data => {
             questionCounter++;
             const questionBlock = createQuestionElement(questionCounter);
@@ -106,49 +112,63 @@ function populateForm(data) {
                 
                 setTimeout(() => {
                     const btn = questionBlock.querySelector('.btn-logic');
-                    if(btn) btn.style.color = 'var(--primary-color)';
+                    if(btn) btn.style.color = 'var(--f-primary)';
                 }, 100);
             }
             
-            questionBlock.querySelector(`input[name*="[title]"]`).value = q_data.title;
-            questionBlock.querySelector(`select[name*="[type]"]`).value = q_data.type;
-            questionBlock.querySelector(`input[name*="[required]"]`).checked = q_data.is_required;
+            // Điền tiêu đề và loại câu hỏi
+            const titleInput = questionBlock.querySelector('.q-input-title');
+            const typeSelect = questionBlock.querySelector('.q-select-type');
+            const reqCheckbox = questionBlock.querySelector('input[type="checkbox"]');
 
-            updateQuestionOptionsUI(q_data.type, questionBlock.querySelector('.question-options-container'), `q_${questionCounter}`);
+            if (titleInput) titleInput.value = q_data.title;
+            if (typeSelect) typeSelect.value = q_data.type;
+            if (reqCheckbox) reqCheckbox.checked = q_data.is_required;
+
+            const optionsContainer = questionBlock.querySelector('.q-options-area');
+            updateQuestionOptionsUI(q_data.type, optionsContainer, `q_${questionCounter}`);
 
             if (q_data.type === 'linear_scale' && q_data.options.length >= 4) {
-                questionBlock.querySelector('.scale-min').value = q_data.options[0].text;
-                questionBlock.querySelector('.scale-max').value = q_data.options[1].text;
-                questionBlock.querySelector('.scale-min-label').value = q_data.options[2].text;
-                questionBlock.querySelector('.scale-max-label').value = q_data.options[3].text;
+                const minS = optionsContainer.querySelector('.scale-min');
+                const maxS = optionsContainer.querySelector('.scale-max');
+                const minL = optionsContainer.querySelector('.scale-min-label');
+                const maxL = optionsContainer.querySelector('.scale-max-label');
+
+                if (minS) minS.value = q_data.options[0].text;
+                if (maxS) maxS.value = q_data.options[1].text;
+                if (minL) minL.value = q_data.options[2].text;
+                if (maxL) maxL.value = q_data.options[3].text;
+                
+                // Trigger update labels
+                if (minS) minS.dispatchEvent(new Event('change'));
             } else if (q_data.options && q_data.options.length > 0) {
-                const container = questionBlock.querySelector('.question-options-container');
                 const gridTypes = ['multiple_choice_grid', 'checkbox_grid'];
                 
                 if (gridTypes.includes(q_data.type)) {
-                    const rowsList = container.querySelector('.rows-list');
-                    const colsList = container.querySelector('.cols-list');
-                    rowsList.innerHTML = '';
-                    colsList.innerHTML = '';
+                    const rowsList = optionsContainer.querySelector('.rows-list');
+                    const colsList = optionsContainer.querySelector('.cols-list');
+                    if (rowsList) rowsList.innerHTML = '';
+                    if (colsList) colsList.innerHTML = '';
                     
                     q_data.options.forEach((opt, idx) => {
                         if (opt.type === 'row') {
                             const el = createOptionElement(`q_${questionCounter}`, idx + 1, 'row');
                             el.querySelector('input').value = opt.text;
-                            rowsList.appendChild(el);
+                            if (rowsList) rowsList.appendChild(el);
                         } else if (opt.type === 'column') {
                             const el = createOptionElement(`q_${questionCounter}`, idx + 1, 'column');
                             el.querySelector('input').value = opt.text;
-                            colsList.appendChild(el);
+                            if (colsList) colsList.appendChild(el);
                         }
                     });
                 } else {
-                    const optionsList = container.querySelector('.options-list');
+                    const optionsList = optionsContainer.querySelector('.options-list');
                     if (optionsList) {
                         optionsList.innerHTML = '';
                         q_data.options.forEach((opt, index) => {
                             const optionElement = createOptionElement(`q_${questionCounter}`, index + 1);
-                            optionElement.querySelector('input[type="text"]').value = opt.text;
+                            const optInput = optionElement.querySelector('.q-opt-input');
+                            if (optInput) optInput.value = opt.text;
                             optionsList.appendChild(optionElement);
                         });
                     }
@@ -158,7 +178,7 @@ function populateForm(data) {
             questionContainer.appendChild(questionBlock);
         });
     } else {
-         questionContainer.innerHTML = '<p class="text-muted">Chưa có câu hỏi nào. Nhấn "Thêm Câu hỏi" để bắt đầu.</p>';
+         checkEmptyContainer();
     }
 }
 
@@ -168,7 +188,23 @@ async function handleFormSubmit(event) {
     const formData = new FormData(form);
     const submitButton = document.querySelector(`button[form="${form.id}"]`);
     const originalButtonText = submitButton.innerHTML;
-    
+    // Front-end validation: title required. For questions, allow saving draft without questions but prevent publishing without questions.
+    const titleVal = (formData.get('form_title') || '').toString().trim();
+    const questionCount = document.querySelectorAll('.question-block-item').length;
+    const statusVal = (formData.get('form_status') || 'draft').toString();
+    if (!titleVal) {
+        showToast('Tiêu đề biểu mẫu là bắt buộc.', 'error');
+        const titleInput = document.getElementById('form_title'); if (titleInput) titleInput.focus();
+        return;
+    }
+    // If publishing and no questions -> block
+    if (questionCount === 0 && statusVal === 'published') {
+        showToast('Không thể xuất bản biểu mẫu khi chưa có câu hỏi. Vui lòng thêm ít nhất một câu hỏi.', 'error');
+        return;
+    }
+    // If saving draft with no questions -> allow but warn after success
+    const warnNoQuestions = questionCount === 0 && statusVal !== 'published';
+
     submitButton.disabled = true;
     submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
 
@@ -184,29 +220,42 @@ async function handleFormSubmit(event) {
         questions: []
     };
 
-    document.querySelectorAll('.question-block').forEach(block => {
+    document.querySelectorAll('.question-block-item').forEach(block => {
+        const titleInput = block.querySelector('.q-input-title');
+        const typeSelect = block.querySelector('.q-select-type');
+        const reqCheckbox = block.querySelector('input[type="checkbox"]');
+
+        if (!titleInput) return; // Bỏ qua nếu không tìm thấy tiêu đề
+
         const question = {
             id: block.getAttribute('data-db-id') || null,
-            title: block.querySelector(`input[name*="[title]"]`).value,
-            type: block.querySelector(`select[name*="[type]"]`).value,
-            is_required: block.querySelector(`input[name*="[required]"]`).checked,
+            title: titleInput.value,
+            type: typeSelect ? typeSelect.value : 'text',
+            is_required: reqCheckbox ? reqCheckbox.checked : false,
             logic_config: block.querySelector('.logic-data') ? block.querySelector('.logic-data').value : null,
             options: []
         };
 
-        if (question.type === 'linear_scale') {
+        const optionsContainer = block.querySelector('.q-options-area');
+
+        if (question.type === 'linear_scale' && optionsContainer) {
+            const minS = optionsContainer.querySelector('.scale-min');
+            const maxS = optionsContainer.querySelector('.scale-max');
+            const minL = optionsContainer.querySelector('.scale-min-label');
+            const maxL = optionsContainer.querySelector('.scale-max-label');
+
             question.options = [
-                { text: block.querySelector('.scale-min').value, type: 'choice' },
-                { text: block.querySelector('.scale-max').value, type: 'choice' },
-                { text: block.querySelector('.scale-min-label').value, type: 'choice' },
-                { text: block.querySelector('.scale-max-label').value, type: 'choice' }
+                { text: minS ? minS.value : '1', type: 'choice' },
+                { text: maxS ? maxS.value : '5', type: 'choice' },
+                { text: minL ? minL.value : '', type: 'choice' },
+                { text: maxL ? maxL.value : '', type: 'choice' }
             ];
-        } else {
-            block.querySelectorAll('.option-item').forEach(optionEl => {
-                const optionText = optionEl.querySelector('input[type="text"]').value;
+        } else if (optionsContainer) {
+            optionsContainer.querySelectorAll('.option-item').forEach(optionEl => {
+                const optionInput = optionEl.querySelector('.q-opt-input');
                 const optionType = optionEl.dataset.type || 'choice';
-                if (optionText) {
-                    question.options.push({ text: optionText, type: optionType });
+                if (optionInput && optionInput.value) {
+                    question.options.push({ text: optionInput.value, type: optionType });
                 }
             });
         }
@@ -225,7 +274,12 @@ async function handleFormSubmit(event) {
         const result = await response.json();
         if (result.success) {
             playAudio('success');
-            showToast(result.message, 'success');
+            // If we saved a draft without questions, show an informational toast
+            if (warnNoQuestions) {
+                showToast('Đã lưu biểu mẫu dưới dạng bản nháp. Lưu ý: biểu mẫu chưa có câu hỏi.', 'info');
+            } else {
+                showToast(result.message, 'success');
+            }
             setTimeout(() => {
                 window.location.href = result.redirect_url;
             }, 1000);
@@ -244,44 +298,46 @@ async function handleFormSubmit(event) {
 function createQuestionElement(index) {
     const questionId = `q_${index}`;
     const questionWrapper = document.createElement('div');
-    questionWrapper.className = 'question-block card';
+    questionWrapper.className = 'question-block-item';
     questionWrapper.setAttribute('data-question-id', questionId);
 
     questionWrapper.innerHTML = `
-        <div class="card-body-custom">
-            <div class="question-header">
-                <input type="text" name="questions[${questionId}][title]" class="form-control" placeholder="Nhập câu hỏi của bạn ở đây...">
-                <select name="questions[${questionId}][type]" class="form-control question-type-select">
-                    <optgroup label="Cơ bản">
-                        <option value="text">Trả lời ngắn</option>
-                        <option value="textarea">Đoạn văn</option>
-                        <option value="multiple_choice" selected>Trắc nghiệm</option>
-                        <option value="checkboxes">Hộp kiểm</option>
-                        <option value="dropdown">Menu thả xuống</option>
-                    </optgroup>
-                    <optgroup label="Thời gian & Số liệu">
-                        <option value="date">Ngày</option>
-                        <option value="time">Giờ</option>
-                        <option value="datetime">Ngày & Giờ</option>
-                        <option value="number">Số</option>
-                    </optgroup>
-                    <optgroup label="Nâng cao">
-                        <option value="file">Tải tệp lên</option>
-                        <option value="linear_scale">Thang đo tuyến tính</option>
-                        <option value="multiple_choice_grid">Lưới trắc nghiệm</option>
-                        <option value="checkbox_grid">Lưới hộp kiểm</option>
-                    </optgroup>
-                </select>
-            </div>
-            <div class="question-options-container"></div>
-            <div class="question-footer">
+        <div class="q-main-row">
+            <input type="text" name="questions[${questionId}][title]" class="q-input-title" placeholder="Nhập câu hỏi của bạn tại đây...">
+            <select name="questions[${questionId}][type]" class="q-select-type question-type-select">
+                <optgroup label="Cơ bản">
+                    <option value="text">Trả lời ngắn</option>
+                    <option value="textarea">Đoạn văn</option>
+                    <option value="multiple_choice" selected>Trắc nghiệm</option>
+                    <option value="checkboxes">Hộp kiểm</option>
+                    <option value="dropdown">Menu thả xuống</option>
+                </optgroup>
+                <optgroup label="Thời gian & Số liệu">
+                    <option value="date">Ngày</option>
+                    <option value="time">Giờ</option>
+                    <option value="datetime">Ngày & Giờ</option>
+                    <option value="number">Số</option>
+                </optgroup>
+                <optgroup label="Nâng cao">
+                    <option value="file">Tải tệp lên</option>
+                    <option value="linear_scale">Thang đo tuyến tính</option>
+                    <option value="multiple_choice_grid">Lưới trắc nghiệm</option>
+                    <option value="checkbox_grid">Lưới hộp kiểm</option>
+                </optgroup>
+            </select>
+        </div>
+        <div class="question-options-container q-options-area"></div>
+        <div class="q-footer-actions">
+            <div style="display: flex; align-items: center; gap: 8px;">
                 <label class="switch">
                     <input type="checkbox" name="questions[${questionId}][required]">
                     <span class="slider round"></span>
                 </label>
-                <span>Bắt buộc</span>
-                <button type="button" class="btn-logic" title="Thiết lập điều kiện hiển thị"><i class="fas fa-brain"></i></button>
-                <button type="button" class="btn-delete-question" title="Xóa câu hỏi"><i class="fas fa-trash-alt"></i></button>
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--f-text-light);">BẮT BUỘC</span>
+            </div>
+            <div style="display: flex; gap: 5px;">
+                <button type="button" class="btn-icon-sm btn-logic" title="Điều kiện hiển thị"><i class="fas fa-brain"></i></button>
+                <button type="button" class="btn-icon-sm btn-delete-question" title="Xóa câu hỏi"><i class="fas fa-trash-alt" style="color: #ef4444;"></i></button>
             </div>
         </div>
     `;
@@ -299,12 +355,125 @@ function createQuestionElement(index) {
     const deleteBtn = questionWrapper.querySelector('.btn-delete-question');
     deleteBtn.addEventListener('click', () => {
         questionWrapper.remove();
-        if (document.querySelectorAll('.question-block').length === 0) {
-            document.getElementById('question-container').innerHTML = '<p class="text-muted">Chưa có câu hỏi nào. Nhấn "Thêm Câu hỏi" để bắt đầu.</p>';
-        }
+        checkEmptyContainer();
     });
 
     return questionWrapper;
+}
+
+function duplicatePreviousQuestion(){
+    const questionContainer = document.getElementById('question-container');
+    const existing = questionContainer.querySelectorAll('.question-block-item');
+    if (!existing || existing.length === 0) {
+        addNewQuestion();
+        return;
+    }
+    const last = existing[existing.length - 1];
+    questionCounter++;
+    const newQ = createQuestionElement(questionCounter);
+
+    // Copy title
+    const lastTitle = last.querySelector('.q-input-title');
+    const newTitle = newQ.querySelector('.q-input-title');
+    if (lastTitle && newTitle) newTitle.value = lastTitle.value;
+
+    // Copy required
+    const lastReq = last.querySelector('input[type="checkbox"]');
+    const newReq = newQ.querySelector('input[type="checkbox"]');
+    if (lastReq && newReq) newReq.checked = lastReq.checked;
+
+    // Copy logic-data if any
+    const lastLogic = last.querySelector('.logic-data');
+    if (lastLogic) {
+        const hid = document.createElement('input');
+        hid.type = 'hidden';
+        hid.className = 'logic-data';
+        hid.value = lastLogic.value;
+        newQ.appendChild(hid);
+        // visually mark logic button
+        const btn = newQ.querySelector('.btn-logic');
+        if (btn) btn.style.color = 'var(--f-primary)';
+    }
+
+    // Copy type and options
+    const lastType = last.querySelector('.q-select-type');
+    const newType = newQ.querySelector('.q-select-type');
+    const newOptionsArea = newQ.querySelector('.q-options-area');
+    const lastOptionsArea = last.querySelector('.q-options-area');
+    if (lastType && newType && lastOptionsArea && newOptionsArea) {
+        newType.value = lastType.value;
+        // render proper options UI for this type
+        updateQuestionOptionsUI(newType.value, newOptionsArea, `q_${questionCounter}`);
+
+        // copy different option structures
+        // standard options
+        const lastOptionsList = lastOptionsArea.querySelectorAll('.option-item');
+        if (lastOptionsList && lastOptionsList.length > 0) {
+            const newOptionsList = newOptionsArea.querySelector('.options-list');
+            if (newOptionsList) {
+                newOptionsList.innerHTML = '';
+                lastOptionsList.forEach((opt, idx) => {
+                    const el = createOptionElement(`q_${questionCounter}`, idx + 1, opt.dataset.type || 'choice');
+                    const input = el.querySelector('.q-opt-input');
+                    const srcInput = opt.querySelector('.q-opt-input');
+                    if (input && srcInput) input.value = srcInput.value;
+                    newOptionsList.appendChild(el);
+                });
+            }
+        }
+
+        // grid types
+        const lastRows = lastOptionsArea.querySelectorAll('.rows-list .option-item');
+        const lastCols = lastOptionsArea.querySelectorAll('.cols-list .option-item');
+        if ((lastRows && lastRows.length>0) || (lastCols && lastCols.length>0)){
+            const rowsList = newOptionsArea.querySelector('.rows-list');
+            const colsList = newOptionsArea.querySelector('.cols-list');
+            if (rowsList) rowsList.innerHTML = '';
+            if (colsList) colsList.innerHTML = '';
+            lastRows.forEach((r, idx) => {
+                const el = createOptionElement(`q_${questionCounter}`, idx+1, 'row');
+                const inp = el.querySelector('input'); if (inp) inp.value = r.querySelector('input').value;
+                rowsList.appendChild(el);
+            });
+            lastCols.forEach((c, idx) => {
+                const el = createOptionElement(`q_${questionCounter}`, idx+1, 'column');
+                const inp = el.querySelector('input'); if (inp) inp.value = c.querySelector('input').value;
+                colsList.appendChild(el);
+            });
+        }
+
+        // linear scale
+        const lastMin = lastOptionsArea.querySelector('.scale-min');
+        const lastMax = lastOptionsArea.querySelector('.scale-max');
+        const lastMinLabel = lastOptionsArea.querySelector('.scale-min-label');
+        const lastMaxLabel = lastOptionsArea.querySelector('.scale-max-label');
+        if (lastMin && lastMax) {
+            const newMin = newOptionsArea.querySelector('.scale-min');
+            const newMax = newOptionsArea.querySelector('.scale-max');
+            const newMinLabel = newOptionsArea.querySelector('.scale-min-label');
+            const newMaxLabel = newOptionsArea.querySelector('.scale-max-label');
+            if (newMin) newMin.value = lastMin.value;
+            if (newMax) newMax.value = lastMax.value;
+            if (newMinLabel) newMinLabel.value = lastMinLabel ? lastMinLabel.value : '';
+            if (newMaxLabel) newMaxLabel.value = lastMaxLabel ? lastMaxLabel.value : '';
+            // trigger updateIndices if present
+            const evt = new Event('change'); if (newMin) newMin.dispatchEvent(evt); if (newMax) newMax.dispatchEvent(evt);
+        }
+    }
+
+    questionContainer.appendChild(newQ);
+    newQ.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function checkEmptyContainer() {
+    if (document.querySelectorAll('.question-block-item').length === 0) {
+        document.getElementById('question-container').innerHTML = `
+            <div class="text-center" style="padding: 50px; border: 2.5px dashed var(--f-border); border-radius: 12px; background: #fff;">
+                <i class="fas fa-clipboard-question" style="font-size: 3rem; color: var(--f-border); margin-bottom: 15px; display: block;"></i>
+                <p class="text-muted" style="font-weight: 600;">Danh sách câu hỏi đang trống. Hãy thêm câu hỏi đầu tiên!</p>
+            </div>
+        `;
+    }
 }
 
 function updateQuestionOptionsUI(type, container, questionId) {
@@ -341,18 +510,46 @@ function renderStandardOptions(container, questionId) {
 
 function renderScaleOptions(container, questionId) {
     container.innerHTML = `
-        <div class="scale-config" style="background: #f8fafc; padding: 15px; border-radius: 8px;">
-            <div style="display: flex; gap: 15px; margin-bottom: 15px; align-items: center;">
-                <select class="form-control scale-min" style="width: 80px;"><option value="0">0</option><option value="1" selected>1</option></select>
+        <div class="scale-config">
+            <div class="scale-range-row">
+                <select class="scale-min">
+                    <option value="0">0</option>
+                    <option value="1" selected>1</option>
+                </select>
                 <span>đến</span>
-                <select class="form-control scale-max" style="width: 80px;"><option value="5" selected>5</option><option value="10">10</option></select>
+                <select class="scale-max">
+                    <option value="5" selected>5</option>
+                    <option value="10">10</option>
+                </select>
             </div>
             <div class="scale-labels">
-                <input type="text" class="form-control scale-min-label" placeholder="Nhãn thấp nhất (VD: Rất kém)" style="margin-bottom: 10px;">
-                <input type="text" class="form-control scale-max-label" placeholder="Nhãn cao nhất (VD: Rất tốt)">
+                <div class="scale-label-item">
+                    <span class="label-index">1</span>
+                    <input type="text" class="scale-min-label" placeholder="Nhãn thấp nhất (Tùy chọn)">
+                </div>
+                <div class="scale-label-item">
+                    <span class="label-index">5</span>
+                    <input type="text" class="scale-max-label" placeholder="Nhãn cao nhất (Tùy chọn)">
+                </div>
             </div>
         </div>
     `;
+
+    // Lắng nghe sự kiện đổi số để cập nhật nhãn index (1 - 5, 0 - 10...)
+    const minSelect = container.querySelector('.scale-min');
+    const maxSelect = container.querySelector('.scale-max');
+    const labelIndices = container.querySelectorAll('.label-index');
+
+    const updateIndices = () => {
+        labelIndices[0].textContent = minSelect.value;
+        labelIndices[1].textContent = maxSelect.value;
+        container.querySelector('.scale-max-label').placeholder = `Nhãn cao nhất (Tại mốc ${maxSelect.value})`;
+        container.querySelector('.scale-min-label').placeholder = `Nhãn thấp nhất (Tại mốc ${minSelect.value})`;
+    };
+
+    minSelect.addEventListener('change', updateIndices);
+    maxSelect.addEventListener('change', updateIndices);
+    updateIndices();
 }
 
 function renderGridOptions(container, questionId) {
@@ -380,13 +577,13 @@ function renderGridOptions(container, questionId) {
 
 function createOptionElement(questionId, optionIndex, type = 'choice', placeholder = '') {
     const optionWrapper = document.createElement('div');
-    optionWrapper.className = 'option-item';
+    optionWrapper.className = 'q-opt-row option-item';
     optionWrapper.dataset.type = type;
     const icon = type === 'row' ? 'fa-grip-lines' : (type === 'column' ? 'fa-ellipsis-v' : 'fa-grip-vertical');
     optionWrapper.innerHTML = `
-        <i class="fas ${icon} drag-handle"></i>
-        <input type="text" class="form-control" placeholder="${placeholder || (type === 'choice' ? 'Lựa chọn ' + optionIndex : 'Nhãn...')}">
-        <button type="button" class="btn-delete-option"><i class="fas fa-times"></i></button>
+        <i class="fas ${icon}" style="color: #cbd5e1; font-size: 0.7rem; cursor: move;"></i>
+        <input type="text" class="q-opt-input" placeholder="${placeholder || (type === 'choice' ? 'Lựa chọn ' + optionIndex : 'Nhãn...')}">
+        <button type="button" class="btn-delete-option" style="background:none; border:none; color:#94a3b8; cursor:pointer; padding:2px;"><i class="fas fa-times"></i></button>
     `;
     optionWrapper.querySelector('.btn-delete-option').addEventListener('click', () => optionWrapper.remove());
     return optionWrapper;
