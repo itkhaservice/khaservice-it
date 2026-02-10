@@ -49,7 +49,7 @@ foreach ($results as $row) {
     <div id="share-panel" class="form-card" style="display: none; background: var(--f-primary-light); border-color: #bbf7d0;">
         <div style="display: flex; gap: 25px; align-items: stretch;">
             <div id="qrcode-container" style="background: #fff; padding: 0; border-radius: 8px; border: 1px solid var(--f-border); display: flex; justify-content: center; align-items: center; width: 160px; height: 160px; flex-shrink: 0; align-self: center; overflow: hidden;">
-                <canvas id="qr-code" style="width: 100%; height: 100%; display: block;"></canvas>
+                <canvas id="qr-code" width="160" height="160" style="width:160px; height:160px; display:block; border-radius:6px;"></canvas>
             </div>
             <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
                 <label style="font-size: 0.75rem; font-weight: 800; color: #166534; display: block; margin-bottom: 8px;">ĐƯỜNG DẪN CÔNG KHAI:</label>
@@ -117,11 +117,15 @@ foreach ($results as $row) {
         const p = document.getElementById('share-panel');
         p.style.display = p.style.display === 'none' ? 'block' : 'none';
         if (p.style.display === 'block') {
+            const canvas = document.getElementById('qr-code');
+            const ctx = canvas.getContext('2d');
+            // Clear and fill with white background first
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 160, 160);
             new QRious({ 
                 element: document.getElementById('qr-code'), 
                 value: document.getElementById('public-link').value, 
-                size: 160, 
-                padding: 10,
+                size: 160,
                 level: 'H'
             });
         }
@@ -159,18 +163,45 @@ foreach ($results as $row) {
             showToast('Vui lòng tạo mã QR trước (bấm Chia sẻ)!', 'error');
             return;
         }
-        canvas.toBlob(blob => {
-            if (!navigator.clipboard || typeof ClipboardItem === 'undefined'){
-                showToast('Trình duyệt không hỗ trợ sao chép hình ảnh. Hãy Tải mã QR.', 'error');
-                return;
+        canvas.toBlob(async blob => {
+            // Best path: ClipboardItem + clipboard.write (image) - requires secure context (HTTPS) or localhost
+            if (navigator.clipboard && typeof ClipboardItem !== 'undefined'){
+                try {
+                    const item = new ClipboardItem({ 'image/png': blob });
+                    await navigator.clipboard.write([item]);
+                    showToast('✓ Đã sao chép mã QR vào bộ nhớ tạm!', 'success');
+                    return;
+                } catch (err) {
+                    console.error('Copy image failed:', err);
+                    // fallthrough to try other fallbacks
+                }
             }
-            const item = new ClipboardItem({ 'image/png': blob });
-            navigator.clipboard.write([item]).then(() => {
-                showToast('✓ Đã sao chép mã QR vào bộ nhớ tạm!', 'success');
-            }).catch(err => {
-                console.error('Copy failed:', err);
-                showToast('❌ Sao chép thất bại. Hãy thử Tải mã QR thay thế.', 'error');
-            });
+
+            // Fallback 1: copy data URL text to clipboard (less ideal but better than nothing)
+            const dataUrl = canvas.toDataURL('image/png');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                try {
+                    await navigator.clipboard.writeText(dataUrl);
+                    showToast('Đã sao chép đường dẫn hình ảnh (data URL). Bạn có thể dán vào tài liệu hoặc mở một tab mới và lưu ảnh.', 'info');
+                    return;
+                } catch (err) {
+                    console.error('Copy dataURL failed:', err);
+                }
+            }
+
+            // Final fallback: open image in new tab so user can manually copy/save
+            try {
+                const win = window.open();
+                const img = win.document.createElement('img');
+                img.src = dataUrl;
+                img.style.maxWidth = '100%';
+                win.document.body.style.margin = '0';
+                win.document.body.appendChild(img);
+                showToast('Mã QR được mở trong tab mới — nhấn phải chuột vào ảnh và chọn "Sao chép ảnh" hoặc "Lưu ảnh".', 'info');
+            } catch (err) {
+                console.error('Open new tab fallback failed:', err);
+                showToast('Trình duyệt không hỗ trợ sao chép hình ảnh. Hãy sử dụng nút Tải mã QR.', 'error');
+            }
         }, 'image/png');
     }
 
