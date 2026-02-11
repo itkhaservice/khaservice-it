@@ -1,42 +1,92 @@
 <?php
-error_reporting(0); // Temporarily suppress all errors for debugging JSON output
-ini_set('display_errors', 0); // Temporarily suppress display errors
-session_start(); // Ensure session is started for this standalone API endpoint
+// For API debugging on hosting, we need to see errors in JSON response
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // Don't display to output, we'll catch in try-catch
+session_start();
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
-// Ensure DB is available
-require_once '../../config/db.php';
-require_once '../../includes/audit_helper.php';
+// Track errors and send them in JSON
+$errors = [];
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    global $errors;
+    $errors[] = "[$errno] $errstr (in $errfile:$errline)";
+    error_log("[FORMS_API_ERROR] " . $errstr . " in " . $errfile . " on line " . $errline);
+    return true; // Don't execute PHP internal error handler
+});
 
-$action = $_GET['action'] ?? null;
+try {
+    // Check if required files exist
+    if (!file_exists('../../config/db.php')) {
+        throw new Exception('Database config file not found: ../../config/db.php (current: ' . getcwd() . ')');
+    }
+    if (!file_exists('../../includes/audit_helper.php')) {
+        throw new Exception('Audit helper file not found: ../../includes/audit_helper.php');
+    }
+    
+    // Ensure DB is available
+    require_once '../../config/db.php';
+    require_once '../../includes/audit_helper.php';
+    
+    if (!isset($pdo)) {
+        throw new Exception('Database connection ($pdo) not initialized after including config/db.php');
+    }
 
-switch ($action) {
-    case 'save_form':
-        handle_save_form($pdo);
-        break;
-    case 'update_form':
-        handle_update_form($pdo);
-        break;
-    case 'duplicate_form':
-        handle_duplicate_form($pdo);
-        break;
-    default:
-        echo json_encode(['success' => false, 'message' => 'Invalid action.']);
-        exit;
-        break;
+    $action = $_GET['action'] ?? null;
+
+    switch ($action) {
+        case 'save_form':
+            handle_save_form($pdo);
+            break;
+        case 'update_form':
+            handle_update_form($pdo);
+            break;
+        case 'duplicate_form':
+            handle_duplicate_form($pdo);
+            break;
+        default:
+            echo json_encode(['success' => false, 'message' => 'Invalid action.']);
+            exit;
+            break;
+    }
+} catch (Throwable $e) {
+    // Catch any exception (including parse errors in PHP 7+)
+    error_log("[FORMS_API] FATAL ERROR: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Server Error: ' . $e->getMessage(),
+        'debug' => [
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'errors' => $errors,
+            'cwd' => getcwd(),
+            'php_version' => phpversion(),
+            'pdo_available' => isset($pdo) ? 'YES' : 'NO'
+        ]
+    ]);
+    exit;
 }
 
 function handle_save_form($pdo) {
+    // Log request details
+    error_log("[FORMS_API] Save Form Request - Session ID: " . session_id() . ", User ID: " . ($_SESSION['user_id'] ?? 'NULL'));
+    error_log("[FORMS_API] Content-Type: " . ($_SERVER['CONTENT_TYPE'] ?? 'NOT SET'));
+    error_log("[FORMS_API] Request Method: " . $_SERVER['REQUEST_METHOD']);
+    
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        error_log("[FORMS_API] Invalid method: " . $_SERVER['REQUEST_METHOD']);
         http_response_code(405);
         echo json_encode(['success' => false, 'message' => 'POST method required.']);
         exit;
     }
 
     $data = json_decode(file_get_contents('php://input'), true);
+    error_log("[FORMS_API] Received data keys: " . implode(', ', array_keys($data ?? [])));
+    error_log("[FORMS_API] Form title: " . ($data['title'] ?? 'NOT SET'));
 
     if (empty($data['title'])) {
+        error_log("[FORMS_API] Empty title error");
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Tiêu đề biểu mẫu là bắt buộc.']);
         exit;
@@ -44,6 +94,7 @@ function handle_save_form($pdo) {
 
     // If attempting to publish, require at least one question. Drafts may be saved without questions.
     if (($data['status'] ?? 'draft') === 'published' && (empty($data['questions']) || !is_array($data['questions']) || count($data['questions']) === 0)) {
+        error_log("[FORMS_API] Publish without questions error");
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Phải có ít nhất một câu hỏi trước khi công khai biểu mẫu.']);
         exit;
@@ -52,6 +103,7 @@ function handle_save_form($pdo) {
     // User must be logged in to save a form
     $user_id = $_SESSION['user_id'] ?? null;
     if (!$user_id) {
+        error_log("[FORMS_API] Unauthorized: No user_id in session");
         http_response_code(401); // Unauthorized
         echo json_encode(['success' => false, 'message' => 'Bạn cần đăng nhập để lưu biểu mẫu.']);
         exit;
@@ -82,6 +134,7 @@ function handle_save_form($pdo) {
 
         $pdo->commit();
 
+        error_log("[FORMS_API] Form saved successfully - Form ID: " . $form_id);
         echo json_encode([
             'success' => true,
             'message' => 'Biểu mẫu đã được lưu thành công!',
@@ -91,6 +144,7 @@ function handle_save_form($pdo) {
 
     } catch (Exception $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
+        error_log("[FORMS_API] Exception caught - " . $e->getMessage() . " - Trace: " . $e->getTraceAsString());
         http_response_code(500);
         error_log("Form save error: " . $e->getMessage());
         echo json_encode(['success' => false, 'message' => 'Lỗi máy chủ: ' . $e->getMessage()]);
