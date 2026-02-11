@@ -60,6 +60,7 @@ $final_base = $protocol . "://" . $host . $base_dir;
                 <li><a href="index.php?page=maintenance/history"><i class="fas fa-tools"></i> Công tác</a></li>
                 <li><a href="index.php?page=services/list"><i class="fas fa-cloud"></i> Dịch vụ</a></li>
                 <li><a href="index.php?page=projects/list"><i class="fas fa-building"></i> Dự án</a></li>
+                <li><a href="index.php?page=car_inspections/list"><i class="fas fa-calendar-check"></i> Kiểm xe</a></li>
                 
                 <li class="dropdown">
                     <a href="javascript:void(0)" onclick="toggleDropdown(this)"><i class="fas fa-ellipsis-h"></i> Khác <i class="fas fa-caret-down"></i></a>

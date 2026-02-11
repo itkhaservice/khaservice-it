@@ -1,18 +1,5 @@
 <?php
-$device_id = $_GET['id'] ?? null;
-$device = null;
-
-if ($device_id) {
-    $stmt = $pdo->prepare("SELECT * FROM devices WHERE id = ?");
-    $stmt->execute([$device_id]);
-    $device = $stmt->fetch();
-}
-
-if (!$device) {
-    set_message('error', 'Thiết bị không tìm thấy!');
-    header("Location: index.php?page=devices/list");
-    exit;
-}
+// $device_id và $device đã được lấy và kiểm tra tại public/index.php
 
 // Fetch projects and suppliers for dropdowns
 $projects_stmt = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du_an");
@@ -25,48 +12,6 @@ $suppliers = $suppliers_stmt->fetchAll();
 $db_types = $pdo->query("SELECT * FROM settings_device_types ORDER BY group_name, type_name")->fetchAll();
 $db_groups = array_unique(array_column($db_types, 'group_name'));
 $db_statuses = $pdo->query("SELECT * FROM settings_device_statuses ORDER BY id ASC")->fetchAll();
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Basic validation
-    if (empty($_POST['ma_tai_san'])) {
-        set_message('error', 'Mã tài sản là bắt buộc.');
-    }
-    if (empty($_POST['ten_thiet_bi'])) {
-        set_message('error', 'Tên thiết bị là bắt buộc.');
-    }
-
-    if (!isset($_SESSION['messages']) || empty(array_filter($_SESSION['messages'], function($msg) { return $msg['type'] === 'error'; }))) {
-        try {
-            $sql = "UPDATE devices SET
-                        ma_tai_san = ?, ten_thiet_bi = ?, nhom_thiet_bi = ?, loai_thiet_bi = ?, model = ?, serial = ?,
-                        project_id = ?, parent_id = ?, supplier_id = ?, ngay_mua = ?, gia_mua = ?, bao_hanh_den = ?, trang_thai = ?, ghi_chu = ?
-                    WHERE id = ?";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([
-                $_POST['ma_tai_san'],
-                $_POST['ten_thiet_bi'],
-                $_POST['nhom_thiet_bi'],
-                $_POST['loai_thiet_bi'],
-                $_POST['model'],
-                $_POST['serial'],
-                $_POST['project_id'] ?: null,
-                $_POST['parent_id'] ?: null,
-                $_POST['supplier_id'] ?: null,
-                $_POST['ngay_mua'] ?: null,
-                $_POST['gia_mua'] ?: null,
-                $_POST['bao_hanh_den'] ?: null,
-                $_POST['trang_thai'],
-                $_POST['ghi_chu'],
-                $device_id
-            ]);
-            set_message('success', 'Thiết bị đã được cập nhật thành công!');
-            header("Location: index.php?page=devices/view&id=" . $device_id);
-            exit;
-        } catch (PDOException $e) {
-            set_message('error', 'Lỗi khi cập nhật thiết bị: ' . $e->getMessage());
-        }
-    }
-}
 ?>
 
 <div class="page-header">

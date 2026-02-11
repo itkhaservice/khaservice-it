@@ -79,12 +79,140 @@ if (($page ?? 'home') === 'home') {
 
 $page = $_GET['page'] ?? 'home';
 $page = preg_replace('/[^a-zA-Z0-9\/_.-]/', '', $page); // Sanitize
+
+// --- XỬ LÝ POST REQUEST TRƯỚC KHI XUẤT HTML (Tránh lỗi Headers already sent) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $page === 'car_inspections/list' && isset($_POST['quick_add'])) {
+    try {
+        // Lấy địa chỉ mặc định từ bảng projects (nối các trường địa chỉ)
+        $stmt_p = $pdo->prepare("SELECT dia_chi_duong, dia_chi_phuong_xa, dia_chi_tinh_tp FROM projects WHERE id = ?");
+        $stmt_p->execute([$_POST['project_id']]);
+        $p_data = $stmt_p->fetch(PDO::FETCH_ASSOC);
+        
+        $addr_parts = [];
+        if (!empty($p_data['dia_chi_duong'])) $addr_parts[] = $p_data['dia_chi_duong'];
+        if (!empty($p_data['dia_chi_phuong_xa'])) $addr_parts[] = $p_data['dia_chi_phuong_xa'];
+        if (!empty($p_data['dia_chi_tinh_tp'])) $addr_parts[] = $p_data['dia_chi_tinh_tp'];
+        
+        $default_address = implode(', ', $addr_parts);
+
+        $stmt = $pdo->prepare("INSERT INTO car_inspections (project_id, inspector_id, inspection_date, inspection_time, project_address, status) VALUES (?, ?, ?, ?, ?, 'pending')");
+        $stmt->execute([$_POST['project_id'], $_SESSION['user_id'], $_POST['inspection_date'], $_POST['inspection_time'], $default_address]);
+        set_message("success", "Đã đặt lịch kiểm tra thành công!");
+        header("Location: index.php?page=car_inspections/list&month=" . substr($_POST['inspection_date'], 0, 7));
+        exit;
+    } catch (PDOException $e) {
+        set_message("error", "Lỗi: " . $e->getMessage());
+    }
+}
+
+// Xử lý cho module devices/edit
+if ($page === 'devices/edit') {
+    $device_id = $_GET['id'] ?? null;
+    $device = null;
+    if ($device_id) {
+        $stmt = $pdo->prepare("SELECT * FROM devices WHERE id = ?");
+        $stmt->execute([$device_id]);
+        $device = $stmt->fetch();
+    }
+    if (!$device) {
+        set_message('error', 'Thiết bị không tìm thấy!');
+        header("Location: index.php?page=devices/list");
+        exit;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Validation và Update logic
+        if (empty($_POST['ma_tai_san'])) set_message('error', 'Mã tài sản là bắt buộc.');
+        if (empty($_POST['ten_thiet_bi'])) set_message('error', 'Tên thiết bị là bắt buộc.');
+
+        if (!isset($_SESSION['messages']) || empty(array_filter($_SESSION['messages'], function($msg) { return $msg['type'] === 'error'; }))) {
+            try {
+                $sql = "UPDATE devices SET
+                            ma_tai_san = ?, ten_thiet_bi = ?, nhom_thiet_bi = ?, loai_thiet_bi = ?, model = ?, serial = ?,
+                            project_id = ?, parent_id = ?, supplier_id = ?, ngay_mua = ?, gia_mua = ?, bao_hanh_den = ?, trang_thai = ?, ghi_chu = ?
+                        WHERE id = ?";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
+                    $_POST['ma_tai_san'], $_POST['ten_thiet_bi'], $_POST['nhom_thiet_bi'], $_POST['loai_thiet_bi'], $_POST['model'], $_POST['serial'],
+                    $_POST['project_id'] ?: null, $_POST['parent_id'] ?: null, $_POST['supplier_id'] ?: null, $_POST['ngay_mua'] ?: null, 
+                    $_POST['gia_mua'] ?: null, $_POST['bao_hanh_den'] ?: null, $_POST['trang_thai'], $_POST['ghi_chu'], $device_id
+                ]);
+                set_message('success', 'Thiết bị đã được cập nhật thành công!');
+                header("Location: index.php?page=devices/view&id=" . $device_id);
+                exit;
+            } catch (PDOException $e) {
+                set_message('error', 'Lỗi khi cập nhật thiết bị: ' . $e->getMessage());
+            }
+        }
+    }
+}
+
+// Xử lý cho module car_inspections/edit
+if ($page === 'car_inspections/edit') {
+    $id = $_GET['id'] ?? null;
+    // Kiểm tra tồn tại
+    $ins = null;
+    if ($id) {
+        $stmt = $pdo->prepare("SELECT id FROM car_inspections WHERE id = ?");
+        $stmt->execute([$id]);
+        $ins = $stmt->fetch();
+    }
+    if (!$ins) {
+        set_message('error', 'Không tìm thấy biên bản kiểm tra!');
+        header("Location: index.php?page=car_inspections/list");
+        exit;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        try {
+            $sql = "UPDATE car_inspections SET 
+                    violation_count = ?, violation_details = ?, 
+                    results_summary = ?, other_opinions = ?, status = ?,
+                    inspection_date = ?, inspection_time = ?, project_address = ?,
+                    inspector_id = ?, inspector_position = ?, 
+                    bql_name_1 = ?, bql_pos_1 = ?, bql_name_2 = ?, bql_pos_2 = ?
+                    WHERE id = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                $_POST['violation_count'], $_POST['violation_details'], $_POST['results_summary'], 
+                $_POST['other_opinions'], $_POST['status'], 
+                $_POST['inspection_date'], $_POST['inspection_time'], $_POST['project_address'],
+                $_POST['inspector_id'], $_POST['inspector_position'], 
+                $_POST['bql_name_1'], $_POST['bql_pos_1'], $_POST['bql_name_2'], $_POST['bql_pos_2'],
+                $id
+            ]);
+            
+            set_message("success", "Cập nhật biên bản kiểm tra thành công!");
+            header("Location: index.php?page=car_inspections/list"); 
+            exit;
+        } catch (PDOException $e) {
+            set_message("error", "Lỗi: " . $e->getMessage());
+        }
+    }
+}
+
+// Xử lý cho module car_inspections/delete
+if ($page === 'car_inspections/delete') {
+    $id = $_GET['id'] ?? null;
+    if ($id) {
+        try {
+            $stmt = $pdo->prepare("DELETE FROM car_inspections WHERE id = ?");
+            $stmt->execute([$id]);
+            set_message("success", "Đã xóa lịch kiểm tra thành công!");
+        } catch (PDOException $e) {
+            set_message("error", "Lỗi khi xóa: " . $e->getMessage());
+        }
+    }
+    header("Location: index.php?page=car_inspections/list");
+    exit;
+}
+
 $requested_file = __DIR__ . '/../modules/' . $page . '.php';
 $base_path = realpath(__DIR__ . '/../modules');
 $module_path = realpath($requested_file);
 
-// --- KIỂM TRA NẾU LÀ TRANG EXPORT (KHÔNG HIỂN THỊ GIAO DIỆN) ---
-$is_export = (strpos($page, 'export') !== false);
+// --- KIỂM TRA NẾU LÀ TRANG EXPORT HOẶC PRINT HOẶC DELETE (KHÔNG HIỂN THỊ GIAO DIỆN) ---
+$is_export = (strpos($page, 'export') !== false || strpos($page, 'print') !== false || strpos($page, 'delete') !== false);
 
 if (!$is_export) {
     include_once __DIR__ . '/../includes/header.php';
