@@ -35,25 +35,25 @@ $forms = $stmt->fetchAll();
                 <?php endif; ?>
                 <?php foreach ($forms as $idx => $form): ?>
                     <tr>
-                        <td class="text-center text-muted"><?php echo $idx + 1; ?></td>
-                        <td>
+                        <td class="text-center text-muted" data-label="STT"><?php echo $idx + 1; ?></td>
+                        <td data-label="Tên biểu mẫu">
                             <div style="font-weight: 700; color: var(--f-text); font-size: 0.95rem;"><?php echo htmlspecialchars($form['title']); ?></div>
                             <div style="font-size: 0.75rem; color: var(--f-text-light);">Slug: /<?php echo $form['slug']; ?></div>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center" data-label="Trạng thái">
                             <span class="f-badge <?php echo $form['status'] == 'published' ? 'f-badge-success' : 'f-badge-draft'; ?>">
                                 <?php echo $form['status'] == 'published' ? 'ĐANG CHẠY' : 'BẢN NHÁP'; ?>
                             </span>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center" data-label="Lượt nộp">
                             <a href="user_forms_dashboard.php?page=forms/view_results&id=<?php echo $form['id']; ?>" style="font-weight: 800; color: var(--f-primary); text-decoration: none; font-size: 1rem;">
                                 <?php echo $form['submission_count']; ?>
                             </a>
                         </td>
-                        <td>
+                        <td data-label="Ngày tạo">
                             <div style="font-weight: 600; color: var(--f-text-light); font-size: 0.8rem;"><?php echo date('d/m/Y', strtotime($form['created_at'])); ?></div>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center" data-label="Thao tác">
                             <div style="display: flex; justify-content: center; gap: 5px;">
                                 <a href="user_forms_dashboard.php?page=forms/view_results&id=<?php echo $form['id']; ?>" class="btn-icon-sm" title="Xem kết quả"><i class="fas fa-chart-line"></i></a>
                                 <a href="user_forms_dashboard.php?page=forms/edit&id=<?php echo $form['id']; ?>" class="btn-icon-sm" title="Sửa thiết kế"><i class="fas fa-edit"></i></a>

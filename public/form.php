@@ -665,111 +665,166 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         /* Responsive Design */
         @media (max-width: 768px) {
             body {
-                padding: 30px 10px;
-                background-image: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-color) 200px, var(--bg-color) 200px);
+                padding: 20px 10px;
+                background-image: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-color) 160px, var(--bg-color) 160px);
+            }
+
+            .form-container {
+                max-width: 100%;
             }
 
             .form-card-header,
             .question-card {
                 padding: 24px 20px;
                 border-radius: 10px;
+                margin-bottom: 12px;
             }
 
             .form-card-header h1 {
-                font-size: 1.9rem;
+                font-size: 1.8rem;
+                margin-bottom: 10px;
+            }
+
+            .form-card-header p {
+                font-size: 1rem;
+                text-align: left;
+                padding-bottom: 15px;
             }
 
             .question-title {
                 font-size: 1.05rem;
+                margin-bottom: 15px;
             }
 
             .submit-section {
                 flex-direction: column;
-                gap: 18px;
+                gap: 15px;
                 align-items: stretch;
+                text-align: center;
             }
 
             .submit-btn {
                 width: 100%;
+                padding: 16px;
+                font-size: 1rem;
             }
 
+            /* Grid Table Mobile Optimization */
             .grid-table {
                 display: block;
                 border: none;
-                box-shadow: none;
             }
 
             .grid-table thead {
                 display: none;
             }
 
-            .grid-table tr {
+            .grid-table tbody, .grid-table tr, .grid-table td {
                 display: block;
-                border: 1.5px solid var(--border-color);
-                border-radius: 8px;
-                margin-bottom: 12px;
-                overflow: hidden;
+                width: 100%;
+            }
+
+            .grid-table tr {
+                border: 1px solid var(--border-color);
+                border-radius: 10px;
+                margin-bottom: 15px;
+                background: #fff;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.02);
             }
 
             .grid-table td {
-                display: block;
-                padding: 12px 16px;
+                padding: 12px 15px;
                 text-align: left;
-                border: none;
-                border-bottom: 1px solid var(--border-color);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid #f1f5f9;
+            }
+
+            .grid-table td:first-child {
+                background-color: var(--primary-light);
+                color: var(--primary-color);
+                font-weight: 700;
+                font-size: 1rem;
+                border-radius: 10px 10px 0 0;
+                padding: 12px 15px;
             }
 
             .grid-table td:last-child {
                 border-bottom: none;
             }
 
-            .grid-table td:before {
+            .grid-table td:not(:first-child)::before {
                 content: attr(data-label);
                 font-weight: 600;
-                display: inline-block;
-                width: 30%;
+                color: var(--text-secondary);
+                font-size: 0.85rem;
+                margin-right: 10px;
             }
 
+            .grid-table input[type="radio"],
+            .grid-table input[type="checkbox"] {
+                margin: 0;
+            }
+
+            /* Linear Scale Mobile Optimization */
             .scale-group {
-                flex-wrap: wrap;
-                justify-content: center;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 5px;
+                padding: 10px 0;
+            }
+
+            .scale-item {
+                flex-direction: row;
+                justify-content: space-between;
+                padding: 12px 15px;
+                background: #f8fafc;
+                border-radius: 8px;
+                border: 1px solid var(--border-color);
+            }
+
+            .scale-item label {
+                font-size: 1rem;
+                font-weight: 600;
+                color: var(--text-main);
+                order: 1;
+            }
+
+            .scale-item input {
+                order: 2;
+                width: 20px;
+                height: 20px;
+            }
+
+            .scale-label {
+                padding: 8px 15px;
+                text-align: left;
+                max-width: 100%;
+                font-weight: 700;
+                color: var(--primary-color);
+                font-size: 0.8rem;
+                text-transform: uppercase;
             }
         }
 
         @media (max-width: 480px) {
             body {
-                padding: 20px 8px;
+                padding: 15px 8px;
+                background-image: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-color) 140px, var(--bg-color) 140px);
             }
 
             .form-card-header,
             .question-card {
-                padding: 20px 16px;
-                margin-bottom: 12px;
+                padding: 20px 15px;
             }
 
             .form-card-header h1 {
-                font-size: 1.6rem;
-            }
-
-            .form-control {
-                font-size: 16px;
-            }
-
-            .option-item {
-                padding: 12px 12px;
-            }
-
-            .submit-btn {
-                padding: 12px 24px;
-                font-size: 0.9rem;
+                font-size: 1.5rem;
             }
 
             .thank-you-card {
-                padding: 50px 24px;
-            }
-
-            .thank-you-card i {
-                font-size: 3.5rem;
+                padding: 60px 20px;
             }
 
             .thank-you-card h2 {
