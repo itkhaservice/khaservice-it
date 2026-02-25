@@ -1,5 +1,34 @@
 <?php
-// Logic xử lý POST đã được di chuyển ra public/index.php để tránh lỗi Header
+// 1. XỬ LÝ POST TẠI CHỖ
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (empty($_POST['ten_npp'])) {
+        set_message('error', 'Tên nhà cung cấp là bắt buộc.');
+    } else {
+        try {
+            $contacts = [];
+            if (isset($_POST['contact_names']) && is_array($_POST['contact_names'])) {
+                for ($i = 0; $i < count($_POST['contact_names']); $i++) {
+                    if (!empty($_POST['contact_names'][$i])) {
+                        $contacts[] = [
+                            'name' => $_POST['contact_names'][$i],
+                            'phone' => $_POST['contact_phones'][$i] ?? '',
+                            'role' => $_POST['contact_roles'][$i] ?? ''
+                        ];
+                    }
+                }
+            }
+            $json_contacts = !empty($contacts) ? json_encode($contacts, JSON_UNESCAPED_UNICODE) : null;
+            
+            $stmt = $pdo->prepare("INSERT INTO suppliers (ten_npp, ghi_chu, thong_tin_lien_he) VALUES (?, ?, ?)");
+            $stmt->execute([$_POST['ten_npp'], $_POST['ghi_chu'] ?? '', $json_contacts]);
+            
+            set_message('success', 'Thêm nhà cung cấp thành công!');
+            safe_redirect("index.php?page=suppliers/list");
+        } catch (PDOException $e) {
+            set_message('error', 'Lỗi: ' . $e->getMessage());
+        }
+    }
+}
 ?>
 
 <div class="page-header">
@@ -124,7 +153,6 @@ function removeContactRow(btn) {
     if (container.querySelectorAll('.contact-row-item').length > 1) {
         row.remove();
     } else {
-        // Clear inputs instead of removing the only row
         row.querySelectorAll('input').forEach(input => input.value = '');
     }
 }

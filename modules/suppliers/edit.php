@@ -1,18 +1,50 @@
 <?php
 $id = $_GET['id'] ?? null;
-if (!$id) { header("Location: index.php?page=suppliers/list"); exit; }
+if (!$id) { safe_redirect("index.php?page=suppliers/list"); }
 
+// 1. XỬ LÝ POST TẠI CHỖ
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (empty($_POST['ten_npp'])) {
+        set_message('error', 'Tên nhà cung cấp là bắt buộc.');
+    } else {
+        try {
+            $contacts = [];
+            if (isset($_POST['contact_names']) && is_array($_POST['contact_names'])) {
+                for ($i = 0; $i < count($_POST['contact_names']); $i++) {
+                    if (!empty($_POST['contact_names'][$i])) {
+                        $contacts[] = [
+                            'name' => $_POST['contact_names'][$i],
+                            'phone' => $_POST['contact_phones'][$i] ?? '',
+                            'role' => $_POST['contact_roles'][$i] ?? ''
+                        ];
+                    }
+                }
+            }
+            $json_contacts = !empty($contacts) ? json_encode($contacts, JSON_UNESCAPED_UNICODE) : null;
+            
+            $stmt = $pdo->prepare("UPDATE suppliers SET ten_npp=?, ghi_chu=?, thong_tin_lien_he=? WHERE id=?");
+            $stmt->execute([$_POST['ten_npp'], $_POST['ghi_chu'] ?? '', $json_contacts, $id]);
+            
+            set_message('success', 'Cập nhật nhà cung cấp thành công!');
+            safe_redirect("index.php?page=suppliers/list");
+        } catch (PDOException $e) {
+            set_message('error', 'Lỗi: ' . $e->getMessage());
+        }
+    }
+}
+
+// 2. LẤY DỮ LIỆU HIỂN THỊ
 $stmt = $pdo->prepare("SELECT * FROM suppliers WHERE id = ?");
 $stmt->execute([$id]);
 $s = $stmt->fetch();
 
-if (!$s) { set_message('error', 'Không tìm thấy.'); header("Location: index.php?page=suppliers/list"); exit; }
+if (!$s) { 
+    set_message('error', 'Không tìm thấy nhà cung cấp.'); 
+    safe_redirect("index.php?page=suppliers/list"); 
+}
 
-// Giải mã thông tin liên hệ (An toàn hơn với isset)
 $contacts_json = isset($s['thong_tin_lien_he']) ? $s['thong_tin_lien_he'] : '';
 $contacts = !empty($contacts_json) ? json_decode($contacts_json, true) : [];
-
-// Logic xử lý POST đã được di chuyển ra public/index.php để tránh lỗi Header
 ?>
 
 <div class="page-header">
@@ -32,11 +64,11 @@ $contacts = !empty($contacts_json) ? json_decode($contacts_json, true) : [];
             <div class="card-body-custom">
                 <div class="form-group">
                     <label>Tên Nhà cung cấp <span class="required">*</span></label>
-                    <input type="text" name="ten_npp" required value="<?php echo htmlspecialchars(isset($s['ten_npp']) ? $s['ten_npp'] : ''); ?>" class="input-highlight">
+                    <input type="text" name="ten_npp" required value="<?php echo htmlspecialchars($s['ten_npp'] ?? ''); ?>" class="input-highlight">
                 </div>
                 <div class="form-group">
                     <label>Ghi chú</label>
-                    <textarea name="ghi_chu" rows="5"><?php echo htmlspecialchars(isset($s['ghi_chu']) ? $s['ghi_chu'] : ''); ?></textarea>
+                    <textarea name="ghi_chu" rows="5"><?php echo htmlspecialchars($s['ghi_chu'] ?? ''); ?></textarea>
                 </div>
             </div>
         </div>
@@ -70,15 +102,15 @@ $contacts = !empty($contacts_json) ? json_decode($contacts_json, true) : [];
                             <div class="contact-row-item">
                                 <div class="form-group">
                                     <label>Họ tên</label>
-                                    <input type="text" name="contact_names[]" value="<?php echo htmlspecialchars($c['name']); ?>" class="form-control-sm">
+                                    <input type="text" name="contact_names[]" value="<?php echo htmlspecialchars($c['name'] ?? ''); ?>" class="form-control-sm">
                                 </div>
                                 <div class="form-group">
                                     <label>Số điện thoại</label>
-                                    <input type="text" name="contact_phones[]" value="<?php echo htmlspecialchars($c['phone']); ?>" class="form-control-sm">
+                                    <input type="text" name="contact_phones[]" value="<?php echo htmlspecialchars($c['phone'] ?? ''); ?>" class="form-control-sm">
                                 </div>
                                 <div class="form-group">
                                     <label>Chức vụ / Nội dung</label>
-                                    <input type="text" name="contact_roles[]" value="<?php echo htmlspecialchars($c['role']); ?>" class="form-control-sm">
+                                    <input type="text" name="contact_roles[]" value="<?php echo htmlspecialchars($c['role'] ?? ''); ?>" class="form-control-sm">
                                 </div>
                                 <button type="button" class="btn-remove-row" onclick="removeContactRow(this)" title="Xóa"><i class="fas fa-times"></i></button>
                             </div>
