@@ -1,25 +1,5 @@
 <?php
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (empty($_POST['ten_npp'])) {
-        set_message('error', 'Tên nhà phân phối là bắt buộc.');
-    } else {
-        try {
-            $stmt = $pdo->prepare("INSERT INTO suppliers (ten_npp, nguoi_lien_he, dien_thoai, email, ghi_chu) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([
-                $_POST['ten_npp'],
-                $_POST['nguoi_lien_he'],
-                $_POST['dien_thoai'],
-                $_POST['email'],
-                $_POST['ghi_chu']
-            ]);
-            set_message('success', 'Thêm nhà cung cấp thành công!');
-            header("Location: index.php?page=suppliers/list");
-            exit;
-        } catch (PDOException $e) {
-            set_message('error', 'Lỗi: ' . $e->getMessage());
-        }
-    }
-}
+// Logic xử lý POST đã được di chuyển ra public/index.php để tránh lỗi Header
 ?>
 
 <div class="page-header">
@@ -42,31 +22,110 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="text" name="ten_npp" required value="<?php echo htmlspecialchars($_POST['ten_npp'] ?? ''); ?>" class="input-highlight">
                 </div>
                 <div class="form-group">
-                    <label>Người liên hệ</label>
-                    <input type="text" name="nguoi_lien_he" value="<?php echo htmlspecialchars($_POST['nguoi_lien_he'] ?? ''); ?>">
-                </div>
-                <div class="form-group">
                     <label>Ghi chú</label>
-                    <textarea name="ghi_chu" rows="5"><?php echo htmlspecialchars($_POST['ghi_chu'] ?? ''); ?></textarea>
+                    <textarea name="ghi_chu" rows="5" placeholder="Ghi chú chung về nhà cung cấp..."><?php echo htmlspecialchars($_POST['ghi_chu'] ?? ''); ?></textarea>
                 </div>
             </div>
         </div>
     </div>
     <div class="right-panel">
         <div class="card">
-            <div class="card-header-custom">
+            <div class="card-header-custom" style="display: flex; justify-content: space-between; align-items: center;">
                 <h3><i class="fas fa-address-book"></i> Thông tin Liên hệ</h3>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="addContactRow()"><i class="fas fa-plus"></i> Thêm</button>
             </div>
             <div class="card-body-custom">
-                <div class="form-group">
-                    <label>Số điện thoại</label>
-                    <input type="text" name="dien_thoai" value="<?php echo htmlspecialchars($_POST['dien_thoai'] ?? ''); ?>">
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
+                <div id="contacts-container">
+                    <div class="contact-row-item">
+                        <div class="form-group">
+                            <label>Họ tên</label>
+                            <input type="text" name="contact_names[]" placeholder="VD: A Sơn" class="form-control-sm">
+                        </div>
+                        <div class="form-group">
+                            <label>Số điện thoại</label>
+                            <input type="text" name="contact_phones[]" placeholder="0123..." class="form-control-sm">
+                        </div>
+                        <div class="form-group">
+                            <label>Chức vụ / Nội dung</label>
+                            <input type="text" name="contact_roles[]" placeholder="VD: Bảo trì hệ thống" class="form-control-sm">
+                        </div>
+                        <button type="button" class="btn-remove-row" onclick="removeContactRow(this)" title="Xóa"><i class="fas fa-times"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </form>
+
+<style>
+.contact-row-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 15px;
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+.btn-remove-row {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 24px;
+    height: 24px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.btn-remove-row:hover { background: #dc2626; }
+
+@media (min-width: 1200px) {
+    .contact-row-item {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+</style>
+
+<script>
+function addContactRow() {
+    const container = document.getElementById('contacts-container');
+    const div = document.createElement('div');
+    div.className = 'contact-row-item';
+    div.innerHTML = `
+        <div class="form-group">
+            <label>Họ tên</label>
+            <input type="text" name="contact_names[]" placeholder="VD: A Sơn" class="form-control-sm">
+        </div>
+        <div class="form-group">
+            <label>Số điện thoại</label>
+            <input type="text" name="contact_phones[]" placeholder="0123..." class="form-control-sm">
+        </div>
+        <div class="form-group">
+            <label>Chức vụ / Nội dung</label>
+            <input type="text" name="contact_roles[]" placeholder="VD: Bảo trì hệ thống" class="form-control-sm">
+        </div>
+        <button type="button" class="btn-remove-row" onclick="removeContactRow(this)" title="Xóa"><i class="fas fa-times"></i></button>
+    `;
+    container.appendChild(div);
+}
+
+function removeContactRow(btn) {
+    const row = btn.closest('.contact-row-item');
+    const container = document.getElementById('contacts-container');
+    if (container.querySelectorAll('.contact-row-item').length > 1) {
+        row.remove();
+    } else {
+        // Clear inputs instead of removing the only row
+        row.querySelectorAll('input').forEach(input => input.value = '');
+    }
+}
+</script>

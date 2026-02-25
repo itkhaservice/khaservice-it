@@ -15,10 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_POST['ghi_chu']
             ]);
             set_message('success', 'Thêm dự án thành công!');
-            header("Location: index.php?page=projects/list");
-            exit;
+            safe_redirect("index.php?page=projects/list");
         } catch (PDOException $e) {
-            set_message('error', 'Lỗi: ' . $e->getMessage());
+            set_message('error', 'Lỗi khi thêm: ' . $e->getMessage());
         }
     }
 }
@@ -62,7 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </select>
                     </div>
 
-                    <!-- ĐỊA CHỈ PHÂN TÁCH -->
                     <div class="form-group full-width">
                         <label style="font-weight: 700; color: var(--primary-color); margin-bottom: 10px; display: block;">Địa chỉ chi tiết</label>
                         <div class="address-layout">
@@ -96,52 +94,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <style>
-.address-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    width: 100%;
-}
-.address-row {
-    display: flex;
-    gap: 20px;
-    width: 100%;
-}
-.address-item {
-    flex: 1;
-    min-width: 0; /* Quan trọng để flex item không bị tràn */
-}
-.address-item label {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    color: #94a3b8;
-    font-weight: 600;
-    margin-bottom: 6px;
-    display: block;
-}
-.address-item input {
-    width: 100% !important;
-}
-.card-header-custom {
-    padding-bottom: 15px;
-    margin-bottom: 20px;
-    border-bottom: 1px solid var(--border-color);
-}
-.card-header-custom h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    color: var(--text-color);
-    display: flex; align-items: center; gap: 10px;
-}
-.input-highlight {
-    background-color: #f8fafc;
-    border-color: #cbd5e1;
-    font-weight: 600;
-    color: var(--primary-dark-color);
-}
-@media (max-width: 768px) {
-    .address-row { flex-direction: column; gap: 15px; }
-    .card { padding: 15px !important; }
-    .form-grid { gap: 15px; }
-}
+.address-layout { display: flex; flex-direction: column; gap: 15px; width: 100%; }
+.address-row { display: flex; gap: 20px; width: 100%; }
+.address-item { flex: 1; min-width: 0; }
+.address-item label { font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 6px; display: block; }
+.card-header-custom { padding-bottom: 15px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+.card-header-custom h3 { margin: 0; font-size: 1.1rem; color: var(--text-color); display: flex; align-items: center; gap: 10px; }
+.input-highlight { background-color: #f8fafc; border-color: #cbd5e1; font-weight: 600; color: var(--primary-dark-color); }
+@media (max-width: 768px) { .address-row { flex-direction: column; gap: 15px; } .card { padding: 15px !important; } .form-grid { gap: 15px; } }
 </style>

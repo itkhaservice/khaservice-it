@@ -14,7 +14,7 @@ function display_messages() {
         foreach ($_SESSION['messages'] as $message) {
             $type = htmlspecialchars($message['type']);
             $icon = 'info-circle';
-            if ($type === 'success') $icon = 'check-circle';
+            if ($type === 'success') $icon = 'check';
             if ($type === 'error') $icon = 'exclamation-circle';
             if ($type === 'warning') $icon = 'exclamation-triangle';
 

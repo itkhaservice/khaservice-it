@@ -28,10 +28,10 @@ $final_base = $protocol . "://" . $host . $base_dir;
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Main Style -->
-    <link rel="stylesheet" href="<?php echo $final_base; ?>assets/css/style.css">
-    <link rel="stylesheet" href="<?php echo $final_base; ?>assets/css/layout.css">
+    <link rel="stylesheet" href="<?php echo $final_base; ?>assets/css/style.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo $final_base; ?>assets/css/layout.css?v=<?php echo time(); ?>">
     
-    <script src="<?php echo $final_base; ?>assets/js/audio_feedback.js" defer></script>
+    <script src="<?php echo $final_base; ?>assets/js/audio_feedback.js?v=<?php echo time(); ?>" defer></script>
     <style>
         .settings-link { color: #64748b; font-size: 1.2rem; transition: color 0.2s; }
         .settings-link:hover { color: var(--primary-color); }

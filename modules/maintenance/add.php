@@ -23,46 +23,7 @@ function getFastDateTime($h, $m, $d, $mon, $y) {
     return sprintf("%04d-%02d-%02d %02d:%02d:00", $y, $mon, $d, $h, $m);
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (empty($_POST['project_id'])) {
-        set_message('error', 'Vui lòng chọn Dự án.');
-    } else {
-        try {
-            $arrival_time = getFastDateTime($_POST['arr_h'], $_POST['arr_m'], $_POST['arr_d'], $_POST['arr_mon'], $_POST['arr_y']);
-            $completion_time = getFastDateTime($_POST['comp_h'], $_POST['comp_m'], $_POST['comp_d'], $_POST['comp_mon'], $_POST['comp_y']);
-            $ngay_su_co = !empty($_POST['ngay_su_co']) ? $_POST['ngay_su_co'] : date('Y-m-d');
-            $ngay_lap_phieu = (isAdmin() && !empty($_POST['ngay_lap_phieu'])) ? $_POST['ngay_lap_phieu'] : date('Y-m-d');
-
-            $final_device_id = !empty($_POST['component_id']) ? $_POST['component_id'] : (!empty($_POST['device_id']) ? $_POST['device_id'] : null);
-
-            $stmt = $pdo->prepare("INSERT INTO maintenance_logs 
-                (user_id, project_id, device_id, custom_device_name, usage_time_manual, ngay_su_co, ngay_lap_phieu, noi_dung, hu_hong, xu_ly, chi_phi, client_name, client_phone, arrival_time, completion_time, work_type) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)");
-            $stmt->execute([
-                $_SESSION['user_id'], 
-                $_POST['project_id'],
-                $final_device_id,
-                !empty($_POST['custom_device_name']) ? $_POST['custom_device_name'] : null,
-                !empty($_POST['usage_time_manual']) ? $_POST['usage_time_manual'] : null,
-                $ngay_su_co,
-                $ngay_lap_phieu,
-                $_POST['noi_dung'] ?: null, 
-                $_POST['hu_hong'],
-                $_POST['xu_ly'],
-                $_POST['client_name'],
-                $_POST['client_phone'],
-                $arrival_time,
-                $completion_time,
-                $_POST['work_type'] ?: 'Bảo trì / Sửa chữa'
-            ]);
-            set_message('success', 'Đã tạo phiếu công tác thành công!');
-            echo "<script>window.location.href = 'index.php?page=maintenance/history';</script>";
-            exit;
-        } catch (PDOException $e) {
-            set_message('error', 'Lỗi: ' . $e->getMessage());
-        }
-    }
-}
+// POST handling has been moved to public/index.php
 ?>
 
 <div class="page-header">

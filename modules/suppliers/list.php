@@ -100,14 +100,24 @@ $all_columns = [
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($suppliers_list as $s): ?>
+                <?php foreach ($suppliers_list as $s): 
+                    $contacts = !empty($s['thong_tin_lien_he']) ? json_decode($s['thong_tin_lien_he'], true) : [];
+                    $primary_contact = !empty($contacts) ? $contacts[0] : null;
+                    $contact_name = $primary_contact ? $primary_contact['name'] : ($s['nguoi_lien_he'] ?? '---');
+                    $contact_phone = $primary_contact ? $primary_contact['phone'] : ($s['dien_thoai'] ?? '---');
+                    $contact_role = $primary_contact ? $primary_contact['role'] : '';
+                ?>
                     <tr>
                         <td><input type="checkbox" name="ids[]" value="<?php echo $s['id']; ?>" class="row-checkbox"></td>
                         <td data-col="ten_npp" class="font-bold text-primary"><?php echo htmlspecialchars($s['ten_npp']); ?></td>
-                        <td data-col="nguoi_lien_he"><?php echo htmlspecialchars($s['nguoi_lien_he']); ?></td>
-                        <td data-col="dien_thoai"><?php echo htmlspecialchars($s['dien_thoai']); ?></td>
-                        <td data-col="email"><?php echo htmlspecialchars($s['email']); ?></td>
-                        <td data-col="ghi_chu"><?php echo htmlspecialchars($s['ghi_chu']); ?></td>
+                        <td data-col="nguoi_lien_he">
+                            <?php echo htmlspecialchars($contact_name); ?>
+                            <?php if($contact_role): ?> <br><small class="text-muted"><?php echo htmlspecialchars($contact_role); ?></small> <?php endif; ?>
+                            <?php if(count($contacts) > 1): ?> <span class="badge status-info" style="font-size: 0.6rem;">+<?php echo count($contacts)-1; ?></span> <?php endif; ?>
+                        </td>
+                        <td data-col="dien_thoai"><?php echo htmlspecialchars($contact_phone); ?></td>
+                        <td data-col="email"><?php echo htmlspecialchars($s['email'] ?? '---'); ?></td>
+                        <td data-col="ghi_chu"><?php echo htmlspecialchars($s['ghi_chu'] ?? ''); ?></td>
                         <td class="actions text-center">
                             <a href="index.php?page=suppliers/view&id=<?php echo $s['id']; ?>" class="btn-icon"><i class="fas fa-eye"></i></a>
                             <?php if(isIT()): ?>

@@ -41,6 +41,6 @@
         <div class="spinner"></div>
     </div>
 
-    <script src="../assets/js/main.js?v=<?php echo time(); ?>"></script>
+    <script src="<?php echo $final_base; ?>assets/js/main.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>

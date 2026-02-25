@@ -1,14 +1,7 @@
 <?php
-if ($_SESSION['role'] !== 'admin') { header("Location: index.php"); exit; }
-
-$id = $_GET['id'] ?? null;
-$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-$stmt->execute([$id]);
-$u = $stmt->fetch();
-
-if (!$u) { set_message('error', 'Không tìm thấy.'); header("Location: index.php?page=users/list"); exit; }
-
+// XỬ LÝ POST (Ưu tiên chạy trước để redirect nếu cần)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $id = $_GET['id'] ?? null;
     try {
         if (!empty($_POST['password'])) {
             $hashed_password = password_hash($_POST['password'], PASSWORD_DEFAULT);
@@ -19,16 +12,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$_POST['fullname'], $_POST['role'], $id]);
         }
         set_message('success', 'Cập nhật thành công!');
-        header("Location: index.php?page=users/list");
+        // Dùng JS redirect an toàn trên hosting
+        echo '<script>window.location.href="index.php?page=users/list";</script>';
         exit;
     } catch (PDOException $e) {
-        set_message('error', 'Lỗi khi cập nhật.');
+        set_message('error', 'Lỗi: ' . $e->getMessage());
     }
+}
+
+// LẤY DỮ LIỆU
+$id = $_GET['id'] ?? null;
+$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->execute([$id]);
+$u = $stmt->fetch();
+
+if (!$u) { 
+    set_message('error', 'Không tìm thấy người dùng.'); 
+    echo '<script>window.location.href="index.php?page=users/list";</script>';
+    exit;
 }
 ?>
 
 <div class="page-header">
-    <h2><i class="fas fa-user-edit"></i> Sửa Người dùng: <?php echo htmlspecialchars($u['username']); ?></h2>
+    <h2><i class="fas fa-user-edit"></i> Sửa Người dùngg: <?php echo htmlspecialchars($u['username']); ?></h2>
     <div class="header-actions">
         <a href="index.php?page=users/list" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
         <button type="submit" form="edit-user-form" class="btn btn-primary"><i class="fas fa-save"></i> Cập nhật</button>
@@ -48,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="form-group">
                     <label>Họ và tên</label>
-                    <input type="text" name="fullname" value="<?php echo htmlspecialchars($u['fullname']); ?>">
+                    <input type="text" name="fullname" value="<?php echo htmlspecialchars($u['fullname']); ?>" required>
                 </div>
                 <div class="form-group">
                     <label>Mật khẩu mới (Để trống nếu không đổi)</label>

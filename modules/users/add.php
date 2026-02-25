@@ -1,17 +1,16 @@
 <?php
-if ($_SESSION['role'] !== 'admin') { header("Location: index.php"); exit; }
+if ($_SESSION['role'] !== 'admin') { safe_redirect("index.php"); }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($_POST['username']) || empty($_POST['password'])) {
-        set_message('error', 'Username và Password là bắt buộc.');
+        set_message('error', 'Tên đăng nhập và Mật khẩu là bắt buộc.');
     } else {
         try {
             $hashed_password = password_hash($_POST['password'], PASSWORD_DEFAULT);
             $stmt = $pdo->prepare("INSERT INTO users (username, fullname, password, role) VALUES (?, ?, ?, ?)");
             $stmt->execute([$_POST['username'], $_POST['fullname'], $hashed_password, $_POST['role']]);
             set_message('success', 'Tạo tài khoản thành công!');
-            header("Location: index.php?page=users/list");
-            exit;
+            safe_redirect("index.php?page=users/list");
         } catch (PDOException $e) {
             set_message('error', 'Lỗi: Tên đăng nhập có thể đã tồn tại.');
         }
