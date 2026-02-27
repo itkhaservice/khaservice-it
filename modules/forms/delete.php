@@ -4,7 +4,7 @@ ini_set('display_errors', 1);
 // File: modules/forms/delete.php
 // Xử lý logic xóa một biểu mẫu.
 
-// Ensure user is logged in and is a 'user' role (handled by user_forms_dashboard.php)
+// Ensure user is logged in and is a 'Guest' role (handled by user_forms_dashboard.php)
 // Ensure $pdo is available (handled by user_forms_dashboard.php)
 
 $form_id = $_GET['id'] ?? null;

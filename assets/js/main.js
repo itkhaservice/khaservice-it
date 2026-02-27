@@ -109,14 +109,23 @@ document.addEventListener('DOMContentLoaded', () => {
         messageBoxes.forEach(messageBox => {
             let timer;
             function hideMessage() {
-                messageBox.style.opacity = '0';
-                messageBox.style.transform = 'translateX(120%)';
-                setTimeout(() => { if (messageBox.parentNode) messageBox.parentNode.removeChild(messageBox); }, 500); 
+                messageBox.classList.add('fade-out');
+                setTimeout(() => { 
+                    if (messageBox.parentNode) messageBox.parentNode.removeChild(messageBox); 
+                }, 300); // Match CSS fade-out duration
             }
-            function startHideTimer() { timer = setTimeout(hideMessage, 4000); }
+            function startHideTimer() { timer = setTimeout(hideMessage, 4000); } // Match progress bar duration
             startHideTimer();
-            messageBox.addEventListener('mouseenter', () => clearTimeout(timer));
-            messageBox.addEventListener('mouseleave', startHideTimer);
+            messageBox.addEventListener('mouseenter', () => {
+                clearTimeout(timer);
+                const progressBar = messageBox.querySelector('.progress-bar');
+                if (progressBar) progressBar.style.animationPlayState = 'paused';
+            });
+            messageBox.addEventListener('mouseleave', () => {
+                startHideTimer();
+                const progressBar = messageBox.querySelector('.progress-bar');
+                if (progressBar) progressBar.style.animationPlayState = 'running';
+            });
             messageBox.addEventListener('click', hideMessage);
         });
     }

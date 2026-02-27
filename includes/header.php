@@ -49,7 +49,7 @@ $final_base = $protocol . "://" . $host . $base_dir;
             </div>
         </div>
 
-        <?php if (isset($_SESSION['role']) && $_SESSION['role'] !== 'user'): // Admin/IT navigation ?>
+        <?php if (isset($_SESSION['role']) && $_SESSION['role'] !== 'Guest'): // Admin/IT navigation ?>
         <nav class="main-nav" id="mobile-menu">
             <div class="mobile-nav-header">
                 <span class="brand">MENU</span>
@@ -76,7 +76,7 @@ $final_base = $protocol . "://" . $host . $base_dir;
                 </li>
             </ul>
         </nav>
-        <?php elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'user'): // User-specific navigation ?>
+        <?php elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'Guest'): // User-specific navigation ?>
         <nav class="main-nav" id="mobile-menu">
             <div class="mobile-nav-header">
                 <span class="brand">MENU</span>

@@ -4,8 +4,35 @@ $pageTitle = "Lịch kiểm tra xe - Audit";
 
 // Check permissions
 if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'it')) {
-    set_message("Bạn không có quyền truy cập trang này!", "error");
+    set_message("error", "Bạn không có quyền truy cập trang này!");
     echo '<script>window.location.href = "index.php";</script>';
+    exit;
+}
+
+// ==================================================
+// HANDLE QUICK ADD FROM MODAL
+// ==================================================
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quick_add'])) {
+    $project_id = $_POST['project_id'] ?? null;
+    $inspection_date = $_POST['inspection_date'] ?? null;
+    $inspection_time = $_POST['inspection_time'] ?? '09:00';
+    $inspector_id = $_SESSION['user_id']; // Current logged in user is the inspector
+
+    if ($project_id && $inspection_date) {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO car_inspections (project_id, inspector_id, inspection_date, inspection_time, status) VALUES (?, ?, ?, ?, 'pending')");
+            $stmt->execute([$project_id, $inspector_id, $inspection_date, $inspection_time]);
+            set_message("success", "Đã đặt lịch kiểm tra thành công!");
+        } catch (PDOException $e) {
+            set_message("error", "Lỗi khi lưu lịch: " . $e->getMessage());
+        }
+    } else {
+        set_message("error", "Vui lòng nhập đầy đủ thông tin!");
+    }
+    
+    // Redirect back to same month to see the new entry
+    $month_redirect = date('Y-m', strtotime($inspection_date));
+    echo "<script>window.location.href = 'index.php?page=car_inspections/list&month=$month_redirect';</script>";
     exit;
 }
 
@@ -20,11 +47,11 @@ $first_day_ts = strtotime("$year-$month-01");
 $days_in_month = date('t', $first_day_ts);
 $start_day_of_week = date('N', $first_day_ts);
 
-// Fetch inspections with details
-$stmt = $pdo->prepare("SELECT ci.*, p.ten_du_an, u.fullname as inspector_name 
+// Fetch inspections with details (Optimized: Only basic fields for calendar)
+$stmt = $pdo->prepare("SELECT ci.id, ci.project_id, ci.inspector_id, ci.inspection_date, ci.inspection_time, 
+                             ci.status, ci.violation_count, p.ten_du_an
                       FROM car_inspections ci
                       JOIN projects p ON ci.project_id = p.id
-                      JOIN users u ON ci.inspector_id = u.id
                       WHERE ci.inspection_date BETWEEN ? AND ?
                       ORDER BY ci.inspection_time ASC");
 $stmt->execute(["$year-$month-01", "$year-$month-$days_in_month"]);
@@ -88,7 +115,8 @@ $projects_list = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du
                                                             $status_class = "event-danger";
                                                         }
                                                     }
-                                                ?>                        <div class="cal-event <?= $status_class ?>" onclick="event.stopPropagation(); openDetailModal(<?= htmlspecialchars(json_encode($ins)) ?>)">
+                                                ?>                        <div class="cal-event <?= $status_class ?>" onclick="event.stopPropagation(); openDetailModal(<?= $ins['id'] ?>)">
+                            <div class="event-time-tag"><?= date('H:i', strtotime($ins['inspection_time'])) ?></div>
                             <div class="event-title"><?= htmlspecialchars($ins['ten_du_an']) ?></div>
                             <?php if($status_label): ?><div class="event-status-line"><?= $status_label ?></div><?php endif; ?>
                         </div>
@@ -233,23 +261,32 @@ $projects_list = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du
         background: #e7f9ee;
     }
 
-    .cal-events { display: flex; flex-direction: column; gap: 4px; }
+    .cal-events { display: flex; flex-direction: column; gap: 6px; }
     
     .cal-event { 
-        font-size: 0.72rem; 
-        padding: 5px 8px; 
-        border-radius: 6px; 
+        font-size: 0.7rem; 
+        padding: 6px 10px; 
+        border-radius: 8px; 
         display: flex; 
         flex-direction: column;
         align-items: flex-start;
-        gap: 2px;
+        gap: 3px;
         border-left: 3px solid transparent; 
         transition: transform 0.1s;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
     .cal-event:hover { transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     
-    .event-pending { background: #f1f5f9; color: #475569; border-color: #94a3b8; }
+    .event-time-tag {
+        font-size: 0.6rem;
+        font-weight: 800;
+        background: rgba(0,0,0,0.05);
+        padding: 1px 5px;
+        border-radius: 4px;
+        margin-bottom: 2px;
+    }
+
+    .event-pending { background: #f8fafc; color: #475569; border-color: #cbd5e1; }
     .event-success { background: #dcfce7; color: #166534; border-color: #108042; }
     .event-danger { background: #fee2e2; color: #991b1b; border-color: #ef4444; }
     
@@ -295,47 +332,65 @@ function openAddModal(date) {
     document.getElementById('addModal').style.display = 'block';
 }
 
-function openDetailModal(ins) {
-    const isCompleted = (ins.status === 'completed');
-    const resultText = isCompleted ? (ins.violation_count == 0 ? '<span class="text-success">ĐẠT</span>' : '<span class="text-danger">CHƯA ĐẠT (' + ins.violation_count + ')</span>') : '<span class="text-muted">Chưa kiểm tra</span>';
-    
-    let html = `
-        <div class="detail-item">
-            <div class="detail-label">Dự án</div>
-            <div class="detail-value text-primary">Chung cư ${ins.ten_du_an}</div>
-        </div>
-        <div class="row">
-            <div class="col-6 detail-item">
-                <div class="detail-label">Thời gian</div>
-                <div class="detail-value">${ins.inspection_time.substring(0,5)} - ${ins.inspection_date.split('-').reverse().join('/')}</div>
-            </div>
-            <div class="col-6 detail-item">
-                <div class="detail-label">Người phụ trách</div>
-                <div class="detail-value">${ins.inspector_name}</div>
-            </div>
-        </div>
-        <div class="detail-item">
-            <div class="detail-label">Kết quả Audit</div>
-            <div class="detail-value">${resultText}</div>
-        </div>
-    `;
-
-    document.getElementById('detail_content').innerHTML = html;
-    
-    let footerHtml = `
-        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('detailModal')">Đóng</button>
-        <button type="button" class="btn btn-danger btn-sm" onclick="confirmDeleteInspection(${ins.id})"><i class="fas fa-trash-alt"></i> Xóa lịch</button>
-        <a href="index.php?page=car_inspections/edit&id=${ins.id}" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i> Chỉnh sửa</a>
-    `;
-    
-    if(isCompleted) {
-        footerHtml = `
-            <a href="index.php?page=car_inspections/print&id=${ins.id}" target="_blank" class="btn btn-success btn-sm"><i class="fas fa-print"></i> In Biên bản</a>
-            ` + footerHtml;
-    }
-
-    document.getElementById('detail_footer').innerHTML = footerHtml;
+async function openDetailModal(id) {
+    // Show loading state
+    document.getElementById('detail_content').innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Đang tải thông tin...</div>';
+    document.getElementById('detail_footer').innerHTML = '';
     document.getElementById('detailModal').style.display = 'block';
+
+    try {
+        const response = await fetch(`api/get_inspection_details.php?id=${id}`);
+        const ins = await response.json();
+
+        if (ins.error) {
+            document.getElementById('detail_content').innerHTML = `<div class="alert alert-danger">${ins.error}</div>`;
+            return;
+        }
+
+        const isCompleted = (ins.status === 'completed');
+        const resultText = isCompleted ? (ins.violation_count == 0 ? '<span class="text-success">ĐẠT</span>' : '<span class="text-danger">CHƯA ĐẠT (' + ins.violation_count + ')</span>') : '<span class="text-muted">Chưa kiểm tra</span>';
+        
+        let html = `
+            <div class="detail-item">
+                <div class="detail-label">Dự án</div>
+                <div class="detail-value text-primary">Chung cư ${ins.ten_du_an}</div>
+            </div>
+            <div class="row">
+                <div class="col-6 detail-item">
+                    <div class="detail-label">Thời gian</div>
+                    <div class="detail-value">${ins.inspection_time.substring(0,5)} - ${ins.inspection_date.split('-').reverse().join('/')}</div>
+                </div>
+                <div class="col-6 detail-item">
+                    <div class="detail-label">Người phụ trách</div>
+                    <div class="detail-value">${ins.inspector_name}</div>
+                </div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Kết quả Audit</div>
+                <div class="detail-value">${resultText}</div>
+            </div>
+            ${ins.results_summary ? `<div class="detail-item"><div class="detail-label">Tóm tắt nội dung</div><div class="detail-value" style="font-size: 0.9rem; font-weight: normal; color: #475569;">${ins.results_summary.replace(/\n/g, '<br>')}</div></div>` : ''}
+        `;
+
+        document.getElementById('detail_content').innerHTML = html;
+        
+        let footerHtml = `
+            <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('detailModal')">Đóng</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDeleteInspection(${ins.id})"><i class="fas fa-trash-alt"></i> Xóa lịch</button>
+            <a href="index.php?page=car_inspections/edit&id=${ins.id}" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i> Chỉnh sửa</a>
+        `;
+        
+        if(isCompleted) {
+            footerHtml = `
+                <a href="index.php?page=car_inspections/print&id=${ins.id}" target="_blank" class="btn btn-success btn-sm"><i class="fas fa-print"></i> In Biên bản</a>
+                ` + footerHtml;
+        }
+
+        document.getElementById('detail_footer').innerHTML = footerHtml;
+
+    } catch (e) {
+        document.getElementById('detail_content').innerHTML = `<div class="alert alert-danger">Lỗi kết nối: ${e.message}</div>`;
+    }
 }
 
 function confirmDeleteInspection(id) {

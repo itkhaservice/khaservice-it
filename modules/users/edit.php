@@ -66,6 +66,7 @@ if (!$u) {
                         <option value="xem" <?php echo $u['role'] == 'xem' ? 'selected' : ''; ?>>Xem (Chỉ xem)</option>
                         <option value="it" <?php echo $u['role'] == 'it' ? 'selected' : ''; ?>>IT (Quản lý thiết bị)</option>
                         <option value="admin" <?php echo $u['role'] == 'admin' ? 'selected' : ''; ?>>Admin (Toàn quyền)</option>
+                        <option value="Guest" <?php echo $u['role'] == 'Guest' ? 'selected' : ''; ?>>Guest (Biểu mẫu)</option>
                     </select>
                 </div>
             </div>

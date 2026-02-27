@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         try {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $role = 'user'; // Assign the specific role for form creators
+            $role = 'Guest'; // Assign the specific role for form creators
 
             $stmt = $pdo->prepare("INSERT INTO users (fullname, username, password, role) VALUES (?, ?, ?, ?)");
             $stmt->execute([$fullname, $username, $hashed_password, $role]);

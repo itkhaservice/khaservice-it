@@ -29,8 +29,8 @@ function safe_redirect($url) {
 $page = $_GET['page'] ?? 'home';
 $page = preg_replace('/[^a-zA-Z0-9\/_.-]/', '', $page);
 
-// Chuyển hướng user thường
-if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'user' && $page === 'home') {
+// Chuyển hướng Guest (Người dùng biểu mẫu) - KHÔNG cho phép vào index.php (trang quản trị IT)
+if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'Guest') {
     safe_redirect('user_forms_dashboard.php');
 }
 

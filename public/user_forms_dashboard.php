@@ -2,7 +2,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 // public/user_forms_dashboard.php
-// This is the dedicated dashboard for 'user' roles, specifically for managing forms.
+// This is the dedicated dashboard for 'Guest' roles, specifically for managing forms.
 
 session_start(); // Start session
 require_once __DIR__ . '/../includes/remember_me_check.php'; // Check for remember me cookie
@@ -11,9 +11,9 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/messages.php'; // Include messages helper
 
 // --- AUTHENTICATION AND AUTHORIZATION CHECK ---
-// Only 'user' role can access this dashboard
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'user') {
-    header('Location: login.php'); // Redirect to login if not logged in or not a 'user'
+// Only 'Guest' role can access this dashboard
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Guest') {
+    header('Location: login.php'); // Redirect to login if not logged in or not a 'Guest'
     exit;
 }
 // --- END AUTHENTICATION AND AUTHORIZATION CHECK ---

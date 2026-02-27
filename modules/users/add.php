@@ -51,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <option value="xem">Xem (Chỉ xem)</option>
                         <option value="it">IT (Quản lý thiết bị)</option>
                         <option value="admin">Admin (Toàn quyền)</option>
+                        <option value="Guest">Guest (Biểu mẫu)</option>
                     </select>
                 </div>
             </div>

@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // Redirect based on role
-            if ($user['role'] === 'user') {
+            if ($user['role'] === 'Guest') {
                 header('Location: user_forms_dashboard.php');
             } else {
                 header('Location: ../index.php');

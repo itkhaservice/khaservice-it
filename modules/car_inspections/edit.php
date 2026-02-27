@@ -1,15 +1,87 @@
 <?php
 // modules/car_inspections/edit.php
 $id = $_GET['id'] ?? null;
-// Logic kiểm tra và xử lý POST đã được chuyển lên public/index.php
 
-$stmt = $pdo->prepare("SELECT ci.*, p.ten_du_an, u.fullname as inspector_name 
+if (!$id || !is_numeric($id)) {
+    set_message('error', 'ID không hợp lệ.');
+    header('Location: index.php?page=car_inspections/list');
+    exit;
+}
+
+// ==================================================
+// HANDLE UPDATE POST
+// ==================================================
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        $stmt = $pdo->prepare("UPDATE car_inspections SET 
+            inspector_id = ?, 
+            inspection_date = ?, 
+            inspection_time = ?, 
+            project_address = ?, 
+            inspector_position = ?, 
+            bql_name_1 = ?, 
+            bql_pos_1 = ?, 
+            bql_name_2 = ?, 
+            bql_pos_2 = ?, 
+            results_summary = ?, 
+            violation_count = ?, 
+            violation_details = ?, 
+            other_opinions = ?, 
+            status = ? 
+            WHERE id = ?");
+        
+        $stmt->execute([
+            $_POST['inspector_id'],
+            $_POST['inspection_date'],
+            $_POST['inspection_time'],
+            $_POST['project_address'],
+            $_POST['inspector_position'],
+            $_POST['bql_name_1'],
+            $_POST['bql_pos_1'],
+            $_POST['bql_name_2'],
+            $_POST['bql_pos_2'],
+            $_POST['results_summary'],
+            $_POST['violation_count'] ?? 0,
+            $_POST['violation_details'],
+            $_POST['other_opinions'],
+            $_POST['status'],
+            $id
+        ]);
+        
+        set_message('success', 'Cập nhật kết quả đối soát thành công!');
+        // Refresh data or redirect
+        header("Location: index.php?page=car_inspections/edit&id=$id");
+        exit;
+    } catch (PDOException $e) {
+        set_message('error', 'Lỗi khi cập nhật: ' . $e->getMessage());
+    }
+}
+
+// ==================================================
+// FETCH CURRENT DATA
+// ==================================================
+$stmt = $pdo->prepare("SELECT ci.*, p.ten_du_an, p.dia_chi_duong, p.dia_chi_phuong_xa, p.dia_chi_tinh_tp, u.fullname as inspector_name 
                       FROM car_inspections ci 
                       JOIN projects p ON ci.project_id = p.id 
                       JOIN users u ON ci.inspector_id = u.id 
                       WHERE ci.id = ?");
 $stmt->execute([$id]);
 $ins = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$ins) {
+    set_message('error', 'Không tìm thấy dữ liệu.');
+    header('Location: index.php?page=car_inspections/list');
+    exit;
+}
+
+// Ghép địa chỉ từ bảng projects làm mặc định nếu project_address trống
+if (empty($ins['project_address'])) {
+    $ins['project_address'] = implode(', ', array_filter([
+        $ins['dia_chi_duong'] ?? '',
+        $ins['dia_chi_phuong_xa'] ?? '',
+        $ins['dia_chi_tinh_tp'] ?? ''
+    ]));
+}
 
 $inspectors_list = $pdo->query("SELECT id, fullname FROM users WHERE role IN ('admin', 'it') ORDER BY fullname")->fetchAll(PDO::FETCH_ASSOC);
 $pageTitle = "Cập nhật kết quả: " . $ins['ten_du_an'];
@@ -154,7 +226,7 @@ $pageTitle = "Cập nhật kết quả: " . $ins['ten_du_an'];
                 <div class="side-card-body">
                     <div class="meta-info-item">
                         <label>Dự án</label>
-                        <div class="val text-primary">Chung cư <?= htmlspecialchars($ins['ten_du_an']) ?></div>
+                        <div class="val text-primary">Chung cư <?= htmlspecialchars($ins['ten_du_an'] ?? '') ?></div>
                     </div>
                     
                     <div class="audit-input-group">
@@ -190,7 +262,7 @@ $pageTitle = "Cập nhật kết quả: " . $ins['ten_du_an'];
                 <div class="participants-container">
                     <div class="audit-input-group mb-4">
                         <label>Địa chỉ bãi xe</label>
-                        <input type="text" name="project_address" class="audit-control" value="<?= htmlspecialchars($ins['project_address']) ?>" placeholder="Địa chỉ hiển thị trên biên bản...">
+                        <input type="text" name="project_address" class="audit-control" value="<?= htmlspecialchars($ins['project_address'] ?? '') ?>" placeholder="Địa chỉ hiển thị trên biên bản...">
                     </div>
 
                     <div class="p-grid-table">
@@ -202,20 +274,20 @@ $pageTitle = "Cập nhật kết quả: " . $ins['ten_du_an'];
                         <div class="p-grid-row">
                             <select name="inspector_id" class="audit-control">
                                 <?php foreach($inspectors_list as $u): ?>
-                                    <option value="<?= $u['id'] ?>" <?= $ins['inspector_id'] == $u['id'] ? 'selected' : '' ?>><?= htmlspecialchars($u['fullname']) ?></option>
+                                    <option value="<?= $u['id'] ?>" <?= $ins['inspector_id'] == $u['id'] ? 'selected' : '' ?>><?= htmlspecialchars($u['fullname'] ?? '') ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <input type="text" name="inspector_position" class="audit-control" value="<?= htmlspecialchars($ins['inspector_position']) ?>" placeholder="VD: Nhân viên IT">
+                            <input type="text" name="inspector_position" class="audit-control" value="<?= htmlspecialchars($ins['inspector_position'] ?? '') ?>" placeholder="VD: Nhân viên IT">
                         </div>
 
                         <div class="p-grid-row">
-                            <input type="text" name="bql_name_1" class="audit-control" value="<?= htmlspecialchars($ins['bql_name_1']) ?>" placeholder="Đại diện BQL 1">
-                            <input type="text" name="bql_pos_1" class="audit-control" value="<?= htmlspecialchars($ins['bql_pos_1']) ?>" placeholder="Chức vụ 1">
+                            <input type="text" name="bql_name_1" class="audit-control" value="<?= htmlspecialchars($ins['bql_name_1'] ?? '') ?>" placeholder="Đại diện BQL 1">
+                            <input type="text" name="bql_pos_1" class="audit-control" value="<?= htmlspecialchars($ins['bql_pos_1'] ?? '') ?>" placeholder="Chức vụ 1">
                         </div>
 
                         <div class="p-grid-row">
-                            <input type="text" name="bql_name_2" class="audit-control" value="<?= htmlspecialchars($ins['bql_name_2']) ?>" placeholder="Đại diện BQL 2">
-                            <input type="text" name="bql_pos_2" class="audit-control" value="<?= htmlspecialchars($ins['bql_pos_2']) ?>" placeholder="Chức vụ 2">
+                            <input type="text" name="bql_name_2" class="audit-control" value="<?= htmlspecialchars($ins['bql_name_2'] ?? '') ?>" placeholder="Đại diện BQL 2">
+                            <input type="text" name="bql_pos_2" class="audit-control" value="<?= htmlspecialchars($ins['bql_pos_2'] ?? '') ?>" placeholder="Chức vụ 2">
                         </div>
                     </div>
                 </div>
@@ -230,26 +302,26 @@ $pageTitle = "Cập nhật kết quả: " . $ins['ten_du_an'];
                 <div class="side-card-body" style="padding: 20px;">
                     <div class="audit-input-group">
                         <label>Tóm tắt kết quả (Nội dung chính)</label>
-                        <textarea name="results_summary" class="audit-control" rows="3" placeholder="Ghi nhận chung về cuộc kiểm tra..."><?= htmlspecialchars($ins['results_summary']) ?></textarea>
+                        <textarea name="results_summary" class="audit-control" rows="3" placeholder="Ghi nhận chung về cuộc kiểm tra..."><?= htmlspecialchars($ins['results_summary'] ?? '') ?></textarea>
                     </div>
 
                     <div class="row">
                         <div class="col-md-3">
                             <div class="audit-input-group">
                                 <label>Số xe vi phạm</label>
-                                <input type="number" name="violation_count" class="audit-control" value="<?= $ins['violation_count'] ?>" style="font-weight: 700;">
+                                <input type="number" name="violation_count" class="audit-control" value="<?= $ins['violation_count'] ?? 0 ?>" style="font-weight: 700;">
                             </div>
                         </div>
                     </div>
 
                     <div class="audit-input-group">
                         <label>Danh sách biển số xe vi phạm chi tiết</label>
-                        <textarea name="violation_details" class="audit-control" rows="4" placeholder="VD: 59C2-360.15..."><?= htmlspecialchars($ins['violation_details']) ?></textarea>
+                        <textarea name="violation_details" class="audit-control" rows="4" placeholder="VD: 59C2-360.15..."><?= htmlspecialchars($ins['violation_details'] ?? '') ?></textarea>
                     </div>
 
                     <div class="audit-input-group">
                         <label>Ý kiến khác & Kiến nghị</label>
-                        <textarea name="other_opinions" class="audit-control" rows="2" placeholder="Ghi nhận ý kiến các bên..."><?= htmlspecialchars($ins['other_opinions']) ?></textarea>
+                        <textarea name="other_opinions" class="audit-control" rows="2" placeholder="Ghi nhận ý kiến các bên..."><?= htmlspecialchars($ins['other_opinions'] ?? '') ?></textarea>
                     </div>
                 </div>
             </div>
