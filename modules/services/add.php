@@ -58,8 +58,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card">
             <div class="card-header-custom"><h3><i class="fas fa-calendar-alt"></i> Thời hạn & Chi phí</h3></div>
             <div class="card-body-custom">
-                <div class="form-group"><label>Ngày hết hạn <span class="required">*</span></label><input type="date" name="ngay_het_han" required></div>
-                <div class="form-group"><label>Chi phí gia hạn (VNĐ)</label><input type="number" name="chi_phi_gia_han" value="0"></div>
+                <div class="form-group"><label>Ngày hết hạn <span class="required">*</span></label><input type="date" name="ngay_het_han" required value="<?php echo date('Y-m-d', strtotime('+1 year')); ?>"></div>
+                <div class="form-group"><label>Chi phí gia hạn (VNĐ)</label>
+                    <input type="text" id="chi_phi_format" class="input-highlight" placeholder="0" value="0">
+                    <input type="hidden" name="chi_phi_gia_han" id="chi_phi_gia_han" value="0">
+                </div>
                 <div class="form-group"><label>Nhắc trước (ngày)</label><input type="number" name="nhac_truoc_ngay" value="30"></div>
                 <div class="form-group"><label>Ghi chú</label><textarea name="ghi_chu" rows="4"></textarea></div>
             </div>
@@ -68,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </form>
 
 <style>
+.input-highlight { font-weight: 700; color: #108042; font-size: 1.1rem; }
 /* Layout Styles */
 .edit-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; align-items: start; }
 .left-panel, .right-panel { display: flex; flex-direction: column; gap: 20px; }
@@ -128,6 +132,19 @@ document.addEventListener('DOMContentLoaded', () => {
             dropdown.style.display = 'none';
         }
     });
+
+    // Currency Formatting
+    const chiPhiFormat = document.getElementById('chi_phi_format');
+    const chiPhiHidden = document.getElementById('chi_phi_gia_han');
+
+    if (chiPhiFormat) {
+        chiPhiFormat.addEventListener('input', function(e) {
+            let value = this.value.replace(/[^0-9]/g, '');
+            if (value === '') value = '0';
+            chiPhiHidden.value = value;
+            this.value = parseInt(value).toLocaleString('vi-VN');
+        });
+    }
 });
 
 function renderDropdown(filter) {

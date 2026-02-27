@@ -42,7 +42,7 @@ $all_columns = [
     'ten_dich_vu'   => ['label' => 'Tên Dịch vụ', 'default' => true],
     'ten_du_an'     => ['label' => 'Dự án', 'default' => true],
     'ngay_het_han'  => ['label' => 'Ngày hết hạn', 'default' => true],
-    'ngay_nhan_de_nghi' => ['label' => 'Ngày nhận đề nghị', 'default' => false],
+    'chi_phi_gia_han' => ['label' => 'Chi phí gia hạn', 'default' => true],
     'trang_thai'    => ['label' => 'Trạng thái', 'default' => true],
 ];
 ?>
@@ -125,13 +125,15 @@ $all_columns = [
                     <tr>
                         <td><input type="checkbox" name="ids[]" value="<?php echo $s['id']; ?>" class="row-checkbox"></td>
                         <td data-col="ten_dich_vu">
-                            <div class="font-bold"><?php echo htmlspecialchars($s['ten_dich_vu']); ?></div>
-                            <small class="text-muted"><?php echo htmlspecialchars($s['loai_dich_vu']); ?> - <?php echo htmlspecialchars($s['ten_npp'] ?? 'N/A'); ?></small>
+                            <div class="font-bold"><?php echo htmlspecialchars($s['ten_dich_vu'] ?? ''); ?></div>
+                            <small class="text-muted"><?php echo htmlspecialchars($s['loai_dich_vu'] ?? ''); ?> - <?php echo htmlspecialchars($s['ten_npp'] ?? 'N/A'); ?></small>
                         </td>
                         <td data-col="ten_du_an"><?php echo htmlspecialchars($s['ten_du_an'] ?: "Dùng chung"); ?></td>
                         <td data-col="ngay_het_han"><?php echo $ngay_het_han_formatted; ?></td>
-                        <td data-col="ngay_nhan_de_nghi"><?php echo $ngay_nhan_de_nghi_formatted; ?></td>
-                        <td data-col="trang_thai"><span class="badge"><?php echo htmlspecialchars($s['trang_thai']); ?></span></td>
+                        <td data-col="chi_phi_gia_han" class="font-bold text-success">
+                            <?php echo number_format($s['chi_phi_gia_han'] ?? 0, 0, ',', '.'); ?> ₫
+                        </td>
+                        <td data-col="trang_thai"><span class="badge"><?php echo htmlspecialchars($s['trang_thai'] ?? ''); ?></span></td>
                         <td class="actions text-center">
                             <a href="index.php?page=services/view&id=<?php echo $s['id']; ?>" class="btn-icon"><i class="fas fa-eye"></i></a>
                             <?php if(isIT()): ?>
