@@ -39,11 +39,14 @@ function parseFastDateTime($dt) {
 
 $arr = parseFastDateTime($log['arrival_time']);
 $comp = parseFastDateTime($log['completion_time']);
+$req = parseFastDateTime($log['ngay_su_co']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $arrival_time = getFastDateTime($_POST['arr_h'], $_POST['arr_m'], $_POST['arr_d'], $_POST['arr_mon'], $_POST['arr_y']);
         $completion_time = getFastDateTime($_POST['comp_h'], $_POST['comp_m'], $_POST['comp_d'], $_POST['comp_mon'], $_POST['comp_y']);
+        $ngay_su_co = getFastDateTime($_POST['req_h'], $_POST['req_m'], $_POST['req_d'], $_POST['req_mon'], $_POST['req_y']);
+        
         $assigned_user_id = (isAdmin() && !empty($_POST['assigned_user_id'])) ? $_POST['assigned_user_id'] : $log['user_id'];
         $ngay_lap_phieu = (isAdmin() && !empty($_POST['ngay_lap_phieu'])) ? $_POST['ngay_lap_phieu'] : ($log['ngay_lap_phieu'] ?: date('Y-m-d'));
 
@@ -54,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_POST['project_id'], !empty($_POST['device_id']) ? $_POST['device_id'] : null,
             !empty($_POST['custom_device_name']) ? $_POST['custom_device_name'] : null,
             !empty($_POST['usage_time_manual']) ? $_POST['usage_time_manual'] : null,
-            $_POST['ngay_su_co'] ?: date('Y-m-d'),
+            $ngay_su_co ?: date('Y-m-d H:i:s'),
             $ngay_lap_phieu,
             $_POST['noi_dung'] ?: null, 
             $_POST['hu_hong'], $_POST['xu_ly'],
@@ -183,7 +186,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
                 <div id="custom-name-area" style="<?php echo empty($log['device_id']) ? 'display:block' : 'display:none'; ?>"><div class="form-group"><label>Tên Đối tượng</label><div class="clearable-input-wrapper"><input type="text" name="custom_device_name" value="<?php echo htmlspecialchars($log['custom_device_name'] ?? ''); ?>"><i class="fas fa-times-circle clear-input"></i></div></div></div>
-                <div class="form-group"><label>Ngày yêu cầu</label><input type="date" name="ngay_su_co" value="<?php echo $log['ngay_su_co']; ?>"></div>
+                <div class="form-group">
+                    <label>Thời gian yêu cầu</label>
+                    <div class="fast-time-container">
+                        <div class="fast-time-group">
+                            <input type="number" name="req_h" class="input-h auto-tab" maxlength="2" placeholder="HH" value="<?php echo $req['h']; ?>">
+                            <span class="sep">:</span>
+                            <input type="number" name="req_m" class="input-m auto-tab" maxlength="2" placeholder="mm" value="<?php echo $req['m']; ?>">
+                            <span class="sep" style="margin: 0 8px;">&nbsp;</span>
+                            <input type="number" name="req_d" class="input-d auto-tab" maxlength="2" placeholder="DD" value="<?php echo $req['d']; ?>">
+                            <span class="sep">/</span>
+                            <input type="number" name="req_mon" class="input-mon auto-tab" maxlength="2" placeholder="MM" value="<?php echo $req['mon']; ?>">
+                            <span class="sep">/</span>
+                            <input type="number" name="req_y" class="input-y auto-tab" maxlength="4" placeholder="YYYY" value="<?php echo $req['y']; ?>">
+                        </div>
+                        <button type="button" class="btn btn-sm btn-secondary btn-now" onclick="fillNow('req')">Nay</button>
+                    </div>
+                </div>
                 <div class="form-group"><label>Sử dụng (Ghi chú)</label><div class="clearable-input-wrapper"><input type="text" name="usage_time_manual" value="<?php echo htmlspecialchars($log['usage_time_manual'] ?? ''); ?>"><i class="fas fa-times-circle clear-input"></i></div></div>
             </div>
             <div class="card mt-20">
