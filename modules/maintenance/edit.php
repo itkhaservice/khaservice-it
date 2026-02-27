@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="dashboard-card-header"><h3><i class="fas fa-tools"></i> Nội dung Công việc</h3></div>
                 <div class="form-group">
                     <label>Loại công việc <span class="required">*</span></label>
-                    <div class="clearable-input-wrapper"><input type="text" name="work_type" list="work_type_list" value="<?php echo htmlspecialchars($log['work_type']); ?>" required><i class="fas fa-times-circle clear-input"></i></div>
+                    <div class="clearable-input-wrapper"><input type="text" name="work_type" list="work_type_list" value="<?php echo htmlspecialchars($log['work_type'] ?? ''); ?>" required><i class="fas fa-times-circle clear-input"></i></div>
                     <datalist id="work_type_list">
                         <option value="Kiểm tra thực tế bãi giữ xe">
                         <option value="Kiểm tra máy tính kế toán">
@@ -91,9 +91,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <option value="Kiểm tra bảo trì hệ thống xe">
                     </datalist>
                 </div>
-                <div class="form-group"><label>Mô tả sự cố / Yêu cầu</label><div class="clearable-input-wrapper"><textarea name="noi_dung" rows="3"><?php echo htmlspecialchars($log['noi_dung']); ?></textarea><i class="fas fa-times-circle clear-input"></i></div></div>
-                <div class="form-group"><label>Xác định Nguyên nhân</label><div class="clearable-input-wrapper"><textarea name="hu_hong" rows="4"><?php echo htmlspecialchars($log['hu_hong']); ?></textarea><i class="fas fa-times-circle clear-input"></i></div></div>
-                <div class="form-group"><label>Giải pháp / Kết quả</label><div class="clearable-input-wrapper"><textarea name="xu_ly" rows="4"><?php echo htmlspecialchars($log['xu_ly']); ?></textarea><i class="fas fa-times-circle clear-input"></i></div></div>
+                <div class="form-group"><label>Mô tả sự cố / Yêu cầu</label><div class="clearable-input-wrapper"><textarea name="noi_dung" rows="3"><?php echo htmlspecialchars($log['noi_dung'] ?? ''); ?></textarea><i class="fas fa-times-circle clear-input"></i></div></div>
+                <div class="form-group"><label>Xác định Nguyên nhân</label><div class="clearable-input-wrapper"><textarea name="hu_hong" rows="4"><?php echo htmlspecialchars($log['hu_hong'] ?? ''); ?></textarea><i class="fas fa-times-circle clear-input"></i></div></div>
+                <div class="form-group"><label>Giải pháp / Kết quả</label><div class="clearable-input-wrapper"><textarea name="xu_ly" rows="4"><?php echo htmlspecialchars($log['xu_ly'] ?? ''); ?></textarea><i class="fas fa-times-circle clear-input"></i></div></div>
             </div>
             <div class="card mt-20">
                 <div class="dashboard-card-header"><h3><i class="fas fa-user-clock"></i> Thời gian Thực hiện</h3></div>
@@ -182,14 +182,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                 </div>
-                <div id="custom-name-area" style="<?php echo empty($log['device_id']) ? 'display:block' : 'display:none'; ?>"><div class="form-group"><label>Tên Đối tượng</label><div class="clearable-input-wrapper"><input type="text" name="custom_device_name" value="<?php echo htmlspecialchars($log['custom_device_name']); ?>"><i class="fas fa-times-circle clear-input"></i></div></div></div>
+                <div id="custom-name-area" style="<?php echo empty($log['device_id']) ? 'display:block' : 'display:none'; ?>"><div class="form-group"><label>Tên Đối tượng</label><div class="clearable-input-wrapper"><input type="text" name="custom_device_name" value="<?php echo htmlspecialchars($log['custom_device_name'] ?? ''); ?>"><i class="fas fa-times-circle clear-input"></i></div></div></div>
                 <div class="form-group"><label>Ngày yêu cầu</label><input type="date" name="ngay_su_co" value="<?php echo $log['ngay_su_co']; ?>"></div>
-                <div class="form-group"><label>Sử dụng (Ghi chú)</label><div class="clearable-input-wrapper"><input type="text" name="usage_time_manual" value="<?php echo htmlspecialchars($log['usage_time_manual']); ?>"><i class="fas fa-times-circle clear-input"></i></div></div>
+                <div class="form-group"><label>Sử dụng (Ghi chú)</label><div class="clearable-input-wrapper"><input type="text" name="usage_time_manual" value="<?php echo htmlspecialchars($log['usage_time_manual'] ?? ''); ?>"><i class="fas fa-times-circle clear-input"></i></div></div>
             </div>
             <div class="card mt-20">
                 <div class="dashboard-card-header"><h3><i class="fas fa-id-card"></i> Khách hàng</h3></div>
-                <div class="form-group"><label>Người liên hệ</label><div class="clearable-input-wrapper"><input type="text" name="client_name" value="<?php echo htmlspecialchars($log['client_name']); ?>"><i class="fas fa-times-circle clear-input"></i></div></div>
-                <div class="form-group"><label>Chức vụ</label><div class="clearable-input-wrapper"><input type="text" name="client_phone" value="<?php echo htmlspecialchars($log['client_phone']); ?>"><i class="fas fa-times-circle clear-input"></i></div></div>
+                <div class="form-group"><label>Người liên hệ</label><div class="clearable-input-wrapper"><input type="text" name="client_name" value="<?php echo htmlspecialchars($log['client_name'] ?? ''); ?>"><i class="fas fa-times-circle clear-input"></i></div></div>
+                <div class="form-group"><label>Chức vụ</label><div class="clearable-input-wrapper"><input type="text" name="client_phone" value="<?php echo htmlspecialchars($log['client_phone'] ?? ''); ?>"><i class="fas fa-times-circle clear-input"></i></div></div>
             </div>
         </div>
     </div>

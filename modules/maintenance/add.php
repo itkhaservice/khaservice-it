@@ -1,6 +1,59 @@
 <?php
 // modules/maintenance/add.php
 
+// --- POST HANDLING ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        $project_id = $_POST['project_id'] ?? null;
+        if (!$project_id) throw new Exception("Vui lòng chọn dự án.");
+
+        $target_mode = $_POST['target_mode'] ?? 'device';
+        $device_id = ($target_mode === 'device' && !empty($_POST['device_id'])) ? $_POST['device_id'] : null;
+        
+        // Nếu chọn linh kiện cụ thể
+        if ($device_id && !empty($_POST['component_id'])) {
+            $device_id = $_POST['component_id'];
+        }
+
+        $custom_device_name = ($target_mode === 'custom') ? ($_POST['custom_device_name'] ?? null) : null;
+        $usage_time_manual = $_POST['usage_time_manual'] ?? null;
+        $ngay_su_co = $_POST['ngay_su_co'] ?: date('Y-m-d');
+        $ngay_lap_phieu = (isAdmin() && !empty($_POST['ngay_lap_phieu'])) ? $_POST['ngay_lap_phieu'] : date('Y-m-d');
+        $work_type = $_POST['work_type'] ?: 'Bảo trì / Sửa chữa';
+        
+        $noi_dung = $_POST['noi_dung'] ?? '';
+        $hu_hong = $_POST['hu_hong'] ?? '';
+        $xu_ly = $_POST['xu_ly'] ?? '';
+        
+        $client_name = $_POST['client_name'] ?? null;
+        $client_phone = $_POST['client_phone'] ?? null;
+
+        // Xử lý thời gian
+        $arrival_time = getFastDateTime($_POST['arr_h'], $_POST['arr_m'], $_POST['arr_d'], $_POST['arr_mon'], $_POST['arr_y']);
+        $completion_time = getFastDateTime($_POST['comp_h'], $_POST['comp_m'], $_POST['comp_d'], $_POST['comp_mon'], $_POST['comp_y']);
+
+        $user_id = $_SESSION['user_id'] ?? null;
+
+        $stmt = $pdo->prepare("INSERT INTO maintenance_logs (
+            user_id, project_id, device_id, custom_device_name, usage_time_manual, 
+            ngay_su_co, ngay_lap_phieu, noi_dung, hu_hong, xu_ly, 
+            client_name, client_phone, arrival_time, completion_time, work_type
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        
+        $stmt->execute([
+            $user_id, $project_id, $device_id, $custom_device_name, $usage_time_manual,
+            $ngay_su_co, $ngay_lap_phieu, $noi_dung, $hu_hong, $xu_ly,
+            $client_name, $client_phone, $arrival_time, $completion_time, $work_type
+        ]);
+
+        $new_id = $pdo->lastInsertId();
+        set_message('success', 'Đã lưu phiếu bảo trì thành công!');
+        safe_redirect("index.php?page=maintenance/view&id=" . $new_id);
+    } catch (Exception $e) {
+        set_message('error', 'Lỗi: ' . $e->getMessage());
+    }
+}
+
 // Fetch projects for dropdown
 $projects = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du_an")->fetchAll();
 

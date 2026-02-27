@@ -52,19 +52,19 @@ $children = $stmt_children->fetchAll();
         <div class="card info-card">
             <div class="card-header-custom">
                 <h3><i class="fas fa-microchip"></i> Thông tin Chung</h3>
-                <span class="badge <?php echo $statusClass; ?>"><?php echo htmlspecialchars($device['trang_thai']); ?></span>
+                <span class="badge <?php echo $statusClass; ?>"><?php echo htmlspecialchars($device['trang_thai'] ?? ''); ?></span>
             </div>
             
             <div class="card-body-custom">
                 <div class="info-grid">
                     <div class="info-item">
                         <span class="info-label"><i class="fas fa-barcode"></i> Mã Tài sản</span>
-                        <span class="info-value highlight"><?php echo htmlspecialchars($device['ma_tai_san']); ?></span>
+                        <span class="info-value highlight"><?php echo htmlspecialchars($device['ma_tai_san'] ?? ''); ?></span>
                     </div>
                     
                     <div class="info-item">
                         <span class="info-label"><i class="fas fa-desktop"></i> Tên Thiết bị</span>
-                        <span class="info-value strong"><?php echo htmlspecialchars($device['ten_thiet_bi']); ?></span>
+                        <span class="info-value strong"><?php echo htmlspecialchars($device['ten_thiet_bi'] ?? ''); ?></span>
                     </div>
 
                     <?php if ($device['parent_id']): ?>
@@ -72,7 +72,7 @@ $children = $stmt_children->fetchAll();
                         <span class="info-label"><i class="fas fa-level-up-alt"></i> Thuộc thiết bị (Cha)</span>
                         <span class="info-value">
                             <a href="index.php?page=devices/view&id=<?php echo $device['parent_id']; ?>" class="link-primary font-bold">
-                                <?php echo htmlspecialchars($device['parent_name']); ?> (<?php echo htmlspecialchars($device['parent_code']); ?>)
+                                <?php echo htmlspecialchars($device['parent_name'] ?? ''); ?> (<?php echo htmlspecialchars($device['parent_code'] ?? ''); ?>)
                             </a>
                         </span>
                     </div>
@@ -80,17 +80,17 @@ $children = $stmt_children->fetchAll();
 
                     <div class="info-item">
                         <span class="info-label"><i class="fas fa-layer-group"></i> Loại / Nhóm</span>
-                        <span class="info-value"><?php echo htmlspecialchars($device['loai_thiet_bi']); ?> <span class="text-muted">/ <?php echo htmlspecialchars($device['nhom_thiet_bi']); ?></span></span>
+                        <span class="info-value"><?php echo htmlspecialchars($device['loai_thiet_bi'] ?? ''); ?> <span class="text-muted">/ <?php echo htmlspecialchars($device['nhom_thiet_bi'] ?? ''); ?></span></span>
                     </div>
 
                     <div class="info-item">
                         <span class="info-label"><i class="fas fa-cube"></i> Model</span>
-                        <span class="info-value"><?php echo htmlspecialchars($device['model']); ?></span>
+                        <span class="info-value"><?php echo htmlspecialchars($device['model'] ?? ''); ?></span>
                     </div>
 
                     <div class="info-item">
                         <span class="info-label"><i class="fas fa-fingerprint"></i> Serial Number</span>
-                        <span class="info-value"><?php echo htmlspecialchars($device['serial']); ?></span>
+                        <span class="info-value"><?php echo htmlspecialchars($device['serial'] ?? ''); ?></span>
                     </div>
 
                     <div class="info-item">
@@ -129,10 +129,10 @@ $children = $stmt_children->fetchAll();
                         <tbody>
                             <?php foreach ($children as $child): ?>
                                 <tr>
-                                    <td><a href="index.php?page=devices/view&id=<?php echo $child['id']; ?>" class="font-bold text-primary"><?php echo htmlspecialchars($child['ma_tai_san']); ?></a></td>
-                                    <td><?php echo htmlspecialchars($child['ten_thiet_bi']); ?></td>
-                                    <td><?php echo htmlspecialchars($child['loai_thiet_bi']); ?></td>
-                                    <td><span class="badge"><?php echo htmlspecialchars($child['trang_thai']); ?></span></td>
+                                    <td><a href="index.php?page=devices/view&id=<?php echo $child['id']; ?>" class="font-bold text-primary"><?php echo htmlspecialchars($child['ma_tai_san'] ?? ''); ?></a></td>
+                                    <td><?php echo htmlspecialchars($child['ten_thiet_bi'] ?? ''); ?></td>
+                                    <td><?php echo htmlspecialchars($child['loai_thiet_bi'] ?? ''); ?></td>
+                                    <td><span class="badge"><?php echo htmlspecialchars($child['trang_thai'] ?? ''); ?></span></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -221,22 +221,22 @@ $children = $stmt_children->fetchAll();
                                     <div class="timeline-header">
                                         <span class="date"><i class="far fa-calendar"></i> <?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></span>
                                         <?php if($log['target_id'] != $device_id): ?>
-                                            <span class="badge status-info" style="font-size: 0.65rem;">Linh kiện: <?php echo htmlspecialchars($log['target_name']); ?></span>
+                                            <span class="badge status-info" style="font-size: 0.65rem;">Linh kiện: <?php echo htmlspecialchars($log['target_name'] ?? ''); ?></span>
                                         <?php endif; ?>
                                     </div>
-                                    <h4 class="title"><?php echo htmlspecialchars($log['noi_dung']); ?></h4>
+                                    <h4 class="title"><?php echo htmlspecialchars($log['noi_dung'] ?? ''); ?></h4>
                                     
                                     <div class="log-details">
                                         <?php if ($log['hu_hong']): ?>
                                             <div class="log-row error">
                                                 <i class="fas fa-exclamation-triangle"></i>
-                                                <span><?php echo htmlspecialchars($log['hu_hong']); ?></span>
+                                                <span><?php echo htmlspecialchars($log['hu_hong'] ?? ''); ?></span>
                                             </div>
                                         <?php endif; ?>
                                         <?php if ($log['xu_ly']): ?>
                                             <div class="log-row success">
                                                 <i class="fas fa-tools"></i>
-                                                <span><?php echo htmlspecialchars($log['xu_ly']); ?></span>
+                                                <span><?php echo htmlspecialchars($log['xu_ly'] ?? ''); ?></span>
                                             </div>
                                         <?php endif; ?>
                                     </div>

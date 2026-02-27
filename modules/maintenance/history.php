@@ -144,18 +144,18 @@ $all_columns = [
                     <tr>
                         <td><input type="checkbox" name="ids[]" value="<?php echo $log['id']; ?>" class="row-checkbox"></td>
                         <td data-col="ten_thiet_bi">
-                            <div class="font-bold"><?php echo htmlspecialchars($d_name); ?></div>
+                            <div class="font-bold"><?php echo htmlspecialchars($d_name ?? ''); ?></div>
                             <?php if(empty($log['device_id'])): ?>
                                 <div style="font-size: 0.8rem; color: #64748b;"><?php echo htmlspecialchars($log['noi_dung'] ? mb_strimwidth($log['noi_dung'], 0, 50, "...") : ''); ?></div>
                             <?php endif; ?>
                         </td>
                         <td data-col="ma_tai_san" class="<?php echo !empty($log['device_id']) ? 'text-primary font-medium' : 'text-muted'; ?>">
-                            <?php echo htmlspecialchars($d_code); ?>
+                            <?php echo htmlspecialchars($d_code ?? ''); ?>
                         </td>
-                        <td data-col="ten_du_an"><?php echo htmlspecialchars($log['ten_du_an']); ?></td>
+                        <td data-col="ten_du_an"><?php echo htmlspecialchars($log['ten_du_an'] ?? ''); ?></td>
                         <td data-col="nguoi_thuc_hien"><?php echo htmlspecialchars($log['nguoi_thuc_hien'] ?? 'N/A'); ?></td>
                         <td data-col="ngay_su_co"><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></td>
-                        <td data-col="work_type"><?php echo htmlspecialchars($log['work_type']); ?></td>
+                        <td data-col="work_type"><?php echo htmlspecialchars($log['work_type'] ?? ''); ?></td>
                         <td class="actions text-center">
                             <a href="index.php?page=maintenance/view&id=<?php echo $log['id']; ?>" class="btn-icon"><i class="fas fa-eye"></i></a>
                             <?php if(isIT()): ?>

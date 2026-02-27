@@ -130,9 +130,9 @@ function getFileIconInfo($filePath) {
                     </div>
                 </div>
                 <div class="ticket-body">
-                    <div class="content-block problem"><h4 class="block-title"><i class="fas fa-exclamation-circle"></i> Hiện tượng / Yêu cầu</h4><div class="block-content"><?php echo nl2br(htmlspecialchars($log['noi_dung'])); ?></div></div>
-                    <div class="content-block diagnosis"><h4 class="block-title"><i class="fas fa-microscope"></i> Nguyên nhân / Hư hỏng</h4><div class="block-content"><?php echo !empty($log['hu_hong']) ? nl2br(htmlspecialchars($log['hu_hong'])) : '<em>Chưa ghi nhận</em>'; ?></div></div>
-                    <div class="content-block solution"><h4 class="block-title"><i class="fas fa-check-circle"></i> Biện pháp Xử lý</h4><div class="block-content"><?php echo !empty($log['xu_ly']) ? nl2br(htmlspecialchars($log['xu_ly'])) : '<em>Chưa ghi nhận</em>'; ?></div></div>
+                    <div class="content-block problem"><h4 class="block-title"><i class="fas fa-exclamation-circle"></i> Hiện tượng / Yêu cầu</h4><div class="block-content"><?php echo nl2br(htmlspecialchars($log['noi_dung'] ?? '')); ?></div></div>
+                    <div class="content-block diagnosis"><h4 class="block-title"><i class="fas fa-microscope"></i> Nguyên nhân / Hư hỏng</h4><div class="block-content"><?php echo !empty($log['hu_hong']) ? nl2br(htmlspecialchars($log['hu_hong'] ?? '')) : '<em>Chưa ghi nhận</em>'; ?></div></div>
+                    <div class="content-block solution"><h4 class="block-title"><i class="fas fa-check-circle"></i> Biện pháp Xử lý</h4><div class="block-content"><?php echo !empty($log['xu_ly']) ? nl2br(htmlspecialchars($log['xu_ly'] ?? '')) : '<em>Chưa ghi nhận</em>'; ?></div></div>
                 </div>
             </div>
 
@@ -155,7 +155,7 @@ function getFileIconInfo($filePath) {
                     </div>
                     <div class="grid-item full">
                         <span class="g-label">Công việc:</span>
-                        <span class="g-value text-indigo"><?php echo htmlspecialchars($prev_log['work_type']); ?></span>
+                        <span class="g-value text-indigo"><?php echo htmlspecialchars($prev_log['work_type'] ?? ''); ?></span>
                     </div>
                     <div class="grid-item full">
                         <span class="g-label">Đối tượng:</span>
@@ -165,7 +165,7 @@ function getFileIconInfo($filePath) {
 
                 <div class="last-result-box">
                     <div class="result-label">Nội dung đã xử lý:</div>
-                    <div class="result-text"><?php echo nl2br(htmlspecialchars($prev_log['xu_ly'] ?: $prev_log['noi_dung'])); ?></div>
+                    <div class="result-text"><?php echo nl2br(htmlspecialchars(($prev_log['xu_ly'] ?: $prev_log['noi_dung']) ?? '')); ?></div>
                 </div>
             </div>
             <?php endif; ?>
@@ -210,10 +210,10 @@ function getFileIconInfo($filePath) {
             <div class="card device-profile-card">
                 <div class="profile-header">
                     <div class="device-icon-large"><i class="fas fa-<?php echo $is_custom_device ? 'cube' : 'server'; ?>"></i></div>
-                    <div class="profile-title"><h3><?php echo htmlspecialchars($web_display_name); ?></h3><span class="code"><?php echo htmlspecialchars($web_display_code); ?></span></div>
+                    <div class="profile-title"><h3><?php echo htmlspecialchars($web_display_name ?? ''); ?></h3><span class="code"><?php echo htmlspecialchars($web_display_code ?? ''); ?></span></div>
                 </div>
                 <div class="profile-details">
-                    <div class="detail-row"><span class="d-label">Dự án</span><span class="d-value"><?php echo htmlspecialchars($display_project_name); ?></span></div>
+                    <div class="detail-row"><span class="d-label">Dự án</span><span class="d-value"><?php echo htmlspecialchars($display_project_name ?? ''); ?></span></div>
                     <div class="detail-row"><span class="d-label">Đại diện</span><span class="d-value"><?php echo htmlspecialchars($log['client_name'] ?? '---'); ?></span></div>
                     <div class="detail-row"><span class="d-label">TG Có mặt</span><span class="d-value"><?php echo $log['arrival_time'] ? date('H:i d/m', strtotime($log['arrival_time'])) : '-'; ?></span></div>
                     <div class="detail-row"><span class="d-label">Hoàn thành</span><span class="d-value"><?php echo $log['completion_time'] ? date('H:i d/m', strtotime($log['completion_time'])) : '-'; ?></span></div>

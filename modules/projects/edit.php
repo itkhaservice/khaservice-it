@@ -38,7 +38,7 @@ if (!$project) {
 ?>
 
 <div class="page-header">
-    <h2><i class="fas fa-edit"></i> Sửa Dự án: <?php echo htmlspecialchars($project['ten_du_an']); ?></h2>
+    <h2><i class="fas fa-edit"></i> Sửa Dự án: <?php echo htmlspecialchars($project['ten_du_an'] ?? ''); ?></h2>
     <div class="header-actions">
         <a href="index.php?page=projects/list" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
         <button type="submit" form="edit-project-form" class="btn btn-primary"><i class="fas fa-save"></i> Cập nhật</button>
@@ -56,12 +56,12 @@ if (!$project) {
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="ma_du_an">Mã Dự án <span class="required">*</span></label>
-                        <input type="text" id="ma_du_an" name="ma_du_an" required value="<?php echo htmlspecialchars($project['ma_du_an']); ?>" class="input-highlight">
+                        <input type="text" id="ma_du_an" name="ma_du_an" required value="<?php echo htmlspecialchars($project['ma_du_an'] ?? ''); ?>" class="input-highlight">
                     </div>
                     
                     <div class="form-group">
                         <label for="ten_du_an">Tên Dự án <span class="required">*</span></label>
-                        <input type="text" id="ten_du_an" name="ten_du_an" required value="<?php echo htmlspecialchars($project['ten_du_an']); ?>">
+                        <input type="text" id="ten_du_an" name="ten_du_an" required value="<?php echo htmlspecialchars($project['ten_du_an'] ?? ''); ?>">
                     </div>
 
                     <div class="form-group">
@@ -82,17 +82,17 @@ if (!$project) {
                             <div class="address-row full-width-row">
                                 <div class="address-item">
                                     <label for="dia_chi_duong">Số nhà / Đường</label>
-                                    <input type="text" id="dia_chi_duong" name="dia_chi_duong" placeholder="VD: 123 Lê Lợi" value="<?php echo htmlspecialchars($project['dia_chi_duong']); ?>">
+                                    <input type="text" id="dia_chi_duong" name="dia_chi_duong" placeholder="VD: 123 Lê Lợi" value="<?php echo htmlspecialchars($project['dia_chi_duong'] ?? ''); ?>">
                                 </div>
                             </div>
                             <div class="address-row split-row">
                                 <div class="address-item">
                                     <label for="dia_chi_phuong_xa">Phường / Xã</label>
-                                    <input type="text" id="dia_chi_phuong_xa" name="dia_chi_phuong_xa" placeholder="VD: Phường 1" value="<?php echo htmlspecialchars($project['dia_chi_phuong_xa']); ?>">
+                                    <input type="text" id="dia_chi_phuong_xa" name="dia_chi_phuong_xa" placeholder="VD: Phường 1" value="<?php echo htmlspecialchars($project['dia_chi_phuong_xa'] ?? ''); ?>">
                                 </div>
                                 <div class="address-item">
                                     <label for="dia_chi_tinh_tp">Quận / Huyện / Tỉnh / TP</label>
-                                    <input type="text" id="dia_chi_tinh_tp" name="dia_chi_tinh_tp" placeholder="VD: Quận 1, TP.HCM" value="<?php echo htmlspecialchars($project['dia_chi_tinh_tp']); ?>">
+                                    <input type="text" id="dia_chi_tinh_tp" name="dia_chi_tinh_tp" placeholder="VD: Quận 1, TP.HCM" value="<?php echo htmlspecialchars($project['dia_chi_tinh_tp'] ?? ''); ?>">
                                 </div>
                             </div>
                         </div>
@@ -100,7 +100,7 @@ if (!$project) {
 
                     <div class="form-group full-width">
                         <label for="ghi_chu">Ghi chú</label>
-                        <textarea id="ghi_chu" name="ghi_chu" rows="4"><?php echo htmlspecialchars($project['ghi_chu']); ?></textarea>
+                        <textarea id="ghi_chu" name="ghi_chu" rows="4"><?php echo htmlspecialchars($project['ghi_chu'] ?? ''); ?></textarea>
                     </div>
                 </div>
             </div>
