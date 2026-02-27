@@ -143,7 +143,7 @@ function renderValue($val, $dots, $isBold = false) {
             </colgroup>
             <tr>
                 <td class="label-cell no-border-bottom">TG yêu cầu:</td>
-                <td class="value-cell no-border-bottom"><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></td>
+                <td class="value-cell no-border-bottom"><?php echo date('H:i d/m/Y', strtotime($log['ngay_su_co'])); ?></td>
                 <td class="label-cell no-border-bottom">Hỗ trợ lần cuối:</td>
                 <td class="value-cell no-border-bottom"><?php echo renderValue($last_support_date, $dots); ?></td>
             </tr>
