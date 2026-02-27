@@ -189,11 +189,11 @@ function getFileIconInfo($filePath) {
                             ?>
                                 <div class="file-item-card">
                                     <a href="<?php echo $url; ?>" target="_blank" class="file-thumb">
-                                        <?php if ($info['type'] === 'image'): ?><img src="<?php echo $url; ?>">
+                                        <?php if ($info['type'] === 'image'): ?><img src="<?php echo $url; ?>" loading="lazy" alt="Attachment">
                                         <?php else: ?><i class="fas <?php echo $info['icon']; ?> icon-file"></i><?php endif; ?>
                                     </a>
                                     <div class="file-meta">
-                                        <a href="<?php echo $url; ?>" target="_blank" class="name"><?php echo basename($file['file_path']); ?></a>
+                                        <a href="<?php echo $url; ?>" target="_blank" class="name" title="<?php echo basename($file['file_path']); ?>"><?php echo basename($file['file_path']); ?></a>
                                         <div class="actions">
                                             <a href="<?php echo $url; ?>" target="_blank" title="Xem tệp"><i class="fas fa-external-link-alt"></i></a>
                                             <a href="index.php?page=maintenance/view&id=<?php echo $log_id; ?>&action=delete_file&file_id=<?php echo $file['id']; ?>" class="text-danger delete-btn" data-url="index.php?page=maintenance/view&id=<?php echo $log_id; ?>&action=delete_file&file_id=<?php echo $file['id']; ?>" title="Xóa"><i class="fas fa-trash-alt"></i></a>
@@ -367,16 +367,16 @@ function getFileIconInfo($filePath) {
 
 /* ATTACHMENT MODERN STYLES */
 .attachment-section { border-radius: 12px; overflow: hidden; }
-.files-grid-simple { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 15px; }
-.file-item-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; height: 100%; position: relative; }
-.file-item-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: var(--primary-color); }
-.file-thumb { height: 120px; background: #f8fafc; display: flex; align-items: center; justify-content: center; overflow: hidden; border-bottom: 1px solid #f1f5f9; cursor: pointer; text-decoration: none; }
-.file-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
-.file-item-card:hover .file-thumb img { transform: scale(1.1); }
-.icon-file { font-size: 2.5rem; color: #94a3b8; transition: color 0.3s; }
-.file-item-card:hover .icon-file { color: var(--primary-color); }
-.file-meta { padding: 10px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; }
-.file-meta .name { font-size: 0.8rem; font-weight: 600; color: #475569; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; text-decoration: none; word-break: break-all; }
+.files-grid-simple { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-top: 15px; }
+.file-item-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; height: 100%; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.file-item-card:hover { transform: translateY(-4px); box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1); border-color: var(--primary-color); }
+.file-thumb { aspect-ratio: 16/10; background: #f8fafc; display: flex; align-items: center; justify-content: center; overflow: hidden; border-bottom: 1px solid #f1f5f9; cursor: pointer; text-decoration: none; }
+.file-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); filter: brightness(0.95); }
+.file-item-card:hover .file-thumb img { transform: scale(1.08); filter: brightness(1); }
+.icon-file { font-size: 2.2rem; color: #94a3b8; transition: all 0.3s; }
+.file-item-card:hover .icon-file { color: var(--primary-color); transform: scale(1.1); }
+.file-meta { padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; }
+.file-meta .name { font-size: 0.8rem; font-weight: 600; color: #334155; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; text-decoration: none; word-break: break-all; }
 .file-meta .name:hover { color: var(--primary-color); }
 .file-meta .actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 8px; }
 .file-meta .actions a { color: #94a3b8; font-size: 0.9rem; padding: 5px; border-radius: 6px; transition: all 0.2s; }
