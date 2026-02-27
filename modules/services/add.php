@@ -58,7 +58,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card">
             <div class="card-header-custom"><h3><i class="fas fa-calendar-alt"></i> Thời hạn & Chi phí</h3></div>
             <div class="card-body-custom">
-                <div class="form-group"><label>Ngày hết hạn <span class="required">*</span></label><input type="date" name="ngay_het_han" required value="<?php echo date('Y-m-d', strtotime('+1 year')); ?>"></div>
+                <div class="form-group">
+                    <label>Ngày hết hạn <span class="required">*</span></label>
+                    <input type="date" name="ngay_het_han" required value="<?php echo date('Y-m-d', strtotime('+1 year')); ?>">
+                    <small class="text-muted" style="display: block; margin-top: 5px;"><i class="fas fa-info-circle"></i> Hệ thống tự động lặp lại hàng năm (chỉ cần chọn đúng Ngày/Tháng).</small>
+                </div>
                 <div class="form-group"><label>Chi phí gia hạn (VNĐ)</label>
                     <input type="text" id="chi_phi_format" class="input-highlight" placeholder="0" value="0">
                     <input type="hidden" name="chi_phi_gia_han" id="chi_phi_gia_han" value="0">
