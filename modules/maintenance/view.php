@@ -188,15 +188,15 @@ function getFileIconInfo($filePath) {
                                 $info = getFileIconInfo($file['file_path']); $url = "../" . $file['file_path'];
                             ?>
                                 <div class="file-item-card">
-                                    <div class="file-thumb">
+                                    <a href="<?php echo $url; ?>" target="_blank" class="file-thumb">
                                         <?php if ($info['type'] === 'image'): ?><img src="<?php echo $url; ?>">
                                         <?php else: ?><i class="fas <?php echo $info['icon']; ?> icon-file"></i><?php endif; ?>
-                                    </div>
+                                    </a>
                                     <div class="file-meta">
-                                        <span class="name"><?php echo basename($file['file_path']); ?></span>
+                                        <a href="<?php echo $url; ?>" target="_blank" class="name"><?php echo basename($file['file_path']); ?></a>
                                         <div class="actions">
-                                            <a href="<?php echo $url; ?>" download><i class="fas fa-download"></i></a>
-                                            <a href="index.php?page=maintenance/view&id=<?php echo $log_id; ?>&action=delete_file&file_id=<?php echo $file['id']; ?>" class="text-danger delete-btn" data-url="index.php?page=maintenance/view&id=<?php echo $log_id; ?>&action=delete_file&file_id=<?php echo $file['id']; ?>"><i class="fas fa-trash-alt"></i></a>
+                                            <a href="<?php echo $url; ?>" target="_blank" title="Xem tệp"><i class="fas fa-external-link-alt"></i></a>
+                                            <a href="index.php?page=maintenance/view&id=<?php echo $log_id; ?>&action=delete_file&file_id=<?php echo $file['id']; ?>" class="text-danger delete-btn" data-url="index.php?page=maintenance/view&id=<?php echo $log_id; ?>&action=delete_file&file_id=<?php echo $file['id']; ?>" title="Xóa"><i class="fas fa-trash-alt"></i></a>
                                         </div>
                                     </div>
                                 </div>
