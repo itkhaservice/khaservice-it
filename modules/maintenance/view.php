@@ -342,6 +342,29 @@ function getFileIconInfo($filePath) {
     .header-actions .btn, .header-actions a { flex: 1 1 calc(50% - 8px); justify-content: center; height: 44px; font-size: 0.85rem; }
 }
 
+@media (max-width: 768px) {
+    .ticket-body, .profile-details { padding: 15px; }
+    .ticket-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .ticket-status { width: 100%; justify-content: space-between; }
+    .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+    .page-header h2 { font-size: 1.25rem; }
+    .content-block { padding-left: 10px; margin-bottom: 15px; }
+    .block-title { font-size: 0.9rem; }
+    .block-content { font-size: 0.85rem; padding: 10px; }
+    
+    /* Force images and tables to be responsive within content blocks */
+    .block-content img { max-width: 100% !important; height: auto !important; border-radius: 4px; }
+    .block-content table { width: 100% !important; display: block; overflow-x: auto; }
+}
+
+@media (max-width: 480px) {
+    .header-actions .btn, .header-actions a { flex: 1 1 100%; }
+    .profile-title h3 { font-size: 1.1rem; }
+    .device-icon-large { font-size: 1.5rem; }
+    .d-label { min-width: 100px; font-size: 0.8rem; }
+    .d-value { font-size: 0.85rem; }
+}
+
 /* ATTACHMENT MODERN STYLES */
 .attachment-section { border-radius: 12px; overflow: hidden; }
 .files-grid-simple { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 15px; }
