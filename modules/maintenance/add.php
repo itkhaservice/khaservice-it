@@ -17,7 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $custom_device_name = ($target_mode === 'custom') ? ($_POST['custom_device_name'] ?? null) : null;
         $usage_time_manual = $_POST['usage_time_manual'] ?? null;
-        $ngay_su_co = $_POST['ngay_su_co'] ?: date('Y-m-d');
+        
+        // Xử lý thời gian yêu cầu chi tiết
+        $ngay_su_co = getFastDateTime($_POST['req_h'], $_POST['req_m'], $_POST['req_d'], $_POST['req_mon'], $_POST['req_y']);
+        if (!$ngay_su_co) $ngay_su_co = date('Y-m-d H:i:s');
+
         $ngay_lap_phieu = (isAdmin() && !empty($_POST['ngay_lap_phieu'])) ? $_POST['ngay_lap_phieu'] : date('Y-m-d');
         $work_type = $_POST['work_type'] ?: 'Bảo trì / Sửa chữa';
         
@@ -220,7 +224,23 @@ function getFastDateTime($h, $m, $d, $mon, $y) {
                     </div>
                 </div>
                 <div id="custom-name-area" style="display: none;"><div class="form-group"><label>Tên Đối tượng</label><div class="clearable-input-wrapper"><input type="text" name="custom_device_name" placeholder="VD: Hệ thống mạng..."><i class="fas fa-times-circle clear-input"></i></div></div></div>
-                <div class="form-group"><label>Ngày yêu cầu</label><input type="date" name="ngay_su_co" value="<?php echo date('Y-m-d'); ?>"></div>
+                <div class="form-group">
+                    <label>Thời gian yêu cầu</label>
+                    <div class="fast-time-container">
+                        <div class="fast-time-group">
+                            <input type="number" name="req_h" class="input-h auto-tab" maxlength="2" placeholder="HH" value="<?php echo date('H'); ?>">
+                            <span class="sep">:</span>
+                            <input type="number" name="req_m" class="input-m auto-tab" maxlength="2" placeholder="mm" value="<?php echo date('i'); ?>">
+                            <span class="sep" style="margin: 0 8px;">&nbsp;</span>
+                            <input type="number" name="req_d" class="input-d auto-tab" maxlength="2" placeholder="DD" value="<?php echo date('d'); ?>">
+                            <span class="sep">/</span>
+                            <input type="number" name="req_mon" class="input-mon auto-tab" maxlength="2" placeholder="MM" value="<?php echo date('m'); ?>">
+                            <span class="sep">/</span>
+                            <input type="number" name="req_y" class="input-y auto-tab" maxlength="4" placeholder="YYYY" value="<?php echo date('Y'); ?>">
+                        </div>
+                        <button type="button" class="btn btn-sm btn-secondary btn-now" onclick="fillNow('req')">Nay</button>
+                    </div>
+                </div>
                 <div class="form-group"><label>Sử dụng (Ghi chú)</label><div class="clearable-input-wrapper"><input type="text" name="usage_time_manual" placeholder="VD: 2 năm..."><i class="fas fa-times-circle clear-input"></i></div></div>
             </div>
             <div class="card mt-20">
