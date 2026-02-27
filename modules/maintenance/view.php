@@ -341,6 +341,38 @@ function getFileIconInfo($filePath) {
     .header-actions { display: flex; flex-wrap: wrap; gap: 8px; }
     .header-actions .btn, .header-actions a { flex: 1 1 calc(50% - 8px); justify-content: center; height: 44px; font-size: 0.85rem; }
 }
+
+/* ATTACHMENT MODERN STYLES */
+.attachment-section { border-radius: 12px; overflow: hidden; }
+.files-grid-simple { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 15px; }
+.file-item-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; height: 100%; position: relative; }
+.file-item-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: var(--primary-color); }
+.file-thumb { height: 120px; background: #f8fafc; display: flex; align-items: center; justify-content: center; overflow: hidden; border-bottom: 1px solid #f1f5f9; cursor: pointer; text-decoration: none; }
+.file-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+.file-item-card:hover .file-thumb img { transform: scale(1.1); }
+.icon-file { font-size: 2.5rem; color: #94a3b8; transition: color 0.3s; }
+.file-item-card:hover .icon-file { color: var(--primary-color); }
+.file-meta { padding: 10px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; }
+.file-meta .name { font-size: 0.8rem; font-weight: 600; color: #475569; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; text-decoration: none; word-break: break-all; }
+.file-meta .name:hover { color: var(--primary-color); }
+.file-meta .actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 8px; }
+.file-meta .actions a { color: #94a3b8; font-size: 0.9rem; padding: 5px; border-radius: 6px; transition: all 0.2s; }
+.file-meta .actions a:hover { background: #f1f5f9; color: var(--primary-color); }
+.file-meta .actions a.text-danger:hover { background: #fee2e2; color: #ef4444; }
+
+.upload-zone { background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 10px; padding: 15px; margin-bottom: 20px; transition: all 0.3s; }
+.upload-zone:hover { border-color: var(--primary-color); background: #f0fdf4; }
+.upload-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.upload-form .form-select { flex: 0 0 120px; height: 38px; padding: 0 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.85rem; }
+.upload-form input[type="file"] { flex: 1; font-size: 0.85rem; color: #64748b; }
+.upload-form .btn { padding: 0 15px; height: 38px; font-size: 0.85rem; }
+
+@media (max-width: 480px) {
+    .files-grid-simple { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    .file-thumb { height: 100px; }
+    .upload-form { flex-direction: column; align-items: stretch; }
+    .upload-form .form-select { flex: 1; }
+}
 </style>
 
 <?php 
