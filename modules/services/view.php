@@ -14,9 +14,19 @@ $service = $stmt->fetch();
 
 if (!$service) { header("Location: index.php?page=services/list"); exit; }
 
-// Tính toán ngày còn lại
+// Logic Ngày hết hạn theo chu kỳ hàng năm (Không quan tâm năm trong DB)
 $today = new DateTime();
-$expiry = new DateTime($service['ngay_het_han']);
+$currentYear = $today->format('Y');
+$expiryDatePart = date('m-d', strtotime($service['ngay_het_han']));
+
+// Giả định ngày hết hạn của năm nay
+$expiry = new DateTime($currentYear . '-' . $expiryDatePart);
+
+// Nếu ngày đó của năm nay đã qua, tính cho năm sau
+if ($expiry < $today && $today->diff($expiry)->days > 0) {
+    $expiry->modify('+1 year');
+}
+
 $diff = $today->diff($expiry);
 $days_left = (int)$diff->format("%r%a");
 
@@ -45,8 +55,8 @@ elseif ($days_left <= 30) $status_class = "text-warning";
                 <div class="info-row"><strong>Dự án:</strong> <span><?php echo htmlspecialchars($service['ten_du_an'] ?: "Dùng chung"); ?></span></div>
                 <hr>
                 <div class="info-row"><strong>Ngày bắt đầu:</strong> <span><?php echo $service['ngay_dang_ky'] ? date('d/m/Y', strtotime($service['ngay_dang_ky'])) : '---'; ?></span></div>
-                <div class="info-row"><strong>Ngày hết hạn:</strong> <span class="<?php echo $status_class; ?> font-bold"><?php echo date('d/m/Y', strtotime($service['ngay_het_han'])); ?></span></div>
-                <div class="info-row"><strong>Còn lại:</strong> <span class="<?php echo $status_class; ?> font-bold"><?php echo ($days_left > 0) ? $days_left . " ngày" : "Đã hết hạn"; ?></span></div>
+                <div class="info-row"><strong>Ngày hết hạn (Hàng năm):</strong> <span class="<?php echo $status_class; ?> font-bold"><?php echo date('d/m', strtotime($service['ngay_het_han'])); ?></span></div>
+                <div class="info-row"><strong>Lần tới:</strong> <span class="<?php echo $status_class; ?> font-bold"><?php echo $expiry->format('d/m/Y'); ?> (Còn <?php echo $days_left; ?> ngày)</span></div>
                 <hr>
                 <div class="info-row"><strong>Ngày nhận Đề nghị TT:</strong> <span><?php echo $service['ngay_nhan_de_nghi'] ? date('d/m/Y', strtotime($service['ngay_nhan_de_nghi'])) : '<em>Chưa nhận</em>'; ?></span></div>
                 <div class="info-row"><strong>Chi phí gia hạn:</strong> <span><?php echo number_format($service['chi_phi_gia_han'] ?? 0); ?> ₫</span></div>

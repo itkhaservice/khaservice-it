@@ -117,10 +117,16 @@ $all_columns = [
             </thead>
             <tbody>
                 <?php foreach ($services as $s):
-                    // Check if $s['ngay_het_han'] is valid before strtotime
-                    $ngay_het_han_formatted = isset($s['ngay_het_han']) && $s['ngay_het_han'] ? date('d/m/Y', strtotime($s['ngay_het_han'])) : 'N/A';
-                    // Check if $s['ngay_nhan_de_nghi'] is valid before strtotime
-                    $ngay_nhan_de_nghi_formatted = isset($s['ngay_nhan_de_nghi']) && $s['ngay_nhan_de_nghi'] ? date('d/m/Y', strtotime($s['ngay_nhan_de_nghi'])) : 'Chưa nhận';
+                    // Logic tính ngày còn lại theo chu kỳ hàng năm
+                    $expiry_obj = new DateTime(date('Y') . '-' . date('m-d', strtotime($s['ngay_het_han'])));
+                    $today_obj = new DateTime();
+                    if ($expiry_obj < $today_obj && $today_obj->diff($expiry_obj)->days > 0) {
+                        $expiry_obj->modify('+1 year');
+                    }
+                    $days_rem = (int)$today_obj->diff($expiry_obj)->format("%r%a");
+                    $h_class = ($days_rem <= 30) ? ($days_rem <= 0 ? 'text-danger' : 'text-warning') : '';
+
+                    $ngay_het_han_display = isset($s['ngay_het_han']) && $s['ngay_het_han'] ? date('d/m', strtotime($s['ngay_het_han'])) : 'N/A';
                 ?>
                     <tr>
                         <td><input type="checkbox" name="ids[]" value="<?php echo $s['id']; ?>" class="row-checkbox"></td>
@@ -129,7 +135,9 @@ $all_columns = [
                             <small class="text-muted"><?php echo htmlspecialchars($s['loai_dich_vu'] ?? ''); ?> - <?php echo htmlspecialchars($s['ten_npp'] ?? 'N/A'); ?></small>
                         </td>
                         <td data-col="ten_du_an"><?php echo htmlspecialchars($s['ten_du_an'] ?: "Dùng chung"); ?></td>
-                        <td data-col="ngay_het_han"><?php echo $ngay_het_han_formatted; ?></td>
+                        <td data-col="ngay_het_han" class="font-bold <?php echo $h_class; ?>" title="Lần tới: <?php echo $expiry_obj->format('d/m/Y'); ?> (Còn <?php echo $days_rem; ?> ngày)">
+                            <?php echo $ngay_het_han_display; ?>
+                        </td>
                         <td data-col="chi_phi_gia_han" class="font-bold text-success">
                             <?php echo number_format($s['chi_phi_gia_han'] ?? 0, 0, ',', '.'); ?> ₫
                         </td>
