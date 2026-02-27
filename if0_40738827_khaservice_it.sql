@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: sql100.infinityfree.com
--- Generation Time: Feb 10, 2026 at 01:23 AM
+-- Generation Time: Feb 26, 2026 at 09:13 PM
 -- Server version: 11.4.10-MariaDB
 -- PHP Version: 7.2.22
 
@@ -25,6 +25,54 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `action_logs`
+--
+
+CREATE TABLE `action_logs` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL COMMENT 'User who performed action',
+  `action_type` varchar(100) NOT NULL COMMENT 'CREATE_FORM, UPDATE_FORM, DELETE_FORM, SUBMIT_FORM, etc.',
+  `entity_type` varchar(100) DEFAULT NULL COMMENT 'forms, devices, projects, etc.',
+  `entity_id` int(11) DEFAULT NULL COMMENT 'ID of the entity affected',
+  `description` text DEFAULT NULL COMMENT 'Detailed description of action',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Audit log of system actions';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `audit_logs`
+--
+
+CREATE TABLE `audit_logs` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `action` varchar(255) NOT NULL,
+  `target_type` varchar(50) NOT NULL,
+  `target_id` int(11) DEFAULT NULL,
+  `details` text DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `audit_logs`
+--
+
+INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `target_type`, `target_id`, `details`, `ip_address`, `created_at`) VALUES
+(1, 6, 'CREATE_FORM', 'forms', 20, 'Title:  Phiếu đăng ký nhận quà tết', '123.21.220.127', '2026-02-10 09:13:03'),
+(2, 6, 'UPDATE_FORM', 'forms', 20, 'Updated title or structure.', '123.21.220.127', '2026-02-10 09:14:35'),
+(3, 6, 'SUBMIT_FORM', 'forms', 20, 'New submission from IP: 123.21.220.127', '123.21.220.127', '2026-02-10 09:14:57'),
+(4, 7, 'CREATE_FORM', 'forms', 21, 'Title: Đăng ký nhận quà tết', '27.65.63.235', '2026-02-11 07:23:05'),
+(5, 7, 'SUBMIT_FORM', 'forms', 21, 'New submission from IP: 27.65.63.235', '27.65.63.235', '2026-02-11 07:25:34'),
+(6, 7, 'SUBMIT_FORM', 'forms', 21, 'New submission from IP: 27.65.63.235', '27.65.63.235', '2026-02-11 13:09:58'),
+(7, 1, 'DELETE_CAR_INSPECTION', 'car_inspections', 9, 'Deleted inspection for project: SAMSORA RIVERSIDE on 2026-03-09', '171.248.166.124', '2026-02-25 09:18:47'),
+(8, 1, 'DELETE_CAR_INSPECTION', 'car_inspections', 10, 'Deleted inspection for project: TOPAZ HOME 2 - BLOCK B on 2026-03-10', '171.248.166.124', '2026-02-25 09:18:52'),
+(9, 1, 'DELETE_CAR_INSPECTION', 'car_inspections', 30, 'Deleted inspection for project: HƯNG PHÁT on 2026-03-27', '171.248.166.124', '2026-02-25 09:43:01');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `auth_tokens`
 --
 
@@ -35,6 +83,71 @@ CREATE TABLE `auth_tokens` (
   `expires_at` datetime NOT NULL,
   `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `car_inspections`
+--
+
+CREATE TABLE `car_inspections` (
+  `id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `inspector_id` int(11) NOT NULL,
+  `inspection_date` date NOT NULL,
+  `inspection_time` time NOT NULL,
+  `total_vehicles` int(11) DEFAULT 0,
+  `violation_count` int(11) DEFAULT 0,
+  `violation_details` text DEFAULT NULL,
+  `results_summary` text DEFAULT NULL,
+  `other_opinions` text DEFAULT NULL,
+  `status` enum('pending','completed') DEFAULT 'pending',
+  `inspector_position` varchar(255) DEFAULT NULL,
+  `bql_name_1` varchar(255) DEFAULT NULL,
+  `bql_pos_1` varchar(255) DEFAULT NULL,
+  `bql_name_2` varchar(255) DEFAULT NULL,
+  `bql_pos_2` varchar(255) DEFAULT NULL,
+  `project_address` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `car_inspections`
+--
+
+INSERT INTO `car_inspections` (`id`, `project_id`, `inspector_id`, `inspection_date`, `inspection_time`, `total_vehicles`, `violation_count`, `violation_details`, `results_summary`, `other_opinions`, `status`, `inspector_position`, `bql_name_1`, `bql_pos_1`, `bql_name_2`, `bql_pos_2`, `project_address`, `created_at`, `updated_at`) VALUES
+(1, 11, 1, '2026-02-11', '05:00:00', 0, 0, '', '', '', 'completed', '', '', '', '', '', '928 Lê Văn Lương, Xã Nhà Bè, TP.HCM', '2026-02-11 11:31:22', '2026-02-11 11:31:33'),
+(3, 10, 1, '2026-03-02', '09:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 08:55:07', '2026-02-25 08:55:07'),
+(4, 16, 1, '2026-03-03', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 08:55:24', '2026-02-25 08:55:24'),
+(5, 4, 1, '2026-03-04', '09:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 08:55:39', '2026-02-25 08:55:39'),
+(6, 29, 1, '2026-03-05', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 08:56:11', '2026-02-25 08:56:11'),
+(7, 6, 1, '2026-03-06', '09:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 08:56:30', '2026-02-25 08:56:30'),
+(8, 17, 1, '2026-03-07', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 08:56:43', '2026-02-25 08:56:43'),
+(11, 39, 1, '2026-03-09', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:19:03', '2026-02-25 09:19:03'),
+(12, 35, 1, '2026-03-10', '10:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:20:02', '2026-02-25 09:20:02'),
+(13, 23, 1, '2026-03-11', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:24:38', '2026-02-25 09:24:38'),
+(14, 25, 1, '2026-03-12', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:24:52', '2026-02-25 09:24:52'),
+(15, 26, 1, '2026-03-12', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:25:01', '2026-02-25 09:25:01'),
+(16, 28, 1, '2026-03-13', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:33:23', '2026-02-25 09:33:23'),
+(17, 20, 1, '2026-03-14', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:34:52', '2026-02-25 09:34:52'),
+(18, 30, 1, '2026-03-16', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:36:45', '2026-02-25 09:36:45'),
+(19, 31, 1, '2026-03-17', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:36:52', '2026-02-25 09:36:52'),
+(20, 13, 1, '2026-03-18', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:36:59', '2026-02-25 09:36:59'),
+(21, 14, 1, '2026-03-18', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:37:08', '2026-02-25 09:37:08'),
+(22, 19, 1, '2026-03-19', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:37:19', '2026-02-25 09:37:19'),
+(23, 15, 1, '2026-03-19', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:37:26', '2026-02-25 09:37:26'),
+(24, 3, 1, '2026-03-20', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:37:36', '2026-02-25 09:37:36'),
+(25, 32, 1, '2026-03-21', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:41:01', '2026-02-25 09:41:01'),
+(26, 33, 1, '2026-03-23', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:41:17', '2026-02-25 09:41:17'),
+(27, 34, 1, '2026-03-24', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:41:32', '2026-02-25 09:41:32'),
+(28, 21, 1, '2026-03-25', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:41:55', '2026-02-25 09:41:55'),
+(29, 22, 1, '2026-03-26', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:42:04', '2026-02-25 09:42:04'),
+(31, 11, 1, '2026-03-27', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:43:48', '2026-02-25 09:43:48'),
+(32, 12, 1, '2026-03-28', '05:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:43:59', '2026-02-25 09:43:59'),
+(33, 4, 1, '2026-03-30', '10:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:44:12', '2026-02-25 09:44:12'),
+(34, 6, 1, '2026-03-31', '10:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:44:20', '2026-02-25 09:44:20'),
+(35, 1, 1, '2026-03-29', '09:00:00', 0, 0, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-25 09:44:51', '2026-02-25 09:44:51');
 
 -- --------------------------------------------------------
 
@@ -64,7 +177,8 @@ INSERT INTO `car_system_configs` (`id`, `project_id`, `server_ip`, `db_name`, `f
 (3, 19, '192.168.1.10', 'GIUXE', '\\\\192.168.1.10\\hinh moi', 'sa', '123ABC', '2026-01-20 02:14:15', '2026-01-20 02:14:15'),
 (4, 32, '192.168.1.96', 'baixe1', '\\\\192.168.1.96\\hinh1', 'sa', '123ABC', '2026-01-21 02:04:23', '2026-01-21 02:04:23'),
 (5, 26, 'DESKTOP-USP86RA', 'GIUXE', '\\\\192.168.1.102\\hinh moi', 'sa', '123ABC', '2026-02-06 07:05:07', '2026-02-06 07:05:07'),
-(6, 35, '192.168.1.101', 'GIUXE', '\\\\192.168.1.101\\Hinh', 'admin', '123ABC', '2026-02-07 02:02:01', '2026-02-07 02:02:01');
+(6, 35, '192.168.1.101', 'GIUXE', '\\\\192.168.1.101\\Hinh', 'admin', '123ABC', '2026-02-07 02:02:01', '2026-02-07 02:02:01'),
+(7, 11, 'DESKTOP-GAEMM79\\MAYCHU', 'GIUXE', '\\\\192.168.1.111\\Hinh', 'sa', '123ABC', '2026-02-11 05:27:10', '2026-02-11 05:27:10');
 
 -- --------------------------------------------------------
 
@@ -103,7 +217,7 @@ INSERT INTO `devices` (`id`, `ma_tai_san`, `ten_thiet_bi`, `nhom_thiet_bi`, `loa
 (4, 'KHAS-DA-DEMO-VP-LK-003', 'PSU 450W', 'Văn phòng', 'Linh kiện', 'Cooler Master', NULL, 38, 1, NULL, NULL, NULL, NULL, 'Đang sử dụng', NULL, '2025-12-23 06:47:18', '2026-01-19 07:04:53'),
 (5, 'KHAS-DA-DEMO-VP-LK-004', 'Mainboard H110', 'Văn phòng', 'Linh kiện', 'ASUS', NULL, 38, 1, NULL, NULL, NULL, NULL, 'Đang sử dụng', NULL, '2025-12-23 06:47:18', '2026-01-19 07:04:53'),
 (6, 'KHAS-DA-DEMO-VP-LK-005', 'Màn hình 24 inch', 'Văn phòng', 'Linh kiện', 'Dell UltraSharp', NULL, 38, 1, NULL, NULL, NULL, NULL, 'Đang sử dụng', NULL, '2025-12-23 06:47:18', '2026-01-19 07:04:53'),
-(7, 'KHAS-DA-DEMO-VP-PC-002', 'Máy tính HP Hành chính', 'Văn phòng', 'Máy tính', 'ProDesk 400', NULL, 38, NULL, NULL, NULL, NULL, NULL, 'Đang sử dụng', NULL, '2025-12-23 06:47:18', NULL),
+(7, 'KHAS-DA-DEMO-VP-PC-002', 'Máy tính HP Hành chính', 'Văn phòng', 'Máy tính', 'ProDesk 400', '', 38, NULL, NULL, NULL, NULL, NULL, 'Tốt', '', '2025-12-23 06:47:18', NULL),
 (8, 'KHAS-DA-DEMO-VP-LK-010', 'RAM 8GB DDR4', 'Văn phòng', 'Linh kiện', 'G.Skill', NULL, 38, 7, NULL, NULL, NULL, NULL, 'Đang sử dụng', NULL, '2025-12-23 06:47:18', NULL),
 (9, 'KHAS-DA-DEMO-VP-LK-011', 'SSD 250GB', 'Văn phòng', 'Linh kiện', 'WD Green', NULL, 38, 7, NULL, NULL, NULL, NULL, 'Đang sử dụng', NULL, '2025-12-23 06:47:18', NULL),
 (10, 'KHAS-DA-DEMO-VP-LK-012', 'PSU 450W', 'Văn phòng', 'Linh kiện', 'Acbel', NULL, 38, 7, NULL, NULL, NULL, NULL, 'Đang sử dụng', NULL, '2025-12-23 06:47:18', '2026-01-19 07:07:11'),
@@ -132,6 +246,80 @@ CREATE TABLE `device_files` (
   `file_path` varchar(255) NOT NULL COMMENT '???????ng d???n file l??u tr??n server',
   `uploaded_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Th???i gian upload'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='File ????nh k??m thi???t b???';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `forms`
+--
+
+CREATE TABLE `forms` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL COMMENT 'Form creator (user ID)',
+  `title` varchar(255) NOT NULL COMMENT 'Form title',
+  `description` text DEFAULT NULL COMMENT 'Form description / instructions',
+  `slug` varchar(255) NOT NULL COMMENT 'URL-friendly slug',
+  `status` varchar(50) DEFAULT 'draft' COMMENT 'draft or published',
+  `expires_at` datetime DEFAULT NULL COMMENT 'Form expiration date/time',
+  `response_limit` int(11) DEFAULT NULL COMMENT 'Max number of submissions allowed',
+  `theme_color` varchar(10) DEFAULT '#108042' COMMENT 'Primary color (hex)',
+  `thank_you_message` text DEFAULT NULL COMMENT 'Message shown after successful submission',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `deleted_at` timestamp NULL DEFAULT NULL COMMENT 'Soft delete timestamp'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Form definitions';
+
+--
+-- Dumping data for table `forms`
+--
+
+INSERT INTO `forms` (`id`, `user_id`, `title`, `description`, `slug`, `status`, `expires_at`, `response_limit`, `theme_color`, `thank_you_message`, `created_at`, `updated_at`, `deleted_at`) VALUES
+(20, 6, ' Phiếu đăng ký nhận quà tết', 'Phiếu này dùng để đăng ký thông tin nhận quà Tết của công ty. Thông tin cung cấp sẽ được sử dụng để tổng hợp danh sách, chuẩn bị quà và phục vụ công tác phát quà Tết cho nhân viên. Vui lòng điền đầy đủ và chính xác các thông tin bên dưới.', 'phieu-dang-ky-nhan-qua-tet-ce29', 'published', NULL, NULL, '#108042', '', '2026-02-10 09:13:03', '2026-02-10 09:14:35', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `form_questions`
+--
+
+CREATE TABLE `form_questions` (
+  `id` int(11) NOT NULL,
+  `form_id` int(11) NOT NULL,
+  `question_text` text NOT NULL COMMENT 'Question content',
+  `question_type` varchar(50) NOT NULL COMMENT 'text, textarea, multiple_choice, checkboxes, dropdown, date, time, datetime, number, file, linear_scale, multiple_choice_grid, checkbox_grid',
+  `question_order` int(11) DEFAULT 0 COMMENT 'Display order',
+  `is_required` tinyint(1) DEFAULT 0 COMMENT 'Is this question required?',
+  `logic_config` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'Skip logic configuration'
+) ;
+
+--
+-- Dumping data for table `form_questions`
+--
+
+INSERT INTO `form_questions` (`id`, `form_id`, `question_text`, `question_type`, `question_order`, `is_required`, `logic_config`, `created_at`, `deleted_at`) VALUES
+(4, 20, 'Họ và tên?', 'text', 0, 1, NULL, '2026-02-10 09:14:35', NULL),
+(5, 20, 'Phòng ban?', 'text', 1, 1, NULL, '2026-02-10 09:14:35', NULL),
+(6, 20, 'Chức vụ?', 'text', 2, 1, NULL, '2026-02-10 09:14:35', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `form_submissions`
+--
+
+CREATE TABLE `form_submissions` (
+  `id` int(11) NOT NULL,
+  `form_id` int(11) NOT NULL,
+  `submitter_ip` varchar(50) DEFAULT NULL COMMENT 'Submitter IP address',
+  `submitted_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Form submissions';
+
+--
+-- Dumping data for table `form_submissions`
+--
+
+INSERT INTO `form_submissions` (`id`, `form_id`, `submitter_ip`, `submitted_at`) VALUES
+(1, 20, '123.21.220.127', '2026-02-10 09:14:57');
 
 -- --------------------------------------------------------
 
@@ -212,7 +400,7 @@ CREATE TABLE `projects` (
 --
 
 INSERT INTO `projects` (`id`, `ma_du_an`, `ten_du_an`, `dia_chi_duong`, `dia_chi_phuong_xa`, `dia_chi_tinh_tp`, `dia_chi`, `loai_du_an`, `ghi_chu`, `deleted_at`) VALUES
-(1, 'DA4SRS', '4S RIVERSIDE GARDEN', '75/15 Đường số 17 Khu Phố 3', 'Phường Hiệp Bình', 'TP.HCM', NULL, 'Chung cư', NULL, NULL),
+(1, 'DA4SRS', '4S RIVERSIDE GARDEN', '75/15 Đường số 17 Khu Phố 3', 'Phường Hiệp Bình', 'TP.HCM', NULL, 'Chung cư', '', NULL),
 (2, 'DACTVPRM', 'CANTAVIL PREMIER', 'Số 1 Song Hành', 'Phường Bình Trưng', 'TP.HCM', NULL, 'Chung cư', NULL, NULL),
 (3, 'DACTZ', 'CITIZEN.TS', 'Đường số 9A Khu dân cư Trung Sơn', 'Phường Bình Đông', 'TP.HCM', NULL, 'Chung cư', NULL, NULL),
 (4, 'DACTP', 'CITRINE APARTMENT', '127 Tăng Nhơn Phú', 'Phường Phước Long', 'TP.HCM', NULL, 'Chung cư', NULL, NULL),
@@ -228,7 +416,7 @@ INSERT INTO `projects` (`id`, `ma_du_an`, `ten_du_an`, `dia_chi_duong`, `dia_chi
 (14, 'DAKH2', 'KHÁNH HỘI 2', '360A Bến Vân Đồn', 'Phường Vĩnh Hội', 'TP.HCM', NULL, 'Chung cư', NULL, NULL),
 (15, 'DAKH3', 'KHÁNH HỘI 3', '360G Bến Vân Đồn', 'Phường Vĩnh Hội', 'TP.HCM', NULL, 'Chung cư', NULL, NULL),
 (16, 'DALPMHBR', 'LAN PHƯƠNG MHBR', '104 đường Hồ Văn Tư', 'Phường Trường Thọ', 'TP.HCM', NULL, 'Chung cư', NULL, NULL),
-(17, 'DAR7AK', 'LÔ R7 AN KHÁNH', '23 Lưu Đình Lễ', 'Phường An Khánh', 'TP.HCM', NULL, 'Chung cư', NULL, NULL),
+(17, 'DAR7AK', 'R7 AN KHÁNH', '23 Lưu Đình Lễ', 'Phường An Khánh', 'TP.HCM', NULL, 'Chung cư', '<br />\r\n<b>Deprecated</b>:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in <b>/home/vol14_7/infinityfree.com/if0_40738827/htdocs/modules/projects/edit.php</b> on line <b>103</b><br />\r\n', NULL),
 (18, 'DANL2', 'NHẤT LAN II', 'Đường 54A', 'Phường Tân Tạo', 'TP.HCM', NULL, 'Chung cư', NULL, NULL),
 (19, 'DAORE', 'ORIENT APARTMENT', '331 Bến Vân Đồn', 'Phường Vĩnh Hội', 'TP.HCM', NULL, 'Chung cư', NULL, NULL),
 (20, 'DAPGP', 'PHỐ GIA PHÚC', '94 Tô Vĩnh Diện', 'Phường Thủ Đức', 'TP.HCM', NULL, 'Chung cư', NULL, NULL),
@@ -249,7 +437,22 @@ INSERT INTO `projects` (`id`, `ma_du_an`, `ten_du_an`, `dia_chi_duong`, `dia_chi
 (35, 'DATPH2', 'TOPAZ HOME 2 - BLOCK B', '215 Đường số 138', 'Phường Tăng Nhơn Phú', 'TP.HCM', NULL, 'Chung cư', NULL, NULL),
 (36, 'DAVDA', 'VẠN ĐÔ', '348 Bến Vân Đồn', 'Phường Vĩnh Hội', 'TP.HCM', NULL, 'Chung cư', NULL, NULL),
 (37, 'VPC', 'VĂN PHÒNG CÔNG TY', '360C Bến Vân Đồn', 'Phường Vĩnh Hội', 'TP.HCM', NULL, 'Văn phòng', NULL, NULL),
-(38, 'DA-DEMO', 'Tòa nhà Khahomex (Dự án Mẫu)', '360C Bến Vân Đồn', 'Phường Vĩnh Hội', 'TP.HCM', NULL, 'Văn phòng', '', NULL);
+(38, 'DA-DEMO', 'Tòa nhà Khahomex (Dự án Mẫu)', '360C Bến Vân Đồn', 'Phường Vĩnh Hội', 'TP.HCM', NULL, 'Văn phòng', '', NULL),
+(39, 'DATDHRVV', 'TDH Riverview', '', '', '', NULL, 'Chung cư', '', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `question_options`
+--
+
+CREATE TABLE `question_options` (
+  `id` int(11) NOT NULL,
+  `question_id` int(11) NOT NULL,
+  `option_text` varchar(500) NOT NULL COMMENT 'Option/choice text',
+  `option_type` varchar(50) DEFAULT 'choice' COMMENT 'choice, row, column',
+  `option_order` int(11) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Question answer options';
 
 -- --------------------------------------------------------
 
@@ -357,6 +560,28 @@ INSERT INTO `settings_device_types` (`id`, `type_name`, `type_code`, `group_name
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `submission_answers`
+--
+
+CREATE TABLE `submission_answers` (
+  `id` int(11) NOT NULL,
+  `submission_id` int(11) NOT NULL,
+  `question_id` int(11) NOT NULL,
+  `answer_text` longtext DEFAULT NULL COMMENT 'Answer content (text, JSON for grids, or file path)'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Answers to form questions';
+
+--
+-- Dumping data for table `submission_answers`
+--
+
+INSERT INTO `submission_answers` (`id`, `submission_id`, `question_id`, `answer_text`) VALUES
+(1, 1, 4, 'Ngụy Nguyễn Quỳnh Hương'),
+(2, 1, 5, 'Ban quản lý'),
+(3, 1, 6, 'Kế toán');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `suppliers`
 --
 
@@ -367,8 +592,35 @@ CREATE TABLE `suppliers` (
   `dien_thoai` varchar(50) DEFAULT NULL COMMENT 'S??? ??i???n tho???i',
   `email` varchar(255) DEFAULT NULL COMMENT 'Email li??n h???',
   `ghi_chu` text DEFAULT NULL COMMENT 'Ghi ch??',
+  `thong_tin_lien_he` text DEFAULT NULL COMMENT 'JSON lưu danh sách liên hệ',
   `deleted_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Nh?? cung c???p thi???t b???';
+
+--
+-- Dumping data for table `suppliers`
+--
+
+INSERT INTO `suppliers` (`id`, `ten_npp`, `nguoi_lien_he`, `dien_thoai`, `email`, `ghi_chu`, `thong_tin_lien_he`, `deleted_at`) VALUES
+(3, 'Trí Thiên Thành', NULL, NULL, NULL, 'Hệ thống bãi xe ', '[{\"name\":\"Anh Sơn\",\"phone\":\"0984719147\",\"role\":\"Kỹ thuật\"}]', NULL),
+(4, 'OMATECH', NULL, NULL, NULL, '', '[{\"name\":\"Anh Hoàng\",\"phone\":\"0906658690\",\"role\":\"SEO\"}]', NULL),
+(5, 'CENVISCO', NULL, NULL, NULL, 'Website công ty https://khaservice.com.vn/\r\nDomain 1: khaservice.com.vn\r\nDomain 2: khaservices.com.vn', '[{\"name\":\"Tuyết Trần\",\"phone\":\"0967001417\",\"role\":\"Sale\"}]', NULL),
+(6, 'THIÊN PHÚC', NULL, NULL, NULL, 'Cung cấp máy in', '[{\"name\":\"Kỹ thuật\",\"phone\":\"0931116938\",\"role\":\"Kỹ thuật\"}]', NULL),
+(7, 'MOMO', NULL, NULL, NULL, 'Nhóm Zalo: https://zalo.me/g/pzmgyf947', NULL, NULL),
+(8, 'ZALO PAY', NULL, NULL, NULL, '', '[{\"name\":\"Anh Hùng\",\"phone\":\"0969975940\",\"role\":\"Kinh Doanh\"}]', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `supplier_files`
+--
+
+CREATE TABLE `supplier_files` (
+  `id` int(11) NOT NULL,
+  `supplier_id` int(11) NOT NULL,
+  `loai_file` varchar(100) DEFAULT NULL,
+  `file_path` varchar(255) NOT NULL,
+  `uploaded_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -395,11 +647,31 @@ INSERT INTO `users` (`id`, `username`, `fullname`, `password`, `role`, `created_
 (2, 'it_kh', 'it_kh', '$2y$10$xNwpeGTu1mo7fNSGGPXRn.j3NIAwyU4A86T8BDrzGFJmXwWW55IzS', 'it', '2025-12-17 05:00:27', NULL),
 (3, 'xem_thietbi', 'xem_thietbi', '$2y$10$xNwpeGTu1mo7fNSGGPXRn.j3NIAwyU4A86T8BDrzGFJmXwWW55IzS', 'xem', '2025-12-17 05:00:27', NULL),
 (4, 'cmthang', 'Cao Minh Thắng', '$2y$10$KXfkwUhQsPckc.PnDABgY.FDkQwHgndMl/8vyPi9CyQJlHn.y5OE2', 'it', '2025-12-22 03:02:47', NULL),
-(5, 'nttrung', 'Nguyễn Tất Trung', '$2y$10$oU862C4l3EBFMm/MTcUe2O5rNWLw03SMZp5YZ/e0O.pd0KbxZhKH6', 'it', '2025-12-22 03:02:58', NULL);
+(5, 'nttrung', 'Nguyễn Tất Trung', '$2y$10$oU862C4l3EBFMm/MTcUe2O5rNWLw03SMZp5YZ/e0O.pd0KbxZhKH6', 'it', '2025-12-22 03:02:58', NULL),
+(6, 'lhthai', 'Lê Hoàng Thái', '$2y$10$qaHYKq8f/TOYOIVnMbW5Iu.hFH/JqVdeL/w1wrhWNUtzJN/03M8UG', 'user', '2026-02-10 06:58:21', NULL),
+(9, 'btphuc', 'Bùi Thanh Phúc', '$2y$10$V4zoQdf77q.lt/svCRXHpusGLhkF7kjXR.xxNeXDx7e3fPPrrPkTC', 'Guest', '2026-02-25 08:38:39', NULL);
 
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `action_logs`
+--
+ALTER TABLE `action_logs`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `action_type` (`action_type`),
+  ADD KEY `entity_type` (`entity_type`),
+  ADD KEY `created_at` (`created_at`);
+
+--
+-- Indexes for table `audit_logs`
+--
+ALTER TABLE `audit_logs`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_user_id` (`user_id`),
+  ADD KEY `idx_target` (`target_type`,`target_id`);
 
 --
 -- Indexes for table `auth_tokens`
@@ -408,6 +680,14 @@ ALTER TABLE `auth_tokens`
   ADD PRIMARY KEY (`id`),
   ADD KEY `token` (`token`),
   ADD KEY `user_id` (`user_id`);
+
+--
+-- Indexes for table `car_inspections`
+--
+ALTER TABLE `car_inspections`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `project_id` (`project_id`),
+  ADD KEY `inspector_id` (`inspector_id`);
 
 --
 -- Indexes for table `car_system_configs`
@@ -431,6 +711,22 @@ ALTER TABLE `device_files`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `forms`
+--
+ALTER TABLE `forms`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `slug` (`slug`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `status` (`status`);
+
+--
+-- Indexes for table `form_submissions`
+--
+ALTER TABLE `form_submissions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `form_id` (`form_id`);
+
+--
 -- Indexes for table `maintenance_files`
 --
 ALTER TABLE `maintenance_files`
@@ -450,6 +746,13 @@ ALTER TABLE `maintenance_logs`
 --
 ALTER TABLE `projects`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `question_options`
+--
+ALTER TABLE `question_options`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `question_id` (`question_id`);
 
 --
 -- Indexes for table `services`
@@ -481,10 +784,25 @@ ALTER TABLE `settings_device_types`
   ADD UNIQUE KEY `type_name` (`type_name`);
 
 --
+-- Indexes for table `submission_answers`
+--
+ALTER TABLE `submission_answers`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `submission_id` (`submission_id`),
+  ADD KEY `question_id` (`question_id`);
+
+--
 -- Indexes for table `suppliers`
 --
 ALTER TABLE `suppliers`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `supplier_files`
+--
+ALTER TABLE `supplier_files`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `supplier_id` (`supplier_id`);
 
 --
 -- Indexes for table `users`
@@ -498,16 +816,34 @@ ALTER TABLE `users`
 --
 
 --
+-- AUTO_INCREMENT for table `action_logs`
+--
+ALTER TABLE `action_logs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `audit_logs`
+--
+ALTER TABLE `audit_logs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
 -- AUTO_INCREMENT for table `auth_tokens`
 --
 ALTER TABLE `auth_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `car_inspections`
+--
+ALTER TABLE `car_inspections`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
 
 --
 -- AUTO_INCREMENT for table `car_system_configs`
 --
 ALTER TABLE `car_system_configs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `devices`
@@ -520,6 +856,24 @@ ALTER TABLE `devices`
 --
 ALTER TABLE `device_files`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `forms`
+--
+ALTER TABLE `forms`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+
+--
+-- AUTO_INCREMENT for table `form_questions`
+--
+ALTER TABLE `form_questions`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `form_submissions`
+--
+ALTER TABLE `form_submissions`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `maintenance_files`
@@ -537,7 +891,13 @@ ALTER TABLE `maintenance_logs`
 -- AUTO_INCREMENT for table `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
+
+--
+-- AUTO_INCREMENT for table `question_options`
+--
+ALTER TABLE `question_options`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `services`
@@ -564,20 +924,38 @@ ALTER TABLE `settings_device_types`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
 
 --
+-- AUTO_INCREMENT for table `submission_answers`
+--
+ALTER TABLE `submission_answers`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
 -- AUTO_INCREMENT for table `suppliers`
 --
 ALTER TABLE `suppliers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT for table `supplier_files`
+--
+ALTER TABLE `supplier_files`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `action_logs`
+--
+ALTER TABLE `action_logs`
+  ADD CONSTRAINT `action_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `auth_tokens`
@@ -586,10 +964,29 @@ ALTER TABLE `auth_tokens`
   ADD CONSTRAINT `auth_tokens_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `car_inspections`
+--
+ALTER TABLE `car_inspections`
+  ADD CONSTRAINT `car_inspections_ibfk_1` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`),
+  ADD CONSTRAINT `car_inspections_ibfk_2` FOREIGN KEY (`inspector_id`) REFERENCES `users` (`id`);
+
+--
 -- Constraints for table `car_system_configs`
 --
 ALTER TABLE `car_system_configs`
   ADD CONSTRAINT `car_system_configs_ibfk_1` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `forms`
+--
+ALTER TABLE `forms`
+  ADD CONSTRAINT `forms_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `form_submissions`
+--
+ALTER TABLE `form_submissions`
+  ADD CONSTRAINT `form_submissions_ibfk_1` FOREIGN KEY (`form_id`) REFERENCES `forms` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `maintenance_files`
@@ -605,11 +1002,24 @@ ALTER TABLE `maintenance_logs`
   ADD CONSTRAINT `fk_log_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
 --
+-- Constraints for table `question_options`
+--
+ALTER TABLE `question_options`
+  ADD CONSTRAINT `question_options_ibfk_1` FOREIGN KEY (`question_id`) REFERENCES `form_questions` (`id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `services`
 --
 ALTER TABLE `services`
   ADD CONSTRAINT `fk_services_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_services_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `submission_answers`
+--
+ALTER TABLE `submission_answers`
+  ADD CONSTRAINT `submission_answers_ibfk_1` FOREIGN KEY (`submission_id`) REFERENCES `form_submissions` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `submission_answers_ibfk_2` FOREIGN KEY (`question_id`) REFERENCES `form_questions` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
