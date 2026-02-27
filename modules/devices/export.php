@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_selected'])) {
                     $val = $row[$key] ? date('d/m/Y', strtotime($row[$key])) : '';
                     break;
                 case 'gia_mua':
-                    $val = number_format($row[$key], 0, ",", ".");
+                    $val = number_format($row[$key] ?? 0, 0, ",", ".");
                     break;
                 default:
                     $val = $row[$key] ?? '';

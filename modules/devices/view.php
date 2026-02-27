@@ -159,7 +159,7 @@ $children = $stmt_children->fetchAll();
                     </div>
                     <div class="info-item">
                          <span class="info-label"><i class="fas fa-tag"></i> Giá mua</span>
-                         <span class="info-value price"><?php echo number_format($device['gia_mua'], 0, ',', '.'); ?> ₫</span>
+                         <span class="info-value price"><?php echo !empty($device['gia_mua']) ? number_format($device['gia_mua'] ?? 0, 0, ',', '.') . ' ₫' : 'N/A'; ?></span>
                     </div>
                     <div class="info-item">
                         <span class="info-label"><i class="fas fa-shield-alt"></i> Bảo hành đến</span>

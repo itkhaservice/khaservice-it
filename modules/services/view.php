@@ -40,8 +40,8 @@ elseif ($days_left <= 30) $status_class = "text-warning";
         <div class="card">
             <div class="card-header-custom"><h3>Thông tin Dịch vụ</h3></div>
             <div class="card-body-custom" style="padding: 20px;">
-                <div class="info-row"><strong>Tên dịch vụ:</strong> <span><?php echo htmlspecialchars($service['ten_dich_vu']); ?></span></div>
-                <div class="info-row"><strong>Loại:</strong> <span><?php echo htmlspecialchars($service['loai_dich_vu']); ?></span></div>
+                <div class="info-row"><strong>Tên dịch vụ:</strong> <span><?php echo htmlspecialchars($service['ten_dich_vu'] ?? ''); ?></span></div>
+                <div class="info-row"><strong>Loại:</strong> <span><?php echo htmlspecialchars($service['loai_dich_vu'] ?? ''); ?></span></div>
                 <div class="info-row"><strong>Dự án:</strong> <span><?php echo htmlspecialchars($service['ten_du_an'] ?: "Dùng chung"); ?></span></div>
                 <hr>
                 <div class="info-row"><strong>Ngày bắt đầu:</strong> <span><?php echo $service['ngay_dang_ky'] ? date('d/m/Y', strtotime($service['ngay_dang_ky'])) : '---'; ?></span></div>
@@ -49,7 +49,7 @@ elseif ($days_left <= 30) $status_class = "text-warning";
                 <div class="info-row"><strong>Còn lại:</strong> <span class="<?php echo $status_class; ?> font-bold"><?php echo ($days_left > 0) ? $days_left . " ngày" : "Đã hết hạn"; ?></span></div>
                 <hr>
                 <div class="info-row"><strong>Ngày nhận Đề nghị TT:</strong> <span><?php echo $service['ngay_nhan_de_nghi'] ? date('d/m/Y', strtotime($service['ngay_nhan_de_nghi'])) : '<em>Chưa nhận</em>'; ?></span></div>
-                <div class="info-row"><strong>Chi phí gia hạn:</strong> <span><?php echo number_format($service['chi_phi_gia_han']); ?> ₫</span></div>
+                <div class="info-row"><strong>Chi phí gia hạn:</strong> <span><?php echo number_format($service['chi_phi_gia_han'] ?? 0); ?> ₫</span></div>
             </div>
         </div>
     </div>

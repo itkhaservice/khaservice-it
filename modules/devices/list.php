@@ -221,8 +221,8 @@ $all_columns = [
                         <td data-col="loai_thiet_bi"><?php echo htmlspecialchars($d['loai_thiet_bi']); ?></td>
                         <td data-col="nhom_thiet_bi"><?php echo htmlspecialchars($d['nhom_thiet_bi']); ?></td>
                         <td data-col="model"><?php echo htmlspecialchars($d['model']); ?></td>
-                        <td data-col="serial"><?php echo htmlspecialchars($d['serial']); ?></td>
-                        <td data-col="ten_du_an"><?php echo htmlspecialchars($d['ten_du_an']); ?></td>
+                        <td data-col="serial"><?php echo htmlspecialchars($d['serial'] ?? ''); ?></td>
+                        <td data-col="ten_du_an"><?php echo htmlspecialchars($d['ten_du_an'] ?? ''); ?></td>
                         <td data-col="ten_npp"><?php echo htmlspecialchars($d['ten_npp'] ?? 'N/A'); ?></td>
                         <td data-col="ngay_mua"><?php echo $d['ngay_mua'] ? date('d/m/Y', strtotime($d['ngay_mua'])) : ''; ?></td>
                         <td data-col="bao_hanh_den">
@@ -230,10 +230,10 @@ $all_columns = [
                                 <span class="<?php echo (strtotime($d['bao_hanh_den']) < time()) ? 'text-danger' : ''; ?>"><?php echo date('d/m/Y', strtotime($d['bao_hanh_den'])); ?></span>
                             <?php endif; ?>
                         </td>
-                        <td data-col="gia_mua"><?php echo $d['gia_mua'] ? number_format($d['gia_mua'], 0, ",", ".") . ' ₫' : ''; ?></td>
+                        <td data-col="gia_mua"><?php echo $d['gia_mua'] ? number_format($d['gia_mua'] ?? 0, 0, ",", ".") . ' ₫' : ''; ?></td>
                         <td data-col="trang_thai">
                             <?php $cls = $statuses_config[$d['trang_thai']] ?? 'status-default'; ?>
-                            <span class="badge <?php echo $cls; ?>"><?php echo htmlspecialchars($d['trang_thai']); ?></span>
+                            <span class="badge <?php echo $cls; ?>"><?php echo htmlspecialchars($d['trang_thai'] ?? ''); ?></span>
                         </td>
                         <td class="actions text-center">
                             <a href="index.php?page=devices/view&id=<?php echo $d['id']; ?>" class="btn-icon"><i class="fas fa-eye"></i></a>
