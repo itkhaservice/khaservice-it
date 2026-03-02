@@ -1,5 +1,6 @@
 <?php
 // File: config/db.php
+date_default_timezone_set('Asia/Ho_Chi_Minh');
 // Cấu hình CSDL đa môi trường (Local & Hosting)
 
 // Thông tin mặc định cho Hosting (InfinityFree)
