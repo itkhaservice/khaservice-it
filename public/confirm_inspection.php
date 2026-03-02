@@ -246,8 +246,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signature_data'])) {
             document.querySelectorAll('.role-card').forEach(c => c.classList.remove('active'));
             document.getElementById('role-' + idx).classList.add('active');
             document.getElementById('name-group').style.display = 'block';
-            document.getElementById('signer_name').value = (idx === 3 || name.includes('Đại diện BQL')) ? name : '';
-            if (idx !== 3) document.getElementById('signer_name').focus();
+            
+            // Hiển thị tên người ký được truyền vào
+            const nameInput = document.getElementById('signer_name');
+            nameInput.value = name;
+            
+            // Nếu là tên mặc định, bôi đen để người dùng dễ xóa/nhập đè
+            if (name.includes('Đại diện BQL')) {
+                nameInput.select();
+            }
+            
+            if (idx !== 3) nameInput.focus();
         }
 
         function startSigning() {
