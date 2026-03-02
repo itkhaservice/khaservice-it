@@ -29,6 +29,7 @@ $project_display_name = "Chung cư " . $ins['ten_du_an'];
 <head>
     <meta charset="UTF-8">
     <title>Biên bản kiểm tra xe - <?= htmlspecialchars($project_display_name) ?></title>
+    <link rel="icon" type="image/png" href="../uploads/system/Logo1024x.png">
     <style>
         @page { size: A4; margin: 15mm; }
         body { font-family: "Times New Roman", Times, serif; line-height: 1.5; color: #000; margin: 0; padding: 0; font-size: 13pt; }
@@ -209,13 +210,38 @@ $project_display_name = "Chung cư " . $ins['ten_du_an'];
         <div class="signature-section">
             <div class="signature-box">
                 ĐẠI DIỆN BAN QUẢN LÝ
-                <div class="signature-space"></div>
+                <?php 
+                    // Xác định người ký đầu tiên
+                    $first_signer = null;
+                    if ($ins['bql_signature_1'] && $ins['bql_signature_2']) {
+                        $first_signer = (strtotime($ins['signed_at_1']) <= strtotime($ins['signed_at_2'])) ? 1 : 2;
+                    } elseif ($ins['bql_signature_1']) {
+                        $first_signer = 1;
+                    } elseif ($ins['bql_signature_2']) {
+                        $first_signer = 2;
+                    }
+                ?>
+                <div class="signature-space" style="display: flex; justify-content: center; align-items: center; height: 100px;">
+                    <?php 
+                        if($first_signer == 1) {
+                            echo '<img src="'.$ins['bql_signature_1'].'" style="max-height: 80px; max-width: 150px;">';
+                        } elseif($first_signer == 2) {
+                            echo '<img src="'.$ins['bql_signature_2'].'" style="max-height: 80px; max-width: 150px;">';
+                        }
+                    ?>
+                </div>
+                <?php 
+                    if($first_signer == 1) {
+                        echo htmlspecialchars($ins['bql_name_1']);
+                    } elseif($first_signer == 2) {
+                        echo htmlspecialchars($ins['bql_name_2']);
+                    }
+                ?>
             </div>
             <div class="signature-box">
                 NGƯỜI KIỂM TRA
                 <div class="signature-space"></div>
                 <?php 
-                    // Refetch inspector name in case it was changed
                     $stmt_u = $pdo->prepare("SELECT fullname FROM users WHERE id = ?");
                     $stmt_u->execute([$ins['inspector_id']]);
                     echo htmlspecialchars($stmt_u->fetchColumn());

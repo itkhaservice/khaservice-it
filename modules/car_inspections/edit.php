@@ -248,6 +248,34 @@ $pageTitle = "Cập nhật kết quả: " . $ins['ten_du_an'];
                     </div>
                 </div>
             </div>
+
+            <!-- SIGNING STATUS -->
+            <?php if($ins['signed_at_1'] || $ins['signed_at_2']): ?>
+            <div class="audit-card" style="margin-top: 20px; border-left: 4px solid var(--primary-color);">
+                <div class="side-card-header" style="color: var(--primary-color);">Xác nhận BQL</div>
+                <div class="side-card-body" style="padding: 15px;">
+                    <?php if($ins['signed_at_1']): ?>
+                        <div class="meta-info-item" style="margin-bottom: 15px;">
+                            <label>Người ký 1</label>
+                            <div class="val" style="font-size: 0.9rem;"><?= htmlspecialchars($ins['bql_name_1']) ?></div>
+                            <div style="font-size: 0.75rem; color: #64748b; font-style: italic;">
+                                <i class="fas fa-clock"></i> <?= date('H:i:s d/m/Y', strtotime($ins['signed_at_1'])) ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if($ins['signed_at_2']): ?>
+                        <div class="meta-info-item" style="margin-bottom: 0;">
+                            <label>Người ký 2</label>
+                            <div class="val" style="font-size: 0.9rem;"><?= htmlspecialchars($ins['bql_name_2']) ?></div>
+                            <div style="font-size: 0.75rem; color: #64748b; font-style: italic;">
+                                <i class="fas fa-clock"></i> <?= date('H:i:s d/m/Y', strtotime($ins['signed_at_2'])) ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
         </aside>
 
         <!-- MAIN -->

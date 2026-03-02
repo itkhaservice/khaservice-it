@@ -28,6 +28,19 @@ try {
     $details = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($details) {
+        // Tự động sinh token nếu chưa có
+        if (empty($details['signing_token'])) {
+            $token = bin2hex(random_bytes(16));
+            $pdo->prepare("UPDATE car_inspections SET signing_token = ? WHERE id = ?")->execute([$token, $id]);
+            $details['signing_token'] = $token;
+        }
+
+        // Tạo URL ký
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+        $host = $_SERVER['HTTP_HOST'];
+        $base_dir = str_replace('/api', '', dirname($_SERVER['SCRIPT_NAME']));
+        $details['signing_url'] = $protocol . $host . $base_dir . '/confirm_inspection.php?token=' . $details['signing_token'];
+
         echo json_encode($details);
     } else {
         echo json_encode(['error' => 'Not found']);

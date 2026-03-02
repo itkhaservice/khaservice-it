@@ -370,6 +370,23 @@ async function openDetailModal(id) {
                 <div class="detail-value">${resultText}</div>
             </div>
             ${ins.results_summary ? `<div class="detail-item"><div class="detail-label">Tóm tắt nội dung</div><div class="detail-value" style="font-size: 0.9rem; font-weight: normal; color: #475569;">${ins.results_summary.replace(/\n/g, '<br>')}</div></div>` : ''}
+            
+            <div class="signing-link-card" style="background: #f0fdf4; border: 1px solid #dcfce7; padding: 15px; border-radius: 12px; margin-top: 20px;">
+                <div class="detail-label" style="color: var(--primary-color); display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 0.75rem;">
+                    <i class="fas fa-share-nodes"></i> ĐƯỜNG DẪN KÝ XÁC NHẬN (GỬI BQL)
+                </div>
+                <div class="copy-input-group" style="display: flex; background: #fff; border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden; transition: all 0.2s;">
+                    <input type="text" id="signing_url_input" value="${ins.signing_url}" readonly 
+                        style="flex: 1; border: none; padding: 10px 15px; font-size: 0.85rem; color: #64748b; background: transparent; outline: none;">
+                    <button onclick="copySigningUrl()" 
+                        style="background: var(--primary-color); color: #fff; border: none; padding: 0 20px; cursor: pointer; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; transition: background 0.2s;">
+                        <i class="fas fa-copy"></i> SAO CHÉP
+                    </button>
+                </div>
+                <div style="font-size: 0.7rem; color: #64748b; margin-top: 8px; display: flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-circle-info"></i> Gửi link này cho BQL để thực hiện ký số trên điện thoại.
+                </div>
+            </div>
         `;
 
         document.getElementById('detail_content').innerHTML = html;
@@ -405,6 +422,23 @@ function confirmDeleteInspection(id) {
 
 function closeModal(id) {
     document.getElementById(id).style.display = 'none';
+}
+
+function copySigningUrl() {
+    const input = document.getElementById('signing_url_input');
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value).then(() => {
+        btn.style.background = '#059669';
+        btn.innerHTML = '<i class="fas fa-check"></i> ĐÃ CHÉP';
+        setTimeout(() => {
+            btn.style.background = '';
+            btn.innerHTML = originalText;
+        }, 2000);
+    });
 }
 
 window.onclick = function(event) {
