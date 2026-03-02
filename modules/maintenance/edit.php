@@ -52,7 +52,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $stmt = $pdo->prepare("UPDATE maintenance_logs SET 
             project_id=?, device_id=?, custom_device_name=?, usage_time_manual=?, ngay_su_co=?, ngay_lap_phieu=?, noi_dung=?, hu_hong=?, xu_ly=?, 
-            client_name=?, client_phone=?, arrival_time=?, completion_time=?, work_type=?, user_id=? WHERE id=?");
+            client_name=?, client_phone=?, arrival_time=?, completion_time=?, work_type=?, user_id=?,
+            signing_token = IFNULL(signing_token, ?)
+            WHERE id=?");
         $stmt->execute([
             $_POST['project_id'], !empty($_POST['device_id']) ? $_POST['device_id'] : null,
             !empty($_POST['custom_device_name']) ? $_POST['custom_device_name'] : null,
@@ -62,7 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_POST['noi_dung'] ?: null, 
             $_POST['hu_hong'], $_POST['xu_ly'],
             $_POST['client_name'], $_POST['client_phone'], $arrival_time, $completion_time, 
-            $_POST['work_type'] ?: 'Bảo trì / Sửa chữa', $assigned_user_id, $id
+            $_POST['work_type'] ?: 'Bảo trì / Sửa chữa', $assigned_user_id, 
+            bin2hex(random_bytes(16)), $id
         ]);
         set_message('success', 'Cập nhật phiếu thành công!');
         echo "<script>window.location.href = 'index.php?page=maintenance/view&id=" . $id . "';</script>";

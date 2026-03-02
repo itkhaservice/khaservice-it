@@ -99,7 +99,7 @@ function renderValue($val, $dots, $isBold = false) {
                     <?php echo !empty($display_address) ? htmlspecialchars($display_address) : '<span class="dot-placeholder">' . $dots . '<br>' . $dots . '</span>'; ?>
                 </td>
                 <td class="label-cell no-border-top no-border-bottom">Người đại diện:</td>
-                <td class="value-cell text-upper no-border-top no-border-bottom"><b><?php echo htmlspecialchars($log['nguoi_thuc_hien'] ?: $current_user_name); ?></b></td>
+                <td class="value-cell text-upper no-border-top no-border-bottom"><b><?php echo htmlspecialchars(($log['nguoi_thuc_hien'] ?? '') ?: ($log['it_name'] ?? $current_user_name)); ?></b></td>
             </tr>
             <tr>
                 <td class="label-cell no-border-top no-border-bottom">Đại diện:</td>
@@ -218,19 +218,25 @@ function renderValue($val, $dots, $isBold = false) {
                 <td>
                     <strong>ĐẠI DIỆN DỰ ÁN</strong><br>
                     <span>(Ký, ghi rõ họ tên)</span>
+                    <div style="height: 80px; display: flex; align-items: center; justify-content: center;">
+                        <?php if(!empty($log['customer_signature'])): ?>
+                            <img src="<?= $log['customer_signature'] ?>" style="max-height: 70px; max-width: 140px;">
+                        <?php endif; ?>
+                    </div>
                 </td>
                 <td>
                     <strong>NGƯỜI THỰC HIỆN</strong><br>
                     <span>(Ký, ghi rõ họ tên)</span>
+                    <div style="height: 80px; display: flex; align-items: center; justify-content: center;">
+                        <?php if(!empty($log['it_signature'])): ?>
+                            <img src="<?= $log['it_signature'] ?>" style="max-height: 70px; max-width: 140px;">
+                        <?php endif; ?>
+                    </div>
                 </td>
-            </tr>
-            <tr class="sig-space-row">
-                <td></td>
-                <td></td>
             </tr>
             <tr>
                 <td class="text-upper"><b><?php echo htmlspecialchars($log['client_name'] ?? ''); ?></b></td>
-                <td class="text-upper"><b><?php echo htmlspecialchars($log['nguoi_thuc_hien'] ?: $current_user_name); ?></b></td>
+                <td class="text-upper"><b><?php echo htmlspecialchars(($log['nguoi_thuc_hien'] ?? '') ?: ($log['it_name'] ?? $current_user_name)); ?></b></td>
             </tr>
         </table>
     </div>

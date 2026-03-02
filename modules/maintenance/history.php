@@ -56,6 +56,7 @@ $all_columns = [
     'ten_du_du_an'       => ['label' => 'Dự án', 'default' => true],
     'nguoi_thuc_hien' => ['label' => 'Người thực hiện', 'default' => true],
     'ngay_su_co'      => ['label' => 'Ngày yêu cầu', 'default' => true],
+    'signing_status'  => ['label' => 'Ký xác nhận', 'default' => true],
     'work_type'       => ['label' => 'Loại công việc', 'default' => false],
 ];
 ?>
@@ -155,6 +156,19 @@ $all_columns = [
                         <td data-col="ten_du_an"><?php echo htmlspecialchars($log['ten_du_an'] ?? ''); ?></td>
                         <td data-col="nguoi_thuc_hien"><?php echo htmlspecialchars($log['nguoi_thuc_hien'] ?? 'N/A'); ?></td>
                         <td data-col="ngay_su_co"><?php echo date('d/m/Y', strtotime($log['ngay_su_co'])); ?></td>
+                        <td data-col="signing_status" class="text-center">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                                <div style="display: flex; gap: 8px;">
+                                    <i class="fas fa-user-shield" title="IT phụ trách" style="color: <?php echo !empty($log['it_signature']) ? '#108042' : '#cbd5e1'; ?>;"></i>
+                                    <i class="fas fa-user" title="Khách hàng" style="color: <?php echo !empty($log['customer_signature']) ? '#108042' : '#cbd5e1'; ?>;"></i>
+                                </div>
+                                <?php if (!empty($log['signing_token'])): ?>
+                                    <button type="button" class="btn-copy-link" onclick="copySigningLink('<?php echo $log['signing_token']; ?>')" title="Lấy link ký tên" style="border: 1px solid var(--primary-color); background: #fff; cursor: pointer; color: var(--primary-color); font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; font-weight: bold; white-space: nowrap;">
+                                        <i class="fas fa-copy"></i> LINK KÝ
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </td>
                         <td data-col="work_type"><?php echo htmlspecialchars($log['work_type'] ?? ''); ?></td>
                         <td class="actions text-center">
                             <a href="index.php?page=maintenance/view&id=<?php echo $log['id']; ?>" class="btn-icon"><i class="fas fa-eye"></i></a>
@@ -264,7 +278,77 @@ function prepareExport() {
     });
     document.getElementById('visible_columns_input').value = JSON.stringify(activeColumns);
 }
+
+function copySigningLink(token) {
+    const currentPath = window.location.pathname;
+    const basePath = currentPath.substring(0, currentPath.lastIndexOf('/public/index.php'));
+    const link = window.location.origin + basePath + '/public/confirm_maintenance.php?token=' + token;
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(() => {
+            showToast('Đã sao chép link ký tên!');
+        }).catch(err => {
+            fallbackCopy(link);
+        });
+    } else {
+        fallbackCopy(link);
+    }
+}
+
+function fallbackCopy(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        showToast('Đã sao chép link ký tên!');
+    } catch (err) {
+        alert('Vui lòng copy thủ công: ' + text);
+    }
+    document.body.removeChild(textArea);
+}
+
+function showToast(msg) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast-msg';
+    toast.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`;
+    container.appendChild(toast);
+    setTimeout(() => { toast.remove(); }, 3000);
+}
 </script>
+
+<div id="toast-container" style="position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;"></div>
+
+<style>
+.toast-msg {
+    background: rgba(30, 41, 59, 0.9);
+    backdrop-filter: blur(8px);
+    color: #fff;
+    padding: 12px 25px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    animation: toastIn 0.3s ease-out, toastOut 0.3s ease-in 2.7s forwards;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.toast-msg i { color: #22c55e; font-size: 1.1rem; }
+
+@keyframes toastIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+@keyframes toastOut {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(-20px); opacity: 0; }
+}
+</style>
 
 <style>
 .filter-section-modern { 

@@ -37,17 +37,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $completion_time = getFastDateTime($_POST['comp_h'], $_POST['comp_m'], $_POST['comp_d'], $_POST['comp_mon'], $_POST['comp_y']);
 
         $user_id = $_SESSION['user_id'] ?? null;
+        $signing_token = bin2hex(random_bytes(16));
 
         $stmt = $pdo->prepare("INSERT INTO maintenance_logs (
             user_id, project_id, device_id, custom_device_name, usage_time_manual, 
             ngay_su_co, ngay_lap_phieu, noi_dung, hu_hong, xu_ly, 
-            client_name, client_phone, arrival_time, completion_time, work_type
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            client_name, client_phone, arrival_time, completion_time, work_type, signing_token
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         
         $stmt->execute([
             $user_id, $project_id, $device_id, $custom_device_name, $usage_time_manual,
             $ngay_su_co, $ngay_lap_phieu, $noi_dung, $hu_hong, $xu_ly,
-            $client_name, $client_phone, $arrival_time, $completion_time, $work_type
+            $client_name, $client_phone, $arrival_time, $completion_time, $work_type, $signing_token
         ]);
 
         $new_id = $pdo->lastInsertId();
