@@ -204,7 +204,9 @@ $project_display_name = "Chung cư " . $ins['ten_du_an'];
 
         <div class="section-title">III. Ý KIẾN KHÁC:</div>
         <div class="content-body">
-            <div class="text-block"><?= !empty($ins['other_opinions']) ? htmlspecialchars($ins['other_opinions']) : "Biên bản kết thúc vào lúc ...... giờ ...... phút cùng ngày và đọc lại cho các bên cùng nghe, đồng ý ký tên." ?></div>
+            <div class="text-block" style="margin-bottom: 20px;"><?= !empty($ins['other_opinions']) ? htmlspecialchars($ins['other_opinions']) : "Ban quản lý sẽ tiến hành rà soát và báo cáo lại cho Ban lãnh đạo." ?></div>
+            
+            <div class="text-block">Biên bản kết thúc vào lúc <?= !empty($ins['end_time']) ? date('H', strtotime($ins['end_time'])) : '......' ?> giờ <?= !empty($ins['end_time']) ? date('i', strtotime($ins['end_time'])) : '......' ?> phút cùng ngày và đọc lại cho các bên cùng nghe, đồng ý ký tên.</div>
         </div>
 
         <div class="signature-section">
@@ -240,7 +242,11 @@ $project_display_name = "Chung cư " . $ins['ten_du_an'];
             </div>
             <div class="signature-box">
                 NGƯỜI KIỂM TRA
-                <div class="signature-space"></div>
+                <div class="signature-space" style="display: flex; justify-content: center; align-items: center; height: 100px;">
+                    <?php if (!empty($ins['it_signature'])): ?>
+                        <img src="<?= $ins['it_signature'] ?>" style="max-height: 80px; max-width: 150px;">
+                    <?php endif; ?>
+                </div>
                 <?php 
                     $stmt_u = $pdo->prepare("SELECT fullname FROM users WHERE id = ?");
                     $stmt_u->execute([$ins['inspector_id']]);

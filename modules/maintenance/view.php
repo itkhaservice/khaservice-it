@@ -215,6 +215,7 @@ function getFileIconInfo($filePath) {
                 <div class="profile-details">
                     <div class="detail-row"><span class="d-label">Dự án</span><span class="d-value"><?php echo htmlspecialchars($display_project_name ?? ''); ?></span></div>
                     <div class="detail-row"><span class="d-label">Đại diện</span><span class="d-value"><?php echo htmlspecialchars($log['client_name'] ?? '---'); ?></span></div>
+                    <div class="detail-row"><span class="d-label">TG Yêu cầu</span><span class="d-value"><?php echo date('H:i d/m', strtotime($log['ngay_su_co'])); ?></span></div>
                     <div class="detail-row"><span class="d-label">TG Có mặt</span><span class="d-value"><?php echo $log['arrival_time'] ? date('H:i d/m', strtotime($log['arrival_time'])) : '-'; ?></span></div>
                     <div class="detail-row"><span class="d-label">Hoàn thành</span><span class="d-value"><?php echo $log['completion_time'] ? date('H:i d/m', strtotime($log['completion_time'])) : '-'; ?></span></div>
                     <div class="detail-row"><span class="d-label">Thực hiện</span><span class="d-value"><?php echo htmlspecialchars($log['nguoi_thuc_hien'] ?? 'N/A'); ?></span></div>

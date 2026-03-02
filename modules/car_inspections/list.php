@@ -369,7 +369,6 @@ async function openDetailModal(id) {
                 <div class="detail-label">Kết quả Audit</div>
                 <div class="detail-value">${resultText}</div>
             </div>
-            ${ins.results_summary ? `<div class="detail-item"><div class="detail-label">Tóm tắt nội dung</div><div class="detail-value" style="font-size: 0.9rem; font-weight: normal; color: #475569;">${ins.results_summary.replace(/\n/g, '<br>')}</div></div>` : ''}
             
             <div class="signing-link-card" style="background: #f0fdf4; border: 1px solid #dcfce7; padding: 15px; border-radius: 12px; margin-top: 20px;">
                 <div class="detail-label" style="color: var(--primary-color); display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 0.75rem;">
@@ -426,20 +425,68 @@ function closeModal(id) {
 
 function copySigningUrl() {
     const input = document.getElementById('signing_url_input');
-    const btn = event.currentTarget;
-    const originalText = btn.innerHTML;
+    if (!input) return;
 
     input.select();
     input.setSelectionRange(0, 99999);
-    navigator.clipboard.writeText(input.value).then(() => {
-        btn.style.background = '#059669';
-        btn.innerHTML = '<i class="fas fa-check"></i> ĐÃ CHÉP';
-        setTimeout(() => {
-            btn.style.background = '';
-            btn.innerHTML = originalText;
-        }, 2000);
-    });
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(input.value).then(() => {
+            showToast('Đã sao chép link ký tên!');
+        });
+    } else {
+        // Fallback
+        const textArea = document.createElement("textarea");
+        textArea.value = input.value;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showToast('Đã sao chép link ký tên!');
+    }
 }
+
+function showToast(msg) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = 'position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999;';
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast-msg';
+    toast.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`;
+    container.appendChild(toast);
+    
+    setTimeout(() => { toast.remove(); }, 3000);
+}
+</script>
+
+<style>
+.toast-msg {
+    background: rgba(30, 41, 59, 0.9);
+    backdrop-filter: blur(8px);
+    color: #fff;
+    padding: 12px 25px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    animation: toastIn 0.3s ease-out, toastOut 0.3s ease-in 2.7s forwards;
+    border: 1px solid rgba(255,255,255,0.1);
+    white-space: nowrap;
+}
+.toast-msg i { color: #22c55e; font-size: 1.1rem; }
+
+@keyframes toastIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-20px); opacity: 0; } }
+</style>
 
 window.onclick = function(event) {
     if (event.target.className === 'f-modal') {

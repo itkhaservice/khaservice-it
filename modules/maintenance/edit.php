@@ -50,12 +50,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $assigned_user_id = (isAdmin() && !empty($_POST['assigned_user_id'])) ? $_POST['assigned_user_id'] : $log['user_id'];
         $ngay_lap_phieu = (isAdmin() && !empty($_POST['ngay_lap_phieu'])) ? $_POST['ngay_lap_phieu'] : ($log['ngay_lap_phieu'] ?: date('Y-m-d'));
 
-        $stmt = $pdo->prepare("UPDATE maintenance_logs SET 
+        // Xử lý xóa chữ ký nếu Admin yêu cầu
+        $clear_it_sig = isset($_POST['clear_it_signature']);
+        $clear_customer_sig = isset($_POST['clear_customer_signature']);
+
+        $sql = "UPDATE maintenance_logs SET 
             project_id=?, device_id=?, custom_device_name=?, usage_time_manual=?, ngay_su_co=?, ngay_lap_phieu=?, noi_dung=?, hu_hong=?, xu_ly=?, 
             client_name=?, client_phone=?, arrival_time=?, completion_time=?, work_type=?, user_id=?,
-            signing_token = IFNULL(signing_token, ?)
-            WHERE id=?");
-        $stmt->execute([
+            signing_token = IFNULL(signing_token, ?)";
+        
+        $params = [
             $_POST['project_id'], !empty($_POST['device_id']) ? $_POST['device_id'] : null,
             !empty($_POST['custom_device_name']) ? $_POST['custom_device_name'] : null,
             !empty($_POST['usage_time_manual']) ? $_POST['usage_time_manual'] : null,
@@ -65,8 +69,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_POST['hu_hong'], $_POST['xu_ly'],
             $_POST['client_name'], $_POST['client_phone'], $arrival_time, $completion_time, 
             $_POST['work_type'] ?: 'Bảo trì / Sửa chữa', $assigned_user_id, 
-            bin2hex(random_bytes(16)), $id
-        ]);
+            bin2hex(random_bytes(16))
+        ];
+
+        if ($clear_it_sig) {
+            $sql .= ", it_signature = NULL, it_signed_at = NULL";
+        }
+        if ($clear_customer_sig) {
+            $sql .= ", customer_signature = NULL, customer_signed_at = NULL";
+        }
+
+        $sql .= " WHERE id=?";
+        $params[] = $id;
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
         set_message('success', 'Cập nhật phiếu thành công!');
         echo "<script>window.location.href = 'index.php?page=maintenance/view&id=" . $id . "';</script>";
         exit;
@@ -213,6 +230,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group"><label>Người liên hệ</label><div class="clearable-input-wrapper"><input type="text" name="client_name" value="<?php echo htmlspecialchars($log['client_name'] ?? ''); ?>"><i class="fas fa-times-circle clear-input"></i></div></div>
                 <div class="form-group"><label>Chức vụ</label><div class="clearable-input-wrapper"><input type="text" name="client_phone" value="<?php echo htmlspecialchars($log['client_phone'] ?? ''); ?>"><i class="fas fa-times-circle clear-input"></i></div></div>
             </div>
+
+            <?php if (isAdmin()): ?>
+                <div class="card mt-20" style="border: 1px dashed #ef4444; background: #fff5f5;">
+                    <div class="dashboard-card-header"><h3 style="color: #ef4444;"><i class="fas fa-file-signature"></i> Quản lý Chữ ký</h3></div>
+                    <div style="padding: 10px 0;">
+                        <div class="form-group">
+                            <label class="checkbox-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" name="clear_it_signature" value="1" style="width: 18px; height: 18px;">
+                                <span>Xóa chữ ký của <b>IT phụ trách</b> <?php echo !empty($log['it_signature']) ? '<span style="color: #108042;">(Đã ký)</span>' : '(Chưa ký)'; ?></span>
+                            </label>
+                        </div>
+                        <div class="form-group mt-15">
+                            <label class="checkbox-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" name="clear_customer_signature" value="1" style="width: 18px; height: 18px;">
+                                <span>Xóa chữ ký của <b>Khách hàng</b> <?php echo !empty($log['customer_signature']) ? '<span style="color: #108042;">(Đã ký)</span>' : '(Chưa ký)'; ?></span>
+                            </label>
+                        </div>
+                        <p style="font-size: 0.75rem; color: #ef4444; margin-top: 15px; font-style: italic;">* Tích chọn và nhấn Cập nhật để xóa chữ ký cũ, cho phép các bên ký lại.</p>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </form>

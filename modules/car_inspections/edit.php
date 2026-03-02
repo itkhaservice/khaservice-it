@@ -330,7 +330,20 @@ $pageTitle = "Cập nhật kết quả: " . $ins['ten_du_an'];
                 <div class="side-card-body" style="padding: 20px;">
                     <div class="audit-input-group">
                         <label>Tóm tắt kết quả (Nội dung chính)</label>
-                        <textarea name="results_summary" class="audit-control" rows="3" placeholder="Ghi nhận chung về cuộc kiểm tra..."><?= htmlspecialchars($ins['results_summary'] ?? '') ?></textarea>
+                        <?php 
+                            $default_summary = "";
+                            if (empty($ins['results_summary'])) {
+                                $h = !empty($ins['inspection_time']) ? date('H', strtotime($ins['inspection_time'])) : '05';
+                                $m = !empty($ins['inspection_time']) ? date('i', strtotime($ins['inspection_time'])) : '00';
+                                $d = date('d', strtotime($ins['inspection_date']));
+                                $mo = date('m', strtotime($ins['inspection_date']));
+                                $y = date('Y', strtotime($ins['inspection_date']));
+                                $v_count = $ins['violation_count'] ?? 3;
+                                
+                                $default_summary = "Vào lúc $h giờ $m phút, ngày $d tháng $mo năm $y, thực hiện theo sự phân công của Ban lãnh đạo, nhân viên IT trực tiếp ghé dự án kiểm tra tình trạng thực tế tại bãi xe. Sau khi kiểm tra, nhân viên IT nhận thấy có $v_count xe máy không thuộc danh sách xe đăng ký gửi tháng và không tìm được thông tin vãng lai trên phần mềm bãi giữ xe. Lần lượt, có biển kiểm soát như sau:";
+                            }
+                        ?>
+                        <textarea name="results_summary" class="audit-control" rows="5" placeholder="Ghi nhận chung về cuộc kiểm tra..."><?php echo htmlspecialchars(!empty($ins['results_summary']) ? $ins['results_summary'] : $default_summary); ?></textarea>
                     </div>
 
                     <div class="row">
