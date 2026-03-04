@@ -35,8 +35,8 @@ elseif (!empty($ins['bql_signature_2'])) { $first_signer = 2; }
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <style>
-        body { margin: 0; padding: 0; background: #525659; display: flex; justify-content: center; font-family: "Times New Roman", Times, serif; color: #000; }
-        .pdf-container { padding: 30px 10px; display: flex; justify-content: center; width: 100%; box-sizing: border-box; }
+        body { margin: 0; padding: 0; background: #525659; display: flex; justify-content: center; font-family: "Times New Roman", Times, serif; color: #000; -webkit-text-size-adjust: 100%; -moz-text-size-adjust: 100%; text-size-adjust: 100%; }
+        .pdf-container { padding: 30px 10px; display: flex; justify-content: center; box-sizing: border-box; }
         
         .a4-page { 
             background: white !important; 
@@ -76,10 +76,33 @@ elseif (!empty($ins['bql_signature_2'])) { $first_signer = 2; }
         .sig-section { width: 100% !important; display: flex !important; justify-content: space-between !important; margin-top: 30px !important; text-align: center !important; }
         .sig-box { width: 48% !important; font-weight: bold !important; }
         .sig-space { height: 100px; display: flex; align-items: center; justify-content: center; }
-        .sig-img { max-height: 90px; max-width: 100% !important; object-fit: contain; }
+        .sig-img { 
+            max-height: 90px; 
+            max-width: 100% !important; 
+            object-fit: contain;
+            /* Filter biến đen thành xanh đậm #003399 */
+            filter: invert(12%) sepia(100%) saturate(3088%) hue-rotate(218deg) brightness(92%) contrast(106%);
+        }
 
         @media (max-width: 210mm) {
             .a4-page { transform: scale(calc(100vw / 225mm)); margin-bottom: calc(-297mm * (1 - (100vw / 225mm))) !important; box-shadow: none !important; }
+        }
+
+        @media print {
+            body { background: white !important; }
+            .pdf-container { padding: 0 !important; }
+            .a4-page { 
+                box-shadow: none !important; 
+                margin: 0 !important; 
+                padding: 15mm 15mm !important; 
+                transform: none !important; 
+                width: 100% !important; 
+                min-height: auto !important; /* Loại bỏ chiều cao cố định */
+            }
+            .sig-section { 
+                margin-top: 30px !important; /* Khoảng cách vừa phải với nội dung */
+                page-break-inside: avoid !important; /* Chống cắt đôi chữ ký */
+            }
         }
     </style>
 </head>
@@ -154,6 +177,65 @@ elseif (!empty($ins['bql_signature_2'])) { $first_signer = 2; }
             </div>
         </div>
     </div>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script>
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('print')) {
+                setTimeout(() => {
+                    window.print();
+                    // Tự động đóng tab sau khi in (tùy chọn)
+                    // window.close(); 
+                }, 500);
+            }
+        }
+
+        // Lắng nghe tín hiệu từ trang mẹ (confirm_inspection.php)
+        window.addEventListener('message', function(event) {
+            if (event.data === 'saveAsImage') {
+                saveAsImage();
+            }
+        });
+
+        async function saveAsImage() {
+            const element = document.querySelector('.a4-page');
+            
+            // Xử lý "nhuộm xanh" chữ ký cho html2canvas (vì thư viện này không hiểu CSS filter)
+            const sigImages = document.querySelectorAll('.sig-img');
+            const originalSrcs = [];
+            
+            for (let img of sigImages) {
+                originalSrcs.push(img.src);
+                try {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Nhuộm màu xanh #003399
+                    ctx.globalCompositeOperation = 'source-in';
+                    ctx.fillStyle = '#003399';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    img.src = canvas.toDataURL();
+                } catch (e) { console.error("Colorize failed", e); }
+            }
+
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: "#ffffff"
+            });
+            
+            // Trả lại ảnh gốc cho giao diện sau khi chụp xong
+            sigImages.forEach((img, i) => img.src = originalSrcs[i]);
+            
+            const link = document.createElement('a');
+            link.download = 'Bien-ban-Audit-<?= $ins['id'] ?>.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.click();
+        }
+    </script>
 </body>
 </html>
 <?php exit; ?>

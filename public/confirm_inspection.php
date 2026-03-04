@@ -202,11 +202,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signature_data'])) {
         </div>
     </div>
 
-    <!-- REPORT MODAL -->
     <div id="report-modal">
         <div class="report-header">
             <div style="font-weight:800; color:var(--primary);">NỘI DUNG BIÊN BẢN</div>
-            <button onclick="closeReport()" style="background:var(--primary); color:#fff; border:none; padding:8px 20px; border-radius:8px; font-weight:700;">ĐÓNG</button>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="downloadImage()" style="background:#fff; color:#e67e22; border:2px solid #e67e22; padding:8px 15px; border-radius:8px; font-weight:700; display:flex; align-items:center; gap:5px;"><i class="fas fa-image"></i> TẢI ẢNH</button>
+                <button onclick="downloadPDF()" style="background:#fff; color:var(--primary); border:2px solid var(--primary); padding:8px 15px; border-radius:8px; font-weight:700; display:flex; align-items:center; gap:5px;"><i class="fas fa-download"></i> TẢI PDF</button>
+                <button onclick="closeReport()" style="background:var(--primary); color:#fff; border:none; padding:8px 20px; border-radius:8px; font-weight:700;">ĐÓNG</button>
+            </div>
         </div>
         <iframe id="report-frame" style="flex: 1; width: 100%; border: none; background: #525659;" src="about:blank"></iframe>
     </div>
@@ -279,7 +282,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signature_data'])) {
             canvas.getContext("2d").scale(ratio, ratio);
 
             if (!signaturePad) {
-                signaturePad = new SignaturePad(canvas, { penColor: '#000', minWidth: 1.5, maxWidth: 4.5 });
+                signaturePad = new SignaturePad(canvas, { penColor: '#003399', minWidth: 1.5, maxWidth: 4.5 });
             } else {
                 signaturePad.clear();
             }
@@ -353,6 +356,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signature_data'])) {
         function closeReport() { 
             document.getElementById('report-modal').style.display = 'none'; 
             document.getElementById('report-frame').src = 'about:blank';
+        }
+        function downloadPDF() {
+            const printUrl = 'render_inspection_preview.php?token=<?php echo $token; ?>&print=1';
+            window.open(printUrl, '_blank');
+        }
+        function downloadImage() {
+            const frame = document.getElementById('report-frame');
+            if (frame.contentWindow) {
+                frame.contentWindow.postMessage('saveAsImage', '*');
+            }
         }
         function hideModal(id) { document.getElementById(id).style.display = 'none'; }
         window.addEventListener('resize', () => { if(document.getElementById('sig-panel').style.display === 'flex') initCanvas(); });

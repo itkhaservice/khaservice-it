@@ -43,8 +43,8 @@ try {
     <title>Xem trước Phiếu công tác</title>
     <style>
         /* RESET VÀ GIẢ LẬP PDF */
-        body { margin: 0; padding: 0; background: #525659; display: flex; justify-content: center; overflow-x: hidden; font-family: "Times New Roman", Times, serif; }
-        .pdf-canvas { padding: 30px 10px; display: flex; justify-content: center; width: 100%; box-sizing: border-box; }
+        body { margin: 0; padding: 0; background: #525659; display: flex; justify-content: center; overflow-x: hidden; font-family: "Times New Roman", Times, serif; -webkit-text-size-adjust: 100%; -moz-text-size-adjust: 100%; text-size-adjust: 100%; }
+        .pdf-canvas { padding: 30px 10px; display: flex; justify-content: center; box-sizing: border-box; }
         
         /* HIỆN THỊ PHẦN TỬ BỊ ẨN TRONG TEMPLATE */
         .print-only { display: block !important; }
@@ -112,7 +112,13 @@ try {
         /* CHỮ KÝ */
         .sig-table { width: 100% !important; text-align: center !important; margin-top: auto !important; border-collapse: collapse !important; }
         .sig-table td { border: none !important; width: 50% !important; vertical-align: top !important; }
-        .sig-img { max-height: 80px !important; max-width: 140px !important; object-fit: contain !important; }
+        .sig-img { 
+            max-height: 80px !important; 
+            max-width: 140px !important; 
+            object-fit: contain !important;
+            /* Filter biến đen thành xanh đậm #003399 */
+            filter: invert(12%) sepia(100%) saturate(3088%) hue-rotate(218deg) brightness(92%) contrast(106%);
+        }
 
         /* DẤU CHẤM */
         .dot-placeholder { color: #555 !important; letter-spacing: 1px !important; white-space: nowrap !important; overflow: hidden !important; display: block !important; }
@@ -126,12 +132,86 @@ try {
                 box-shadow: none !important;
             }
         }
+
+        @media print {
+            body { background: white !important; }
+            .pdf-canvas { padding: 0 !important; }
+            .a4-page-wrapper { 
+                box-shadow: none !important; 
+                margin: 0 !important; 
+                padding: 10mm 15mm !important; 
+                transform: none !important; 
+                width: 100% !important; 
+                min-height: auto !important; /* Loại bỏ chiều cao cố định */
+            }
+            .sig-table { 
+                margin-top: 30px !important; /* Thay thế margin-top auto */
+                page-break-inside: avoid !important; /* Chống cắt đôi chữ ký */
+            }
+        }
     </style>
 </head>
 <body>
     <div class="pdf-canvas">
         <?php include __DIR__ . '/../modules/maintenance/print_template.inc.php'; ?>
     </div>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script>
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('print')) {
+                setTimeout(() => {
+                    window.print();
+                }, 500);
+            }
+        }
+
+        // Lắng nghe tín hiệu từ trang mẹ (confirm_maintenance.php)
+        window.addEventListener('message', function(event) {
+            if (event.data === 'saveAsImage') {
+                saveAsImage();
+            }
+        });
+
+        async function saveAsImage() {
+            const element = document.querySelector('.a4-page-wrapper');
+            
+            // Xử lý "nhuộm xanh" chữ ký cho html2canvas (vì thư viện này không hiểu CSS filter)
+            const sigImages = document.querySelectorAll('.sig-img');
+            const originalSrcs = [];
+            
+            for (let img of sigImages) {
+                originalSrcs.push(img.src);
+                try {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Nhuộm màu xanh #003399
+                    ctx.globalCompositeOperation = 'source-in';
+                    ctx.fillStyle = '#003399';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    img.src = canvas.toDataURL();
+                } catch (e) { console.error("Colorize failed", e); }
+            }
+
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: "#ffffff"
+            });
+            
+            // Trả lại ảnh gốc cho giao diện sau khi chụp xong
+            sigImages.forEach((img, i) => img.src = originalSrcs[i]);
+            
+            const link = document.createElement('a');
+            link.download = 'Phieu-cong-tac-<?= $log['id'] ?>.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.click();
+        }
+    </script>
 </body>
 </html>
 <?php exit; ?>
