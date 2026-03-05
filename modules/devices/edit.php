@@ -1,5 +1,78 @@
 <?php
-// $device_id và $device đã được lấy và kiểm tra tại public/index.php
+// Lấy ID thiết bị từ URL
+$device_id = $_GET['id'] ?? null;
+
+if (!$device_id) {
+    set_message('Không tìm thấy ID thiết bị!', 'error');
+    header("Location: index.php?page=devices/list");
+    exit;
+}
+
+// Lấy thông tin thiết bị
+$stmt = $pdo->prepare("SELECT * FROM devices WHERE id = ? AND deleted_at IS NULL");
+$stmt->execute([$device_id]);
+$device = $stmt->fetch();
+
+if (!$device) {
+    set_message('Thiết bị không tồn tại!', 'error');
+    header("Location: index.php?page=devices/list");
+    exit;
+}
+
+// Xử lý cập nhật thông tin thiết bị
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $ma_tai_san = trim($_POST['ma_tai_san'] ?? '');
+    $ten_thiet_bi = trim($_POST['ten_thiet_bi'] ?? '');
+    
+    if (empty($ma_tai_san) || empty($ten_thiet_bi)) {
+        set_message('Mã tài sản và tên thiết bị là bắt buộc!', 'error');
+    } else {
+        try {
+            $sql = "UPDATE devices SET 
+                        ma_tai_san = ?, 
+                        ten_thiet_bi = ?, 
+                        nhom_thiet_bi = ?, 
+                        loai_thiet_bi = ?, 
+                        model = ?, 
+                        serial = ?, 
+                        project_id = ?, 
+                        parent_id = ?, 
+                        supplier_id = ?, 
+                        ngay_mua = ?, 
+                        gia_mua = ?, 
+                        bao_hanh_den = ?, 
+                        trang_thai = ?, 
+                        ghi_chu = ?,
+                        updated_at = NOW()
+                    WHERE id = ?";
+            
+            $stmt_update = $pdo->prepare($sql);
+            $stmt_update->execute([
+                $ma_tai_san,
+                $ten_thiet_bi,
+                $_POST['nhom_thiet_bi'] ?? null,
+                $_POST['loai_thiet_bi'] ?? null,
+                $_POST['model'] ?? null,
+                $_POST['serial'] ?? null,
+                $_POST['project_id'] ?: null,
+                $_POST['parent_id'] ?: null,
+                $_POST['supplier_id'] ?: null,
+                $_POST['ngay_mua'] ?: null,
+                $_POST['gia_mua'] ?: null,
+                $_POST['bao_hanh_den'] ?: null,
+                $_POST['trang_thai'] ?? null,
+                $_POST['ghi_chu'] ?? null,
+                $device_id
+            ]);
+            
+            set_message('Cập nhật thiết bị thành công!', 'success');
+            header("Location: index.php?page=devices/view&id=" . $device_id);
+            exit;
+        } catch (PDOException $e) {
+            set_message('Lỗi khi cập nhật thiết bị: ' . $e->getMessage(), 'error');
+        }
+    }
+}
 
 // Fetch projects and suppliers for dropdowns
 $projects_stmt = $pdo->query("SELECT id, ten_du_an FROM projects ORDER BY ten_du_an");
