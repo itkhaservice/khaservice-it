@@ -488,9 +488,10 @@ function showToast(msg) {
 @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-20px); opacity: 0; } }
 </style>
 
-window.onclick = function(event) {
-    if (event.target.className === 'f-modal') {
+<script>
+window.addEventListener('click', function(event) {
+    if (event.target.classList && event.target.classList.contains('f-modal')) {
         event.target.style.display = "none";
     }
-}
+});
 </script>

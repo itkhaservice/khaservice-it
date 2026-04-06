@@ -289,8 +289,10 @@ CREATE TABLE `form_questions` (
   `question_type` varchar(50) NOT NULL COMMENT 'text, textarea, multiple_choice, checkboxes, dropdown, date, time, datetime, number, file, linear_scale, multiple_choice_grid, checkbox_grid',
   `question_order` int(11) DEFAULT 0 COMMENT 'Display order',
   `is_required` tinyint(1) DEFAULT 0 COMMENT 'Is this question required?',
-  `logic_config` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'Skip logic configuration'
-) ;
+  `logic_config` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'Skip logic configuration',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `deleted_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `form_questions`
@@ -723,6 +725,13 @@ ALTER TABLE `forms`
 -- Indexes for table `form_submissions`
 --
 ALTER TABLE `form_submissions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `form_id` (`form_id`);
+
+--
+-- Indexes for table `form_questions`
+--
+ALTER TABLE `form_questions`
   ADD PRIMARY KEY (`id`),
   ADD KEY `form_id` (`form_id`);
 
