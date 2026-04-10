@@ -17,7 +17,7 @@ $stmt->execute([$id]);
 $check = $stmt->fetch();
 if (!$check) die("Not found");
 
-// Fetch details and Build Tree for Export
+// Fetch details and Build Tree
 $stmt = $pdo->prepare("SELECT d.*, dev.ten_thiet_bi, dev.ma_tai_san, dev.nhom_thiet_bi, dev.parent_id
                       FROM it_system_health_check_details d
                       JOIN devices dev ON d.device_id = dev.id
@@ -48,12 +48,7 @@ foreach ($roots as $group => $root_list) {
     }
 }
 
-// Translation
-$health_map = [
-    'good' => 'Tốt',
-    'warning' => 'Cảnh báo',
-    'broken' => 'Hỏng'
-];
+$health_map = ['good' => 'Tốt', 'warning' => 'Cảnh báo', 'broken' => 'Hỏng'];
 
 $filename = "Bao-cao-kiem-tra-" . str_replace(' ', '-', $check['ten_du_an']) . "-" . date('d-m-Y', strtotime($check['check_date'])) . ".xls";
 
@@ -83,11 +78,8 @@ echo '<tr style="background-color:#f2f2f2;">
       </tr>';
 
 foreach ($tree as $node) {
-    $d = $node['item'];
-    $lvl = $node['level'];
+    $d = $node['item']; $lvl = $node['level'];
     $indent = ($lvl > 0) ? "    ↳ " : "";
-    $note_full = $d['notes'] ?: "-";
-    
     echo '<tr>';
     echo '<td>' . ($lvl == 0 ? htmlspecialchars($d['nhom_thiet_bi']) : "") . '</td>';
     echo '<td style="' . ($lvl == 0 ? 'font-weight:bold;' : 'color:#475569;') . '">' . $indent . htmlspecialchars($d['ten_thiet_bi']) . '</td>';
@@ -95,9 +87,31 @@ foreach ($tree as $node) {
     echo '<td align="center">' . ($health_map[$d['health_status']] ?? $d['health_status']) . '</td>';
     echo '<td align="center">' . $d['quantity'] . '</td>';
     echo '<td>' . htmlspecialchars($d['cause'] ?: "-") . '</td>';
-    echo '<td>' . htmlspecialchars($note_full) . '</td>';
+    echo '<td>' . htmlspecialchars($d['notes'] ?: "-") . '</td>';
     echo '</tr>';
 }
+
+echo '<tr><td colspan="7"></td></tr>';
+echo '<tr><td colspan="7"></td></tr>';
+
+// Signatures Row
+echo '<tr>
+        <td colspan="3" align="center" style="height:150px; vertical-align:top;">
+            <b>NHÂN VIÊN KIỂM TRA</b><br><br>';
+            if($check['it_signature']) {
+                echo '<img src="' . $check['it_signature'] . '" width="150" height="80"><br>';
+            }
+            echo '<b>' . htmlspecialchars($check['checker_name']) . '</b>
+        </td>
+        <td></td>
+        <td colspan="3" align="center" style="height:150px; vertical-align:top;">
+            <b>CÁN BỘ TẠI DỰ ÁN</b><br><br>';
+            if($check['client_signature']) {
+                echo '<img src="' . $check['client_signature'] . '" width="150" height="80"><br>';
+            }
+            echo '<b>' . htmlspecialchars($check['client_name'] ?: "") . '</b>
+        </td>
+      </tr>';
 
 echo '</table>';
 echo '</body></html>';

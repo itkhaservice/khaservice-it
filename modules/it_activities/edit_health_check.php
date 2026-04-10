@@ -15,11 +15,7 @@ if (!$id) {
     exit;
 }
 
-$status_sync_map = [
-    'good'    => 'Tốt',
-    'warning' => 'Cảnh báo',
-    'broken'  => 'Hỏng'
-];
+$status_sync_map = ['good' => 'Tốt', 'warning' => 'Cảnh báo', 'broken' => 'Hỏng'];
 
 $stmt = $pdo->prepare("SELECT * FROM it_system_health_checks WHERE id = ?");
 $stmt->execute([$id]);
@@ -38,11 +34,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_health_check']
     $overall_health = $_POST['overall_health'];
     $summary_notes = $_POST['summary_notes'];
     $check_date = $_POST['check_date'];
+    $checked_by = $_POST['checked_by'];
 
     try {
         $pdo->beginTransaction();
-        $stmt = $pdo->prepare("UPDATE it_system_health_checks SET check_date = ?, overall_health = ?, summary_notes = ? WHERE id = ?");
-        $stmt->execute([$check_date, $overall_health, $summary_notes, $id]);
+        $stmt = $pdo->prepare("UPDATE it_system_health_checks SET check_date = ?, overall_health = ?, summary_notes = ?, checked_by = ? WHERE id = ?");
+        $stmt->execute([$check_date, $overall_health, $summary_notes, $checked_by, $id]);
 
         if (isset($_POST['device_ids']) && is_array($_POST['device_ids'])) {
             $stmt_sync = $pdo->prepare("UPDATE devices SET trang_thai = ? WHERE id = ?");
@@ -74,8 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_health_check']
 }
 
 $projects = $pdo->query("SELECT id, ten_du_an, ma_du_an FROM projects WHERE deleted_at IS NULL ORDER BY ten_du_an ASC")->fetchAll();
+$it_staff = $pdo->query("SELECT id, fullname FROM users WHERE role IN ('it', 'admin') AND deleted_at IS NULL ORDER BY fullname ASC")->fetchAll();
 
-// Fetch existing details and Build Tree
+// Build Tree
 $stmt = $pdo->prepare("SELECT d.*, dev.ten_thiet_bi, dev.ma_tai_san, dev.nhom_thiet_bi, dev.parent_id
                       FROM it_system_health_check_details d
                       JOIN devices dev ON d.device_id = dev.id
@@ -84,27 +82,16 @@ $stmt = $pdo->prepare("SELECT d.*, dev.ten_thiet_bi, dev.ma_tai_san, dev.nhom_th
 $stmt->execute([$id]);
 $existing_details = $stmt->fetchAll();
 
-$tree_by_group = [];
-$roots = [];
-$children = [];
-$detail_data = [];
-
+$tree_by_group = []; $roots = []; $children = [];
 foreach ($existing_details as $row) {
-    $detail_data[$row['device_id']] = $row;
-    if (!$row['parent_id']) {
-        $roots[$row['nhom_thiet_bi']][] = $row;
-    } else {
-        $children[$row['parent_id']][] = $row;
-    }
+    if (!$row['parent_id']) $roots[$row['nhom_thiet_bi']][] = $row;
+    else $children[$row['parent_id']][] = $row;
 }
-
 foreach ($roots as $group => $root_list) {
     foreach ($root_list as $root) {
         $tree_by_group[$group][] = ['item' => $root, 'level' => 0];
         if (isset($children[$root['device_id']])) {
-            foreach ($children[$root['device_id']] as $child) {
-                $tree_by_group[$group][] = ['item' => $child, 'level' => 1];
-            }
+            foreach ($children[$root['device_id']] as $child) $tree_by_group[$group][] = ['item' => $child, 'level' => 1];
         }
     }
 }
@@ -118,16 +105,11 @@ foreach ($roots as $group => $root_list) {
 .device-table { width: 100%; border-collapse: collapse; }
 .device-table th { background: #f1f5f9; padding: 12px 15px; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; border-bottom: 1px solid #e2e8f0; }
 .device-table td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-
-.row-root { background-color: #fff; }
-.row-child { background-color: #fcfdfd; }
 .device-info { display: flex; align-items: flex-start; gap: 10px; }
 .device-info.level-1 { padding-left: 20px; }
 .tree-branch { color: #cbd5e1; font-size: 1rem; margin-top: 2px; }
 .device-text strong { display: block; color: #1e293b; font-size: 0.9rem; margin-bottom: 2px; }
 .device-text small { color: #94a3b8; font-size: 0.7rem; font-style: italic; display: block; }
-.row-child .device-text strong { color: #475569; font-weight: 500; }
-
 .select-styled { width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; background-color: #fff; transition: 0.2s; cursor: pointer; }
 .status-inuse { color: #10b981; font-weight: 600; }
 .status-notinuse { color: #ef4444; font-weight: 600; }
@@ -138,8 +120,8 @@ foreach ($roots as $group => $root_list) {
 <div class="page-header">
     <h2><i class="fas fa-edit"></i> Chỉnh sửa Phiếu Kiểm tra</h2>
     <div class="header-actions">
-        <a href="index.php?page=it_activities/view_health_check&id=<?= $id ?>" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
-        <button type="submit" form="edit-health-check-form" name="update_health_check" class="btn btn-primary"><i class="fas fa-save"></i> Cập nhật báo cáo</button>
+        <a href="index.php?page=it_activities/view_health_check&id=<?= $id ?>" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Quay lại</a>
+        <button type="submit" form="edit-health-check-form" name="update_health_check" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Cập nhật báo cáo</button>
     </div>
 </div>
 
@@ -151,15 +133,16 @@ foreach ($roots as $group => $root_list) {
                 <div class="card-header bg-light"><strong>Thông tin chung</strong></div>
                 <div class="card-body">
                     <div class="form-group mb-3"><label>Dự án</label><select class="form-control bg-light" disabled><?php foreach ($projects as $p): ?><option value="<?= $p['id'] ?>" <?= $project_id == $p['id'] ? 'selected' : '' ?>><?= htmlspecialchars($p['ten_du_an']) ?></option><?php endforeach; ?></select></div>
-                    <div class="form-group mb-3"><label>Ngày kiểm tra <span class="text-danger">*</span></label><input type="date" name="check_date" value="<?= $check_date ?>" class="form-control" required></div>
                     <div class="form-group mb-3">
-                        <label>Đánh giá tổng quát</label>
-                        <select name="overall_health" class="form-control">
-                            <option value="good" <?= $check['overall_health'] == 'good' ? 'selected' : '' ?>>Tốt</option>
-                            <option value="warning" <?= $check['overall_health'] == 'warning' ? 'selected' : '' ?>>Cảnh báo</option>
-                            <option value="critical" <?= $check['overall_health'] == 'critical' ? 'selected' : '' ?>>Khẩn cấp</option>
+                        <label>Người kiểm tra <span class="text-danger">*</span></label>
+                        <select name="checked_by" class="form-control" required>
+                            <?php foreach ($it_staff as $staff): ?>
+                                <option value="<?= $staff['id'] ?>" <?= $check['checked_by'] == $staff['id'] ? 'selected' : '' ?>><?= htmlspecialchars($staff['fullname']) ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
+                    <div class="form-group mb-3"><label>Ngày kiểm tra <span class="text-danger">*</span></label><input type="date" name="check_date" value="<?= $check_date ?>" class="form-control" required></div>
+                    <div class="form-group mb-3"><label>Đánh giá tổng quát</label><select name="overall_health" class="form-control"><option value="good" <?= $check['overall_health'] == 'good' ? 'selected' : '' ?>>Tốt</option><option value="warning" <?= $check['overall_health'] == 'warning' ? 'selected' : '' ?>>Cảnh báo</option><option value="critical" <?= $check['overall_health'] == 'critical' ? 'selected' : '' ?>>Khẩn cấp</option></select></div>
                     <div class="form-group"><label>Ghi chú tổng quan</label><textarea name="summary_notes" class="form-control" rows="4"><?= htmlspecialchars($check['summary_notes']) ?></textarea></div>
                 </div>
             </div>
@@ -178,30 +161,13 @@ foreach ($roots as $group => $root_list) {
                                 ?>
                                     <tr class="<?= $lvl == 0 ? 'row-root' : 'row-child' ?>">
                                         <td>
-                                            <div class="device-info level-<?= $lvl ?>">
-                                                <?php if($lvl > 0): ?><span class="tree-branch">↳</span><?php endif; ?>
-                                                <div class="device-text"><strong><?= htmlspecialchars($d['ten_thiet_bi']) ?></strong><small><?= htmlspecialchars($d['ma_tai_san']) ?></small></div>
-                                            </div>
+                                            <div class="device-info level-<?= $lvl ?>"><?php if($lvl > 0): ?><span class="tree-branch">↳</span><?php endif; ?><div class="device-text"><strong><?= htmlspecialchars($d['ten_thiet_bi']) ?></strong><small><?= htmlspecialchars($d['ma_tai_san']) ?></small></div></div>
                                             <input type="hidden" name="device_ids[]" value="<?= $d['device_id'] ?>">
                                         </td>
-                                        <td>
-                                            <select name="status[]" class="select-styled" onchange="updateStatusColor(this)">
-                                                <option value="Đang sử dụng" <?= $d['status'] == 'Đang sử dụng' ? 'selected' : '' ?> class="status-inuse">Đang dùng</option>
-                                                <option value="Không sử dụng" <?= $d['status'] == 'Không sử dụng' ? 'selected' : '' ?> class="status-notinuse">Không dùng</option>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <select name="health_status[]" class="select-styled">
-                                                <option value="good" <?= $d['health_status'] == 'good' ? 'selected' : '' ?>>Tốt</option>
-                                                <option value="warning" <?= $d['health_status'] == 'warning' ? 'selected' : '' ?>>Cảnh báo</option>
-                                                <option value="broken" <?= $d['health_status'] == 'broken' ? 'selected' : '' ?>>Hỏng</option>
-                                            </select>
-                                        </td>
+                                        <td><select name="status[]" class="select-styled" onchange="updateStatusColor(this)"><option value="Đang sử dụng" <?= $d['status'] == 'Đang sử dụng' ? 'selected' : '' ?> class="status-inuse">Đang dùng</option><option value="Không sử dụng" <?= $d['status'] == 'Không sử dụng' ? 'selected' : '' ?> class="status-notinuse">Không dùng</option></select></td>
+                                        <td><select name="health_status[]" class="select-styled"><option value="good" <?= $d['health_status'] == 'good' ? 'selected' : '' ?>>Tốt</option><option value="warning" <?= $d['health_status'] == 'warning' ? 'selected' : '' ?>>Cảnh báo</option><option value="broken" <?= $d['health_status'] == 'broken' ? 'selected' : '' ?>>Hỏng</option></select></td>
                                         <td><input type="number" name="quantity[]" value="<?= $d['quantity'] ?>" min="0" class="input-styled text-center"></td>
-                                        <td>
-                                            <input type="text" name="cause[]" value="<?= htmlspecialchars($d['cause']) ?>" class="input-styled mb-1" placeholder="Nguyên nhân...">
-                                            <input type="text" name="notes[]" value="<?= htmlspecialchars($d['notes']) ?>" class="input-styled" placeholder="Ghi chú...">
-                                        </td>
+                                        <td><input type="text" name="cause[]" value="<?= htmlspecialchars($d['cause']) ?>" class="input-styled mb-1" placeholder="Nguyên nhân..."><input type="text" name="notes[]" value="<?= htmlspecialchars($d['notes']) ?>" class="input-styled" placeholder="Ghi chú..."></td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
