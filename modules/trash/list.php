@@ -158,8 +158,8 @@ try {
                             <tr>
                                 <td><input type="checkbox" name="ids[]" value="<?php echo $item['id']; ?>" class="row-checkbox"></td>
                                 <td>
-                                    <div class="font-bold"><?php echo htmlspecialchars($item['label']); ?></div>
-                                    <div class="text-muted small"><?php echo htmlspecialchars($item['sublabel']); ?></div>
+                                    <div class="font-bold"><?php echo htmlspecialchars((string)($item['label'] ?? '')); ?></div>
+                                    <div class="text-muted small"><?php echo htmlspecialchars((string)($item['sublabel'] ?? '')); ?></div>
                                 </td>
                                 <td><?php echo date('d/m/Y H:i', strtotime($item['deleted_at'])); ?></td>
                                 <td class="actions text-center">

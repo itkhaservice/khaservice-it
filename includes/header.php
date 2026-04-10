@@ -56,16 +56,18 @@ $final_base = $protocol . "://" . $host . $base_dir;
                 <button class="close-menu" onclick="document.getElementById('hamburger-menu').click()">&times;</button>
             </div>
             <ul>
-                <li><a href="index.php?page=devices/list"><i class="fas fa-server"></i> Thiết bị</a></li>
                 <li><a href="index.php?page=maintenance/history"><i class="fas fa-tools"></i> Công tác</a></li>
                 <li><a href="index.php?page=services/list"><i class="fas fa-cloud"></i> Dịch vụ</a></li>
-                <li><a href="index.php?page=projects/list"><i class="fas fa-building"></i> Dự án</a></li>
                 <li><a href="index.php?page=car_inspections/list"><i class="fas fa-calendar-check"></i> Kiểm xe</a></li>
+                <li><a href="index.php?page=it_activities/list"><i class="fas fa-tasks"></i> Kế hoạch IT</a></li>
                 <li><a href="index.php?page=proposals/list"><i class="fas fa-file-invoice-dollar"></i> Đề xuất IT</a></li>
                 
                 <li class="dropdown">
                     <a href="javascript:void(0)" onclick="toggleDropdown(this)"><i class="fas fa-ellipsis-h"></i> Khác <i class="fas fa-caret-down"></i></a>
                     <div class="dropdown-content">
+                        <a href="index.php?page=devices/list"><i class="fas fa-server"></i> Thiết bị</a>
+                        <a href="index.php?page=projects/list"><i class="fas fa-building"></i> Dự án</a>
+                        <a href="index.php?page=links/list"><i class="fas fa-link"></i> Tài khoản / Link</a>
                         <a href="index.php?page=car_systems/list"><i class="fas fa-car-battery"></i> Hệ thống xe</a>
                         <a href="index.php?page=suppliers/list"><i class="fas fa-truck"></i> Nhà cung cấp</a>
                         <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
@@ -95,7 +97,7 @@ $final_base = $protocol . "://" . $host . $base_dir;
                 <span class="user-role"><?php echo strtoupper($_SESSION['role']); ?></span>
             </div>
             <a href="index.php?page=users/settings" class="settings-link" title="Cài đặt"><i class="fas fa-cog"></i></a>
-            <a href="logout.php" class="logout-link" title="Thoát"><i class="fas fa-sign-out-alt"></i></a>
+            <a href="<?php echo $final_base; ?>public/logout.php" class="logout-link" title="Thoát"><i class="fas fa-sign-out-alt"></i></a>
         </div>
     </header>
     
