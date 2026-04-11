@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="text" id="ma_tai_san" name="ma_tai_san" value="<?php echo htmlspecialchars($_POST['ma_tai_san'] ?? ''); ?>" required class="input-highlight" placeholder="Sẽ tự động tạo khi chọn Dự án & Loại...">
                         <button type="button" class="btn-refresh" onclick="generateAssetCode()" title="Tạo lại mã"><i class="fas fa-sync-alt"></i></button>
                     </div>
-                    <small class="text-muted">Tự động sinh theo quy tắc: KHAS-[Mã DA]-[Mã Loại]-[STT]</small>
+                    <small class="text-muted">Tự động sinh theo quy tắc: KHAS-[Mã DA]-[Mã nhóm]-[Mã Loại]-[STT]</small>
                 </div>
                 
                 <div class="form-group">

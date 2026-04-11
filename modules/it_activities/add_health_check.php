@@ -126,6 +126,9 @@ if ($project_id) {
     <h2><i class="fas fa-file-medical"></i> Phiếu Kiểm tra Tình trạng Hệ thống</h2>
     <div class="header-actions">
         <a href="index.php?page=it_activities/list" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+        <?php if ($project_id): ?>
+            <button type="button" class="btn btn-dark" onclick="openQuickAddModal()"><i class="fas fa-bolt"></i> THÊM NHANH</button>
+        <?php endif; ?>
         <button type="submit" form="health-check-form" name="save_health_check" class="btn btn-primary"><i class="fas fa-save"></i> Lưu báo cáo</button>
     </div>
 </div>

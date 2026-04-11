@@ -29,27 +29,39 @@ try {
     ];
     $group_code = $group_map[$group_name] ?? strtoupper(substr($group_name, 0, 2));
 
-    // 3. Tạo Mã Loại Thiết Bị (Lấy 3 chữ cái đầu không dấu)
-    function getTypeCode($str) {
-        $str = preg_replace("/(à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ)/", "a", $str);
-        $str = preg_replace("/(è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ)/", "e", $str);
-        $str = preg_replace("/(ì|í|ị|ỉ|ĩ)/", "i", $str);
-        $str = preg_replace("/(ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ)/", "o", $str);
-        $str = preg_replace("/(ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ỡ)/", "u", $str);
-        $str = preg_replace("/(ỳ|ý|ỵ|ỷ|ỹ)/", "y", $str);
-        $str = preg_replace("/(đ)/", "d", $str);
-        $str = strtoupper(preg_replace("/[^A-Z0-9]/i", "", $str));
-        return substr($str, 0, 3);
+    // 3. Lấy Mã Loại Thiết Bị từ bảng settings_device_types
+    $stmt = $pdo->prepare("SELECT type_code FROM settings_device_types WHERE type_name = ?");
+    $stmt->execute([$type_name]);
+    $type_row = $stmt->fetch();
+    $type_code = strtoupper($type_row['type_code'] ?? 'XXX');
+
+    // 4. Lấy STT tiếp theo (Dựa trên tiền tố mã đã tồn tại để tránh trùng lặp)
+    // Quy tắc: KHAS-[Mã DA]-[Mã nhóm]-[Mã Loại]-[STT]
+    $prefix = "KHAS-{$project_code}-{$group_code}-{$type_code}-";
+    
+    // Tìm mã lớn nhất có cùng tiền tố, tập trung vào phần số cuối cùng
+    $stmt = $pdo->prepare("SELECT ma_tai_san FROM devices WHERE ma_tai_san LIKE ? ORDER BY LENGTH(ma_tai_san) DESC, ma_tai_san DESC LIMIT 1");
+    $stmt->execute([$prefix . '%']);
+    $last_device = $stmt->fetch();
+
+    $next_num = 1;
+    if ($last_device) {
+        $last_code = $last_device['ma_tai_san'];
+        // Tách lấy phần số cuối cùng (STT)
+        $parts = explode('-', $last_code);
+        $last_stt_str = end($parts);
+        if (is_numeric($last_stt_str)) {
+            $next_num = intval($last_stt_str) + 1;
+        } else {
+            // Nếu phần cuối không phải là số (trường hợp mã đặc biệt), đếm tổng số lượng cùng prefix để an toàn
+            $stmt_count = $pdo->prepare("SELECT COUNT(*) FROM devices WHERE ma_tai_san LIKE ?");
+            $stmt_count->execute([$prefix . '%']);
+            $next_num = $stmt_count->fetchColumn() + 1;
+        }
     }
-    $type_code = getTypeCode($type_name);
-
-    // 4. Lấy STT tiếp theo (Cùng dự án, cùng nhóm, cùng loại)
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM devices WHERE project_id = ? AND nhom_thiet_bi = ? AND loai_thiet_bi = ?");
-    $stmt->execute([$project_id, $group_name, $type_name]);
-    $count = $stmt->fetchColumn();
-    $next_stt = str_pad($count + 1, 3, '0', STR_PAD_LEFT);
-
-    $final_code = "KHAS-{$project_code}-{$group_code}-{$type_code}-{$next_stt}";
+    
+    $next_stt = str_pad($next_num, 3, '0', STR_PAD_LEFT);
+    $final_code = $prefix . $next_stt;
 
     echo json_encode(['code' => $final_code]);
 

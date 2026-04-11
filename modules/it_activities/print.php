@@ -149,10 +149,11 @@ $p_y = date('Y', strtotime($check['check_date']));
             <thead>
                 <tr>
                     <th width="5%">STT</th>
-                    <th width="40%">Tên thiết bị / Linh kiện</th>
+                    <th width="35%">Tên thiết bị / Linh kiện</th>
+                    <th width="10%">S.Lượng</th>
                     <th width="15%">Sử dụng</th>
                     <th width="15%">Sức khỏe</th>
-                    <th width="25%">Tình trạng chi tiết</th>
+                    <th width="20%">Tình trạng chi tiết</th>
                 </tr>
             </thead>
             <tbody>
@@ -161,7 +162,7 @@ $p_y = date('Y', strtotime($check['check_date']));
                 foreach ($tree_by_group as $group_name => $nodes): 
                 ?>
                     <tr class="group-header-row">
-                        <td colspan="5" align="left">NHÓM: <?= htmlspecialchars($group_name) ?></td>
+                        <td colspan="6" align="left">NHÓM: <?= htmlspecialchars($group_name) ?></td>
                     </tr>
                     <?php foreach ($nodes as $node): 
                         $d = $node['item']; $lvl = $node['level'];
@@ -174,6 +175,7 @@ $p_y = date('Y', strtotime($check['check_date']));
                                     <?= htmlspecialchars($d['ten_thiet_bi']) ?>
                                 </div>
                             </td>
+                            <td align="center"><strong><?= $d['quantity'] ?: 1 ?></strong></td>
                             <td align="center"><?= htmlspecialchars($d['status']) ?></td>
                             <td align="center"><?= ($health_map[$d['health_status']] ?? $d['health_status']) ?></td>
                             <td>

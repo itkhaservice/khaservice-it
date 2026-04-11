@@ -50,10 +50,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_health_check']
                 $cause = $_POST['cause'][$index] ?? '';
                 $notes = $_POST['notes'][$index] ?? '';
                 
-                $stmt_upd = $pdo->prepare("UPDATE it_system_health_check_details 
-                                          SET status = ?, health_status = ?, quantity = ?, cause = ?, notes = ? 
-                                          WHERE check_id = ? AND device_id = ?");
-                $stmt_upd->execute([$status, $health, $qty, $cause, $notes, $id, $device_id]);
+                // Kiểm tra xem thiết bị này đã có trong báo cáo chưa
+                $stmt_check = $pdo->prepare("SELECT id FROM it_system_health_check_details WHERE check_id = ? AND device_id = ?");
+                $stmt_check->execute([$id, $device_id]);
+                $exists = $stmt_check->fetch();
+
+                if ($exists) {
+                    $stmt_upd = $pdo->prepare("UPDATE it_system_health_check_details 
+                                              SET status = ?, health_status = ?, quantity = ?, cause = ?, notes = ? 
+                                              WHERE id = ?");
+                    $stmt_upd->execute([$status, $health, $qty, $cause, $notes, $exists['id']]);
+                } else {
+                    $stmt_ins = $pdo->prepare("INSERT INTO it_system_health_check_details 
+                                              (check_id, device_id, status, health_status, quantity, cause, notes) 
+                                              VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    $stmt_ins->execute([$id, $device_id, $status, $health, $qty, $cause, $notes]);
+                }
 
                 if (isset($status_sync_map[$health])) {
                     $stmt_sync->execute([$status_sync_map[$health], $device_id]);
@@ -73,13 +85,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_health_check']
 $projects = $pdo->query("SELECT id, ten_du_an, ma_du_an FROM projects WHERE deleted_at IS NULL ORDER BY ten_du_an ASC")->fetchAll();
 $it_staff = $pdo->query("SELECT id, fullname FROM users WHERE role IN ('it', 'admin') AND deleted_at IS NULL ORDER BY fullname ASC")->fetchAll();
 
-// Build Tree
-$stmt = $pdo->prepare("SELECT d.*, dev.ten_thiet_bi, dev.ma_tai_san, dev.nhom_thiet_bi, dev.parent_id
-                      FROM it_system_health_check_details d
-                      JOIN devices dev ON d.device_id = dev.id
-                      WHERE d.check_id = ?
+// Fetch ALL devices for this project and JOIN with existing check details if they exist
+$stmt = $pdo->prepare("SELECT 
+                        dev.id as device_id, dev.ten_thiet_bi, dev.ma_tai_san, dev.nhom_thiet_bi, dev.parent_id,
+                        d.status, d.health_status, d.quantity, d.cause, d.notes, d.id as detail_id
+                      FROM devices dev
+                      LEFT JOIN it_system_health_check_details d ON dev.id = d.device_id AND d.check_id = ?
+                      WHERE dev.project_id = ? AND dev.deleted_at IS NULL
                       ORDER BY dev.nhom_thiet_bi, dev.parent_id ASC, dev.ten_thiet_bi");
-$stmt->execute([$id]);
+$stmt->execute([$id, $project_id]);
 $existing_details = $stmt->fetchAll();
 
 $tree_by_group = []; $roots = []; $children = [];
@@ -161,13 +175,13 @@ foreach ($roots as $group => $root_list) {
                                 ?>
                                     <tr class="<?= $lvl == 0 ? 'row-root' : 'row-child' ?>">
                                         <td>
-                                            <div class="device-info level-<?= $lvl ?>"><?php if($lvl > 0): ?><span class="tree-branch">↳</span><?php endif; ?><div class="device-text"><strong><?= htmlspecialchars($d['ten_thiet_bi']) ?></strong><small><?= htmlspecialchars($d['ma_tai_san']) ?></small></div></div>
+                                            <div class="device-info level-<?= $lvl ?>"><?php if($lvl > 0): ?><span class="tree-branch">↳</span><?php endif; ?><div class="device-text"><strong><?= htmlspecialchars($d['ten_thiet_bi'] ?? '') ?></strong><small><?= htmlspecialchars($d['ma_tai_san'] ?? '') ?></small></div></div>
                                             <input type="hidden" name="device_ids[]" value="<?= $d['device_id'] ?>">
                                         </td>
-                                        <td><select name="status[]" class="select-styled" onchange="updateStatusColor(this)"><option value="Đang sử dụng" <?= $d['status'] == 'Đang sử dụng' ? 'selected' : '' ?> class="status-inuse">Đang dùng</option><option value="Không sử dụng" <?= $d['status'] == 'Không sử dụng' ? 'selected' : '' ?> class="status-notinuse">Không dùng</option></select></td>
-                                        <td><select name="health_status[]" class="select-styled"><option value="good" <?= $d['health_status'] == 'good' ? 'selected' : '' ?>>Tốt</option><option value="warning" <?= $d['health_status'] == 'warning' ? 'selected' : '' ?>>Cảnh báo</option><option value="broken" <?= $d['health_status'] == 'broken' ? 'selected' : '' ?>>Hỏng</option></select></td>
-                                        <td><input type="number" name="quantity[]" value="<?= $d['quantity'] ?>" min="0" class="input-styled text-center"></td>
-                                        <td><input type="text" name="cause[]" value="<?= htmlspecialchars($d['cause']) ?>" class="input-styled mb-1" placeholder="Nguyên nhân..."><input type="text" name="notes[]" value="<?= htmlspecialchars($d['notes']) ?>" class="input-styled" placeholder="Ghi chú..."></td>
+                                        <td><select name="status[]" class="select-styled" onchange="updateStatusColor(this)"><option value="Đang sử dụng" <?= ($d['status'] ?? '') == 'Đang sử dụng' ? 'selected' : '' ?> class="status-inuse">Đang dùng</option><option value="Không sử dụng" <?= ($d['status'] ?? '') == 'Không sử dụng' ? 'selected' : '' ?> class="status-notinuse">Không dùng</option></select></td>
+                                        <td><select name="health_status[]" class="select-styled"><option value="good" <?= ($d['health_status'] ?? '') == 'good' ? 'selected' : '' ?>>Tốt</option><option value="warning" <?= ($d['health_status'] ?? '') == 'warning' ? 'selected' : '' ?>>Cảnh báo</option><option value="broken" <?= ($d['health_status'] ?? '') == 'broken' ? 'selected' : '' ?>>Hỏng</option></select></td>
+                                        <td><input type="number" name="quantity[]" value="<?= $d['quantity'] ?? 1 ?>" min="0" class="input-styled text-center"></td>
+                                        <td><input type="text" name="cause[]" value="<?= htmlspecialchars($d['cause'] ?? '') ?>" class="input-styled mb-1" placeholder="Nguyên nhân..."><input type="text" name="notes[]" value="<?= htmlspecialchars($d['notes'] ?? '') ?>" class="input-styled" placeholder="Ghi chú..."></td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
