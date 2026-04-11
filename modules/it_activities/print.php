@@ -71,8 +71,8 @@ $p_y = date('Y', strtotime($check['check_date']));
         body { font-family: "Times New Roman", Times, serif; font-size: 11pt; line-height: 1.3; color: #000; background: #fff; margin: 0; padding: 0; }
         .print-container { width: 210mm; margin: 0 auto; padding: 10mm 15mm; box-sizing: border-box; }
         .p-header-table { width: 100%; border-bottom: 2px solid #000; margin-bottom: 5px; border-collapse: collapse; }
-        .logo { width: 180px; display: block; margin-bottom: 5px; }
-        .p-ticket-no { font-size: 12pt; font-style: italic; }
+        .logo { width: 180px; display: block; margin: 0 auto 5px auto; }
+        .p-ticket-no { font-size: 12pt; font-style: italic; text-align: center; }
         .p-date { text-align: right; vertical-align: bottom; padding-bottom: 5px; font-size: 12pt; font-style: italic; }
         .p-title { text-align: center; font-size: 18pt; font-weight: bold; margin: 15px 0 10px 0; text-transform: uppercase; line-height: 1.2; }
         
@@ -114,7 +114,7 @@ $p_y = date('Y', strtotime($check['check_date']));
             <tr>
                 <td style="width: 190px;">
                     <img src="../uploads/system/logo.png" class="logo" alt="Logo">
-                    <div class="p-ticket-no">Số: <?= str_pad($check['id'], 3, '0', STR_PAD_LEFT) ?>/BC-P.IT/<?= date('y', strtotime($check['check_date'])) ?></div>
+                    <div class="p-ticket-no">Số: <?= $check['id'] ?>/BC-P.IT/<?= date('y', strtotime($check['check_date'])) ?></div>
                 </td>
                 <td class="p-date">TP. Hồ Chí Minh, ngày <?= $p_d ?> tháng <?= $p_m ?> năm <?= $p_y ?></td>
             </tr>
@@ -122,9 +122,25 @@ $p_y = date('Y', strtotime($check['check_date']));
 
         <div class="p-title">BÁO CÁO KIỂM TRA TÌNH TRẠNG<br>HỆ THỐNG VÀ THIẾT BỊ</div>
 
+        <style>
+            .data-table { width: 100%; border-collapse: collapse; border: 1.5px solid #000; table-layout: fixed; margin-bottom: 15px; }
+            .data-table td { border: 1px solid #000; padding: 6px 8px; vertical-align: middle; font-size: 10pt; }
+            .label-cell { font-weight: bold; background-color: #f5f5f5 !important; -webkit-print-color-adjust: exact; width: 110px; }
+            .value-cell { word-wrap: break-word; }
+            /* Định nghĩa độ rộng cột để khớp nhau giữa 2 bảng */
+            .col-label { width: 110px; }
+            .col-value { width: auto; }
+        </style>
+
         <table class="data-table">
+            <colgroup>
+                <col class="col-label">
+                <col class="col-value">
+                <col class="col-label">
+                <col class="col-value">
+            </colgroup>
             <tr>
-                <td class="label-cell">Dự Án:</td>
+                <td class="label-cell">Dự án:</td>
                 <td class="value-cell" colspan="3"><strong><?= htmlspecialchars($check['ten_du_an']) ?></strong></td>
             </tr>
             <tr>
@@ -132,14 +148,33 @@ $p_y = date('Y', strtotime($check['check_date']));
                 <td class="value-cell" colspan="3"><?= htmlspecialchars($display_address ?: '-') ?></td>
             </tr>
             <tr>
+                <td class="label-cell">Đại diện:</td>
+                <td class="value-cell"><strong><?= htmlspecialchars($check['client_name'] ?: '-') ?></strong></td>
+                <td class="label-cell">Chức vụ:</td>
+                <td class="value-cell"><?= htmlspecialchars($check['client_position'] ?: '-') ?></td>
+            </tr>
+        </table>
+
+        <table class="data-table">
+            <colgroup>
+                <col class="col-label">
+                <col class="col-value">
+                <col class="col-label">
+                <col class="col-value">
+            </colgroup>
+            <tr>
                 <td class="label-cell">Người kiểm tra:</td>
-                <td class="value-cell" style="text-transform: uppercase;"><strong><?= htmlspecialchars($check['checker_name']) ?></strong></td>
-                <td class="label-cell">Đánh giá chung:</td>
-                <td class="value-cell"><strong><?= ($overall_health_map[$check['overall_health']] ?? $check['overall_health']) ?></strong></td>
+                <td class="value-cell"><strong><?= htmlspecialchars($check['checker_name']) ?></strong></td>
+                <td class="label-cell">Chức vụ:</td>
+                <td class="value-cell"><?= htmlspecialchars($check['checked_position'] ?: 'IT') ?></td>
+            </tr>
+            <tr>
+                <td class="label-cell">Đánh giá:</td>
+                <td class="value-cell" colspan="3"><strong><?= ($overall_health_map[$check['overall_health']] ?? $check['overall_health']) ?></strong></td>
             </tr>
             <?php if($check['summary_notes']): ?>
             <tr>
-                <td class="label-cell">Ghi chú hệ thống:</td>
+                <td class="label-cell">Ghi chú:</td>
                 <td class="value-cell" colspan="3"><?= nl2br(htmlspecialchars($check['summary_notes'])) ?></td>
             </tr>
             <?php endif; ?>
@@ -153,7 +188,7 @@ $p_y = date('Y', strtotime($check['check_date']));
                     <th width="10%">S.Lượng</th>
                     <th width="15%">Sử dụng</th>
                     <th width="15%">Sức khỏe</th>
-                    <th width="20%">Tình trạng chi tiết</th>
+                    <th width="20%">Tình trạng</th>
                 </tr>
             </thead>
             <tbody>

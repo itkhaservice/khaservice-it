@@ -35,11 +35,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_health_check']
     $summary_notes = $_POST['summary_notes'];
     $check_date = $_POST['check_date'];
     $checked_by = $_POST['checked_by'];
+    $client_name = $_POST['client_name'];
+    $client_position = $_POST['client_position'];
+    $checked_position = $_POST['checked_position'];
 
     try {
         $pdo->beginTransaction();
-        $stmt = $pdo->prepare("UPDATE it_system_health_checks SET check_date = ?, overall_health = ?, summary_notes = ?, checked_by = ? WHERE id = ?");
-        $stmt->execute([$check_date, $overall_health, $summary_notes, $checked_by, $id]);
+        $stmt = $pdo->prepare("UPDATE it_system_health_checks SET check_date = ?, overall_health = ?, summary_notes = ?, checked_by = ?, client_name = ?, client_position = ?, checked_position = ? WHERE id = ?");
+        $stmt->execute([$check_date, $overall_health, $summary_notes, $checked_by, $client_name, $client_position, $checked_position, $id]);
 
         if (isset($_POST['device_ids']) && is_array($_POST['device_ids'])) {
             $stmt_sync = $pdo->prepare("UPDATE devices SET trang_thai = ? WHERE id = ?");
@@ -147,6 +150,13 @@ foreach ($roots as $group => $root_list) {
                 <div class="card-header bg-light"><strong>Thông tin chung</strong></div>
                 <div class="card-body">
                     <div class="form-group mb-3"><label>Dự án</label><select class="form-control bg-light" disabled><?php foreach ($projects as $p): ?><option value="<?= $p['id'] ?>" <?= $project_id == $p['id'] ? 'selected' : '' ?>><?= htmlspecialchars($p['ten_du_an']) ?></option><?php endforeach; ?></select></div>
+                    <div class="form-group mb-3"><label>Ngày kiểm tra <span class="text-danger">*</span></label><input type="date" name="check_date" value="<?= $check_date ?>" class="form-control" required></div>
+                    
+                    <hr>
+                    <div class="form-group mb-3"><label>Đại diện dự án</label><input type="text" name="client_name" value="<?= htmlspecialchars($check['client_name'] ?? '') ?>" class="form-control" placeholder="Họ và tên người đại diện"></div>
+                    <div class="form-group mb-3"><label>Chức vụ đại diện</label><input type="text" name="client_position" value="<?= htmlspecialchars($check['client_position'] ?? '') ?>" class="form-control" placeholder="VD: Trưởng BQL, Kế toán..."></div>
+                    
+                    <hr>
                     <div class="form-group mb-3">
                         <label>Người kiểm tra <span class="text-danger">*</span></label>
                         <select name="checked_by" class="form-control" required>
@@ -155,8 +165,10 @@ foreach ($roots as $group => $root_list) {
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="form-group mb-3"><label>Ngày kiểm tra <span class="text-danger">*</span></label><input type="date" name="check_date" value="<?= $check_date ?>" class="form-control" required></div>
-                    <div class="form-group mb-3"><label>Đánh giá tổng quát</label><select name="overall_health" class="form-control"><option value="good" <?= $check['overall_health'] == 'good' ? 'selected' : '' ?>>Tốt</option><option value="warning" <?= $check['overall_health'] == 'warning' ? 'selected' : '' ?>>Cảnh báo</option><option value="critical" <?= $check['overall_health'] == 'critical' ? 'selected' : '' ?>>Khẩn cấp</option></select></div>
+                    <div class="form-group mb-3"><label>Chức vụ người kiểm tra</label><input type="text" name="checked_position" value="<?= htmlspecialchars($check['checked_position'] ?? 'IT') ?>" class="form-control" placeholder="VD: Nhân viên IT, Team Lead..."></div>
+                    
+                    <hr>
+                    <div class="form-group mb-3"><label>Đánh giá tổng quát</label><input type="text" name="overall_health" value="<?= htmlspecialchars($check['overall_health'] ?? '') ?>" class="form-control" placeholder="VD: Tốt, ổn định / Cần lưu ý thay thế..."></div>
                     <div class="form-group"><label>Ghi chú tổng quan</label><textarea name="summary_notes" class="form-control" rows="4"><?= htmlspecialchars($check['summary_notes']) ?></textarea></div>
                 </div>
             </div>

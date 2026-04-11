@@ -60,8 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quick_add_device'])) 
     } catch (PDOException $e) { set_message("error", "Lỗi: " . $e->getMessage()); }
 }
 
-$db_types = $pdo->query("SELECT * FROM settings_device_types ORDER BY group_name, type_name")->fetchAll(PDO::FETCH_ASSOC);
-$db_groups = array_unique(array_column($db_types, 'group_name'));
+$db_groups = $pdo->query("SELECT group_name FROM settings_device_groups ORDER BY group_name ASC")->fetchAll(PDO::FETCH_COLUMN);
+$db_types = $pdo->query("SELECT * FROM settings_device_types ORDER BY group_name, type_name ASC")->fetchAll(PDO::FETCH_ASSOC);
 $projects = $pdo->query("SELECT id, ten_du_an, ma_du_an FROM projects WHERE deleted_at IS NULL ORDER BY ten_du_an ASC")->fetchAll();
 $it_staff = $pdo->query("SELECT id, fullname FROM users WHERE role IN ('it', 'admin') AND deleted_at IS NULL ORDER BY fullname ASC")->fetchAll();
 
@@ -74,9 +74,12 @@ if ($project_id) {
     $raw_devices = $stmt->fetchAll();
     $roots = []; $children = [];
     foreach ($raw_devices as $d) {
-        if (!$d['parent_id']) $roots[$d['nhom_thiet_bi']][] = $d;
-        else $children[$d['parent_id']][] = $d;
-        $potential_parents[] = $d;
+        if (!$d['parent_id']) {
+            $roots[$d['nhom_thiet_bi']][] = $d;
+            $potential_parents[] = $d; // Only root devices can be potential parents
+        } else {
+            $children[$d['parent_id']][] = $d;
+        }
     }
     foreach ($roots as $group => $root_list) {
         foreach ($root_list as $root) {
@@ -219,9 +222,8 @@ if ($project_id) {
             <div class="modal-body-custom">
                 <div class="row">
                     <div class="col-md-5 mb-3"><div class="form-group-custom"><label>Nhóm</label><select name="q_nhom_thiet_bi" id="q_nhom_thiet_bi" class="form-control-custom" onchange="filterQuickTypes();"><?php foreach ($db_groups as $group): ?><option value="<?= htmlspecialchars($group) ?>"><?= htmlspecialchars($group) ?></option><?php endforeach; ?></select></div></div>
-                    <div class="col-md-7 mb-3"><div class="form-group-custom"><label>Loại thiết bị</label><input type="text" name="q_loai_thiet_bi" id="q_loai_thiet_bi" class="form-control-custom" required readonly placeholder="Chọn một loại..."></div></div>
+                    <div class="col-md-7 mb-3"><div class="form-group-custom"><label>Loại thiết bị <span class="text-danger">*</span></label><select name="q_loai_thiet_bi" id="q_loai_thiet_bi" class="form-control-custom" required onchange="callGenerateAssetCodeAPI();"></select></div></div>
                 </div>
-                <div class="form-group-custom mb-3"><div class="type-picker-wrapper"><div class="type-list" id="quick-type-list"></div></div></div>
                 <div class="form-group-custom mb-3"><label>Tên thiết bị <span class="text-danger">*</span></label><input type="text" name="q_ten_thiet_bi" id="q_ten_thiet_bi" class="form-control-custom" required placeholder="VD: Máy tính chị Yến"></div>
                 <div class="form-group-custom mb-3"><label>Mã Tài sản (Tự sinh)</label><div style="display: flex; gap: 5px;"><input type="text" name="q_ma_tai_san" id="q_ma_tai_san" class="form-control-custom" style="background:#f1f5f9;" readonly><button type="button" class="btn btn-secondary btn-sm" onclick="callGenerateAssetCodeAPI()"><i class="fas fa-sync"></i></button></div></div>
                 <div class="form-group-custom mb-3"><label>Thiết bị gốc (Cha)</label><select name="q_parent_id" class="form-control-custom"><option value="">-- Là thiết bị gốc --</option><?php foreach ($potential_parents as $p): ?><option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['ma_tai_san']) ?> - <?= htmlspecialchars($p['ten_thiet_bi']) ?></option><?php endforeach; ?></select></div>
@@ -238,17 +240,18 @@ function openQuickAddModal() { document.getElementById('quickAddModal').style.di
 function closeQuickAddModal() { document.getElementById('quickAddModal').style.display = 'none'; }
 function filterQuickTypes() {
     const group = document.getElementById('q_nhom_thiet_bi').value;
-    const listContainer = document.getElementById('quick-type-list');
-    const typeInput = document.getElementById('q_loai_thiet_bi');
+    const typeSelect = document.getElementById('q_loai_thiet_bi');
     const assetInput = document.getElementById('q_ma_tai_san');
-    listContainer.innerHTML = ''; typeInput.value = ''; assetInput.value = '';
+    
+    typeSelect.innerHTML = '<option value="">-- Chọn loại --</option>';
+    assetInput.value = '';
+    
     const filtered = allTypes.filter(t => t.group_name === group);
     filtered.forEach(t => {
-        const pill = document.createElement('div'); pill.className = 'type-pill'; pill.innerText = t.type_name;
-        pill.onclick = function() {
-            typeInput.value = t.type_name; document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('active')); pill.classList.add('active'); callGenerateAssetCodeAPI();
-        };
-        listContainer.appendChild(pill);
+        const opt = document.createElement('option');
+        opt.value = t.type_name;
+        opt.innerText = t.type_name;
+        typeSelect.appendChild(opt);
     });
 }
 function callGenerateAssetCodeAPI() {
